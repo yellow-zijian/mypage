@@ -3164,7 +3164,10 @@ initWeather();
   (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(0);
   // 検証用: ?reveal で破壊を飛ばして新サイトを即公開
   if (new URLSearchParams(location.search).has('reveal')) {
-    document.getElementById('new-site').classList.add('revealed');
+    // 1コマ待ってから開くと、ようこそ文の出現(ふわっと上がる)が毎回動く。文字の組み上がり(scramble)も毎回流す
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('new-site').classList.add('revealed')));
+    document.getElementById('ns-title').textContent = '';   // 組み上がる前に完成形が一瞬見えないように
+    setTimeout(() => scramble(document.getElementById('ns-title'), 'ようこそ、黄梓健のホームページへ。'), 350);
     const t = document.getElementById('three'); if (t) t.style.pointerEvents = 'none';
     const o = document.getElementById('old-site'); if (o) o.style.visibility = 'hidden';
     ['integrity', 'mute', 'skip'].forEach(id => document.getElementById(id)?.classList.add('fade-out'));
