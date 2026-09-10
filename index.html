@@ -1562,7 +1562,7 @@ function normalizeModel(obj, name, targetSize, fatUp = true) {
 }
 const GLB_ALIASES = { drill: ['hammer_drill'], katana: ['game_ready_samurai_katana'] };
 function tryLoadGLB(name, apply) {
-  const paths = [name, ...(GLB_ALIASES[name] || [])].map(n => `assets/models/${n}.glb`)
+  const paths = [...(GLB_ALIASES[name] || []), name].map(n => `assets/models/${n}.glb`)   // 実在する別名を先に試す(存在しない名前で毎回404を出さない)
     .concat([`assets/models/${name}/scene.gltf`]);
   const tryOne = i => {
     if (i >= paths.length) return;
