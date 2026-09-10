@@ -3,7 +3,7 @@
    空のままなら何もしない。手元(localhost)の確認は数えない。
    出来事を数えたい所では window.__count('名前') を呼ぶ(集計画面に event/名前 として出る) */
 (() => {
-  const SITE = '';
+  const SITE = 'huangzijian';
   window.__count = () => {};
   if (!SITE || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   if (new URLSearchParams(location.search).has('embed')) return;   // 埋め込み(部屋・テレビ)は親で数えるので二重にしない
