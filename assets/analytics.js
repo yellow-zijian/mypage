@@ -6,6 +6,7 @@
   const SITE = 'huangzijian';
   window.__count = () => {};
   if (!SITE || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  if (navigator.webdriver) return;   // 自動操作のブラウザ(検証用・クローラ)は数えない
   if (new URLSearchParams(location.search).has('embed')) return;   // 埋め込み(部屋・テレビ)は親で数えるので二重にしない
   window.goatcounter = { path: location.pathname.replace(/\/index\.html$/, '/') };   // ?reveal=1 などの違いで分かれないように
   const s = document.createElement('script');
