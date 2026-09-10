@@ -63,8 +63,8 @@ class Game{
   const front=(p.x-e.x)*e.dir>0;
   if(e.type==='shield'&&e.broken<=0&&front&&kind==='light'){damage*=.12;e.posture+=30;this.event('blocked');if(e.posture>=90){e.broken=1.8;e.stun=1;e.posture=0;this.event('guard-break');}}
   if(kind==='heavy'){e.broken=1.4;e.stun=e===this.boss?.15:.75;e.posture=0;}
-  e.hp=Math.max(0,e.hp-Math.round(damage));e.flash=.12;e.stun=Math.max(e.stun,.1);this.comboCount++;this.comboTimer=2.5;p.focus=clamp(p.focus+(kind==='ultimate'?0:5),0,100);this.hitstop=Math.max(this.hitstop,.04);this.shake=kind==='heavy'?6:3;
-  this.burst(e.x+e.w/2,e.y+e.h*.5,kind==='heavy'?'#ffd49c':'#79ffe7',14,220);this.event('hit');
+  e.hp=Math.max(0,e.hp-Math.round(damage));e.flash=.12;e.stun=Math.max(e.stun,.1);this.comboCount++;this.comboTimer=2.5;p.focus=clamp(p.focus+(kind==='ultimate'?0:5),0,100);this.hitstop=Math.max(this.hitstop,kind==='heavy'?.065:kind==='ultimate'?.085:.035);this.shake=kind==='heavy'?6:3;
+  this.burst(e.x+e.w/2,e.y+e.h*.5,kind==='heavy'?'#ffd49c':'#79ffe7',14,220);this.event('hit',{x:e.x+e.w/2,y:e.y+e.h*.5,kind});
   if(e.hp<=0){e.dead=true;this.kills++;this.score+=e===this.boss?5000:e.score;p.focus=clamp(p.focus+(e===this.boss||kind==='ultimate'?0:12),0,100);this.burst(e.x+e.w/2,e.y+e.h/2,'#ed66a1',24,230);this.event('kill');if(e===this.boss){this.endTimer=1.5;this.shake=12;this.bossGate=false;p.invuln=4;this.projectiles=[];this.attacks=[];this.event('boss-defeated');}}
   else this.score+=15;
  }
@@ -73,7 +73,7 @@ class Game{
   this.projectiles=[];this.event('ultimate');return true;
  }
  addAttack(box,damage,delay=.6,duration=.2,parryable=false,source=this.boss,label=''){this.attacks.push({...box,damage,delay,maxDelay:delay,life:duration,maxLife:duration,parryable,source,label,hit:false});}
- shoot(e,targetX,targetY,speed=260,count=1,spread=.16){const x=e.x+e.w/2,y=e.y+e.h*.45,a=Math.atan2(targetY-y,targetX-x);for(let i=0;i<count;i++){const t=a+(i-(count-1)/2)*spread;this.projectiles.push({x,y,w:12,h:8,vx:Math.cos(t)*speed,vy:Math.sin(t)*speed,life:4.5,damage:e.damage||16,friendly:false});}this.event('shot');}
+ shoot(e,targetX,targetY,speed=260,count=1,spread=.16){const x=e.x+e.w/2,y=e.y+e.h*.45,a=Math.atan2(targetY-y,targetX-x);for(let i=0;i<count;i++){const t=a+(i-(count-1)/2)*spread;this.projectiles.push({x,y,w:12,h:8,vx:Math.cos(t)*speed,vy:Math.sin(t)*speed,life:4.5,damage:e.damage||16,friendly:false});}this.event('shot',{x});}
  update(dt,input={}){
   if(this.mode!=='playing')return;dt=clamp(dt,0,1/30);this.time+=dt;this.age+=dt;const p=this.player;
   const pressed={};for(const k of ['jump','attack','dash','parry','heavy','ultimate'])pressed[k]=!!input[k]&&!this.prev[k];this.prev={...input};
@@ -108,7 +108,7 @@ class Game{
    if(active&&!p.hitTargets.has(e)&&overlap(attackBox,e)){p.hitTargets.add(e);this.hitEnemy(e,heavy?70:p.combo===3?42:28,p.dir,p.attackKind);}if(!e.dead)this.updateEnemy(e,dt);}
   const b=this.boss;for(const k of ['flash','stun','broken'])b[k]=Math.max(0,b[k]-dt);
   if(b.active&&!b.dead){if(active&&!p.hitTargets.has(b)&&overlap(attackBox,b)){p.hitTargets.add(b);this.hitEnemy(b,heavy?76:p.combo===3?45:30,p.dir,p.attackKind);}if(!b.dead)this.updateBoss(dt);}
-  for(const a of this.attacks){a.delay-=dt;if(a.delay>0)continue;a.life-=dt;if(!a.hit&&overlap(p,a)){const result=this.damagePlayer(a.damage,a.source?.x??a.x,a.source,a.parryable);if(result)a.hit=true;}}
+  for(const a of this.attacks){a.delay-=dt;if(a.delay>0)continue;if(!a.sounded){a.sounded=true;this.event('attack-fired',{x:a.x+a.w/2,label:a.label});}a.life-=dt;if(!a.hit&&overlap(p,a)){const result=this.damagePlayer(a.damage,a.source?.x??a.x,a.source,a.parryable);if(result)a.hit=true;}}
   this.attacks=this.attacks.filter(a=>a.life>0);
   for(const h of this.hazards){const t=(this.age+h.offset)%h.period;h.warning=t>h.period-h.on-.7&&t<h.period-h.on;h.active=t>=h.period-h.on;if(h.active&&overlap(p,h))this.damagePlayer(18,h.x,null,false);}
   for(const q of this.projectiles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;
