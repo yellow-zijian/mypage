@@ -1249,7 +1249,7 @@ function paint() {
   else if (y === m) v.textContent = `まさかの引き分け。重なりは${both}県。`;
   else v.innerHTML = `あと<span style="color:#c48d7e">${m - y}県</span>で追いつきます。` +
        (only ? `黄が知らない土地が${only}。` : '');
-  if (VIEW) v.innerHTML = v.innerHTML.replace(/あなた/g, VIEW.name);
+  if (VIEW) v.innerHTML = v.innerHTML.replace(/あなた/g, VIEW.name.replace(/[<>&"']/g, ch => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[ch])));   // リンク由来の名前は必ず無害化
 }
 paint();
 document.getElementById('reset').addEventListener('click', () => {

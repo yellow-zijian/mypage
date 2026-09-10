@@ -12,3 +12,20 @@ estate-01-built.txt
 INTERACTIONS.md
 VIDEO_PROMPTS.md
 引き継ぎ.md
+# 使っていない旧モデル(出どころの記録がないものは公開しない)
+assets/models/ecorche.glb
+assets/models/lowpoly-anatomy.glb
+assets/models/muscles.glb
+assets/models/body-hi.glb
+assets/models/body.glb
+# 使っていない旧素材(手元には残す)
+assets/resume-dusty.png
+assets/videos/concept/
+assets/gate/*-warm.*
+assets/gate/*-pale.*
+assets/dig-desk.jpg
+assets/dig-desk-warm.jpg
+assets/dig-desk-pale.jpg
+assets/brush.png
+assets/strata.jpg
+assets/strata-purple.jpg

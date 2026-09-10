@@ -378,6 +378,10 @@
   .foot-col a small { font-size:.62em; font-weight:600; color:rgba(242,239,230,.5); margin-left:.6em; letter-spacing:.12em; }
   .foot-sign { margin-top: clamp(40px, 8vh, 90px); font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
     letter-spacing:.3em; color:rgba(242,239,230,.42); }
+  .foot-credit { margin-top:1.6em; max-width:min(880px, 92vw); text-align:center; font:500 clamp(9px, .75vw, 11px)/1.8 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:rgba(242,239,230,.32); letter-spacing:.04em; }
+  .foot-credit a { color:rgba(242,239,230,.5); text-decoration:none; border-bottom:1px solid rgba(242,239,230,.2); }
+  .foot-credit a:hover { color:var(--rose2); border-color:var(--rose2); }
   @media (max-width:860px), (max-aspect-ratio:1/1) {
     .foot-grid { grid-template-columns: 1fr; gap: 26px; }
     .ns-foot { min-height:auto; }
@@ -561,11 +565,14 @@
           </div>
         </div>
         <p class="foot-sign">黄梓健 · 2026</p>
+        <p class="foot-credit">3Dモデル: <a href="https://sketchfab.com/3d-models/hammer-9f5c4bcb43ab44ecbec7827aa404043f" target="_blank" rel="noopener">Hammer</a> by Typhen (CC BY-NC 4.0) ·
+          <a href="https://sketchfab.com/3d-models/hammer-drill-215ea20f47b5497498ef7246d836cf7e" target="_blank" rel="noopener">Hammer drill</a> by Jinhong Jeong (CC BY-NC 4.0) ·
+          <a href="https://sketchfab.com/3d-models/game-ready-samurai-katana-29428a577d094c40a47651b7f5e6dafd" target="_blank" rel="noopener">Game Ready Samurai Katana</a> by roma1n (CC BY 4.0)</p>
       </section>
     </div>
     </div>
     <div style="display:none">
-      <!-- 公開時はクレジット表記の復活が必要(ライセンス条件):
+      <!-- クレジットは一覧の下(.foot-credit)に表示している(ライセンス条件):
            "Hammer" by Typhen (CC BY-NC 4.0) https://sketchfab.com/3d-models/hammer-9f5c4bcb43ab44ecbec7827aa404043f
            "Hammer drill" by Jinhong Jeong (CC BY-NC 4.0) https://sketchfab.com/3d-models/hammer-drill-215ea20f47b5497498ef7246d836cf7e
            "Game Ready Samurai Katana" by roma1n (CC BY 4.0) https://sketchfab.com/3d-models/game-ready-samurai-katana-29428a577d094c40a47651b7f5e6dafd -->

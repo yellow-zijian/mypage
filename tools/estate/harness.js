@@ -1,7 +1,7 @@
 // estate.html から純粋ロジック(@@PURE-BEGIN 〜 @@PURE-END)を抜き出して Node で回す
 const fs = require('fs');
 const path = require('path');
-const html = fs.readFileSync('/Users/huangzijian/Desktop/5.project/mypage/pages/estate.html', 'utf8');
+const html = fs.readFileSync(require('path').join(__dirname, '..', '..', 'pages', 'estate.html'), 'utf8');
 const re = /\/\* @@PURE-BEGIN[^*]*\*\/([\s\S]*?)\/\* @@PURE-END[^*]*\*\//g;
 let code = '', m;
 while ((m = re.exec(html))) code += m[1] + '\n';
