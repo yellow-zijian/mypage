@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>部屋 — 黄梓健</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body { background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%);
+    font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; -webkit-user-select:none; user-select:none; }
+  #stage { position:fixed; inset:0; touch-action:none; }
+  #stage.hand { cursor:pointer; }
+  #stage.grab { cursor:grabbing; }
+  body.embed .back, body.embed .head { display:none; }
+  body.embed #stage { touch-action:pan-y; }
+  body.embed #mute { top:auto; bottom:clamp(16px, 3vh, 34px); right:clamp(16px, 2.5vw, 40px); }
+  body.embed .card { display:none; }
+  body.embed .bar { left:auto; right:calc(clamp(16px, 2.5vw, 40px) + clamp(40px, 3.4vw, 54px)); transform:none; }
+  body.embed .bubble { z-index:14; }
+  #paper { position:fixed; inset:0; pointer-events:none; z-index:2;
+    background: radial-gradient(90% 80% at 50% 45%, rgba(255,255,255,0) 55%, rgba(96,102,88,.10) 100%); }
+
+  .back { position:fixed; top:clamp(18px, 3.5vh, 40px); left:clamp(18px, 2.5vw, 40px); z-index:20;
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#6f6d62; text-decoration:none; border:1px solid rgba(96,102,88,.25); border-radius:999px;
+    padding:.9em 1.5em; transition: all .25s ease; background:rgba(255,252,246,.55); backdrop-filter:blur(6px); }
+  .back:hover { border-color:#c48d7e; color:#c48d7e; box-shadow:0 6px 20px rgba(196,141,126,.18); }
+
+  .head { position:fixed; left:clamp(18px, 2.5vw, 40px); top:clamp(76px, 11vh, 118px); z-index:12;
+    opacity:0; transform:translateY(10px); transition:.9s cubic-bezier(.22,.9,.3,1); pointer-events:none; }
+  .head.on { opacity:1; transform:none; }
+  .eyebrow { font:600 clamp(10px, .9vw, 13px)/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing:.4em; color:#c48d7e; margin-bottom:.9em; }
+  h1 { font:800 clamp(24px, 3vw, 44px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .head p { margin-top:.9em; font:500 clamp(11px, .95vw, 14px)/1.9 "Hiragino Kaku Gothic ProN", sans-serif; color:#7a786e; }
+
+  #mute { position:fixed; z-index:30; top:14px; right:14px;
+    width:clamp(32px, 2.8vw, 44px); height:clamp(32px, 2.8vw, 44px); font-size:clamp(14px, 1.25vw, 19px);
+    background:rgba(255,252,246,.8); border:1px solid rgba(96,102,88,.2); border-radius:50%;
+    cursor:pointer; backdrop-filter: blur(6px); color:#4a4a43; }
+
+  .bar { position:fixed; left:50%; bottom:clamp(16px, 3vh, 34px); transform:translateX(-50%); z-index:20;
+    display:flex; gap:.5em; padding:.45em; border-radius:999px; background:rgba(255,252,246,.7);
+    border:1px solid rgba(96,102,88,.18); backdrop-filter:blur(8px); box-shadow:0 8px 24px rgba(80,80,60,.10);
+    opacity:0; transition:opacity .8s ease .6s; }
+  .bar.on { opacity:1; }
+  .bar button { width:clamp(32px, 2.6vw, 40px); height:clamp(32px, 2.6vw, 40px); border-radius:50%; border:1px solid rgba(196,141,126,.45);
+    background:transparent; color:#c48d7e; font:700 clamp(13px, 1.1vw, 17px)/1 "Helvetica Neue", Arial, sans-serif; cursor:pointer;
+    transition:all .2s ease; }
+  .bar button:hover { background:rgba(196,141,126,.12); border-color:#c48d7e; box-shadow:0 0 14px rgba(196,141,126,.25); }
+  .bar button:active { transform:scale(.92); }
+  .bar i { width:1px; margin:.3em .2em; background:rgba(96,102,88,.18); }
+
+  .bubble { position:fixed; z-index:14; transform:translate(-50%, -100%); pointer-events:none;
+    font:700 clamp(11px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.08em; color:#4a4a43;
+    background:rgba(255,252,246,.94); border:1px solid rgba(96,102,88,.22); border-radius:999px; padding:.7em 1.1em;
+    box-shadow:0 6px 18px rgba(80,80,60,.12); opacity:0; transition:opacity .35s ease; white-space:nowrap; }
+  .bubble::after { content:""; position:absolute; left:50%; bottom:-6px; width:10px; height:10px; transform:translateX(-50%) rotate(45deg);
+    background:rgba(255,252,246,.94); border-right:1px solid rgba(96,102,88,.22); border-bottom:1px solid rgba(96,102,88,.22); }
+  .bubble.on { opacity:1; }
+  .bubble.kid { color:#c48d7e; border-color:rgba(196,141,126,.35); }
+  .bubble.kid::after { border-color:rgba(196,141,126,.35); }
+
+  .card { position:fixed; z-index:16; right:clamp(18px, 2.5vw, 40px); top:50%; transform:translate(24px, -50%);
+    width:min(78vw, clamp(220px, 22vw, 320px)); padding:clamp(16px, 1.6vw, 24px);
+    background:rgba(255,251,244,.9); border:1px solid rgba(96,102,88,.16); border-radius:18px;
+    backdrop-filter:blur(12px); box-shadow:0 20px 50px rgba(80,80,60,.16); opacity:0; transition:.55s cubic-bezier(.22,.9,.3,1); pointer-events:none; }
+  .card.on { opacity:1; transform:translate(0, -50%); pointer-events:auto; }
+  .card .eyebrow { margin-bottom:.7em; }
+  .card h2 { font:800 clamp(18px, 1.7vw, 26px)/1.25 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .card p { margin-top:.8em; font:500 clamp(12px, 1vw, 14px)/1.85 "Hiragino Kaku Gothic ProN", sans-serif; color:#7a786e; }
+  .card .meter { margin-top:1.1em; height:3px; border-radius:2px; background:rgba(96,102,88,.12); overflow:hidden; }
+  .card .meter i { display:block; height:100%; width:0; background:linear-gradient(90deg, #a9b394, #d7aa9c); transition:width .3s linear; }
+  @media (max-width:640px) {
+    .card { right:12px; left:12px; top:auto; bottom:clamp(76px, 12vh, 110px); width:auto; transform:translateY(16px); }
+    .card.on { transform:none; }
+    .head p { display:none; }
+  }
+
+  #fx { position:fixed; inset:0; z-index:13; pointer-events:none; overflow:hidden; }
+  #fx span { position:absolute; will-change:transform, opacity; }
+  .zz { font:800 clamp(12px, 1.2vw, 18px)/1 "Helvetica Neue", Arial, sans-serif; color:#7a786e; animation: zz 2.2s ease-out forwards; }
+  @keyframes zz { 0% { opacity:0; transform:translate(-50%,-50%) scale(.6); } 20% { opacity:1; } 100% { opacity:0; transform:translate(20px,-70px) scale(1.4); } }
+  .steam { width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,.85); filter:blur(4px); animation: steam 1.6s ease-out forwards; }
+  @keyframes steam { 0% { opacity:0; transform:translate(-50%,-50%) scale(.5); } 25% { opacity:.9; } 100% { opacity:0; transform:translate(-30%,-52px) scale(1.8); } }
+  .drop { width:4px; height:7px; border-radius:50%; background:#6fb0d8; animation: drop .55s ease-in forwards; }
+  @keyframes drop { 0% { opacity:0; transform:translate(-50%,-50%); } 20% { opacity:1; } 100% { opacity:0; transform:translate(-50%, 38px); } }
+  .spark { font:700 clamp(10px, .9vw, 14px)/1 "Helvetica Neue", Arial, sans-serif; color:#a9b394; animation: spark 1.1s ease-out forwards; }
+  @keyframes spark { 0% { opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(0); } 30% { opacity:1; } 100% { opacity:0; transform:translate(-50%,-30px) scale(1.2) rotate(90deg); } }
+  .note { font:800 clamp(12px, 1.1vw, 16px)/1 "Helvetica Neue", Arial, sans-serif; color:#c48d7e; animation: zz 1.8s ease-out forwards; }
+  .heart { font:800 clamp(14px, 1.3vw, 20px)/1 "Helvetica Neue", Arial, sans-serif; color:#d7aa9c; animation: zz 1.8s ease-out forwards; }
+
+  #loader { position:fixed; left:50%; top:50%; width:10px; height:10px; margin:-5px; border-radius:50%; background:#c48d7e; z-index:40;
+    box-shadow:0 0 24px rgba(196,141,126,.6); animation: pulse 1.1s ease-in-out infinite; transition:opacity .5s ease; }
+  #loader.off { opacity:0; pointer-events:none; }
+  @keyframes pulse { 0%,100% { transform:scale(.7); opacity:.5; } 50% { transform:scale(1.3); opacity:1; } }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="paper"></div>
+<div id="fx"></div>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+<div class="head" id="head">
+  <h1>部屋</h1>
+  <p>昼下がり。黄と息子はここで暮らしている。</p>
+</div>
+<button id="mute" title="サウンド">🔊</button>
+<div class="bubble" id="bubble"></div>
+<div class="bubble kid" id="kbubble"></div>
+<div class="card" id="card">
+  <p class="eyebrow" id="card-eyebrow">NOW</p>
+  <h2 id="card-title"></h2>
+  <p id="card-text"></p>
+  <div class="meter"><i id="card-meter"></i></div>
+</div>
+<div class="bar" id="bar">
+  <button id="goA" title="黄の部屋">🏠</button>
+  <button id="goB" title="子ども部屋">🧸</button>
+  <i></i>
+  <button id="rotL" title="左へ回す">↺</button>
+  <button id="rotR" title="右へ回す">↻</button>
+  <button id="rotReset" title="元の角度">◎</button>
+  <i></i>
+  <button id="zoomIn" title="寄る">＋</button>
+  <button id="zoomOut" title="引く">－</button>
+</div>
+<div id="loader"></div>
+
+<script type="importmap">
+{ "imports": { "three": "../assets/vendor/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../assets/vendor/loaders/GLTFLoader.js';
+import { RoomEnvironment } from '../assets/vendor/environments/RoomEnvironment.js';
+
+/* ================================================================
+   部屋 — 3頭身の黄と5歳の息子が、昼下がりの2部屋で暮らす
+   ---------------------------------------------------------------
+   ① 箱庭の部屋が組み上がり、黄がドアから入ってきて手を振る。息子は隣の子ども部屋で遊んでいる
+   ② 床を押すとそこへ歩く。家具を押すと、歩いて行ってそれを使う
+   ③ 子ども部屋の家具(と息子本人)を押すと、親子の互动が始まる(一緒にゲーム/滑り台/勉強/絵本/積み木/高い高い/お絵かき/寝かしつけ)
+   ④ 放っておくと勝手に暮らす。カメラは黄について部屋間を移動する。仕切り壁は腰の高さの固定壁(開口から行き来)
+   モデル: assets/models/room.glb / chibi.glb / kid.glb(blender/*.py で生成。room.glb は AO を頂点色に焼き込み済み)
+   ================================================================ */
+
+const ROOM_V = 15;   // glb を作り直したら +1
+const EMBED = new URLSearchParams(location.search).has('embed');   // landing page の iframe として動くとき
+// 部屋は landing に移植済みなので単独ページとしては開かない(検証用に ?solo=1 だけ通す)
+if (!EMBED && !new URLSearchParams(location.search).has('solo')) location.replace('../index.html');
+if (EMBED) document.body.classList.add('embed');
+const $ = s => document.querySelector(s);
+const stage = $('#stage');
+const PI = Math.PI;
+
+/* ---------- 黄ひとりの行動(座標は glTF: x, z。Blender の +y は -z) ---------- */
+const HILITE = new THREE.Color('#e0b04a');
+const ACTS = {
+  work:   { name:'仕事',    bubble:'仕事中…',       anim:'Type',    spot:[2.1, -2.2],    approach:[2.1, -1.6],   yaw:PI,     yoff:-0.06, dur:9,
+            hit:['f_desk', 'f_chair'], props:[], fx:'monitor', text:'最新のAIを、最古の機械で動かしている。' },
+  tv:     { name:'テレビ',  bubble:'テレビ中',      anim:'Watch',   spot:[1.05, -1.75],  approach:[0.25, -1.75], yaw:-PI/2,  yoff:-0.14, dur:8,
+            hit:['f_sofa', 'f_tv'], props:[], fx:'tv', text:'旅番組で行った気になる。航空券より安い。' },
+  game:   { name:'ゲーム',  bubble:'ゲーム中',      anim:'Game',    spot:[-0.55, -0.55], approach:[0.45, -0.55], look:[-1.05, -1.75], yoff:-0.28, dur:9,
+            hit:['f_beanbag'], props:[['pad', 'handR', [-0.09, 0.02, 0.02], [PI, 0, 0]]], fx:'game', text:'積みゲーを一本崩した。セールで三本積んだ。' },
+  sleep:  { name:'昼寝',    bubble:'昼寝中 zzz',    anim:'Sleep',   spot:[-3.35, -1.3],  approach:[-3.2, -0.8],  yaw:0,      yoff:0.48,  dur:8,
+            hit:['f_bed'], props:[], fx:'sleep', text:'猫の呼吸を数えていたら、こちらが眠っていた。' },
+  read:   { name:'読書',    bubble:'読書中',        anim:'ReadSit', spot:[2.75, 1.5],    approach:[3.35, 2.1],   yaw:PI/4,   yoff:-0.02, dur:8,
+            hit:['f_armchair', 'f_shelf'], props:[['book', 'handL', [0.13, 0.03, 0.03], [PI - 0.9, 0, 0]]], fx:'read', text:'買えない物件の間取りほど、よく読める。' },
+  lift:   { name:'筋トレ',  bubble:'筋トレ中',      anim:'Lift',    spot:[-0.6, 2.5],    approach:[-1.05, 2.5],  yaw:PI/2,   yoff:0,     dur:7,
+            hit:['f_rack'], props:[['dumbbell', 'handL', [0, 0.02, 0], [PI, 0, 0]], ['dumbbell', 'handR', [0, 0.02, 0], [PI, 0, 0]]], fx:'lift', text:'今日は腕の日。脚の日は今週も延期した。' },
+  coffee: { name:'お茶',    bubble:'お茶中',        anim:'Drink',   spot:[-3.05, 1.6],   approach:[-3.05, 1.6],  yaw:-PI/2,  yoff:0,     dur:6,
+            hit:['f_kitchen'], props:[['cup', 'handR', [0, 0.04, 0.02], [PI, PI/2, 0]]], fx:'coffee', text:'立ったまま飲む。座ると夕方になる。' },
+  water:  { name:'水やり',  bubble:'水やり中',      anim:'Water',   spot:[1.5, 2.45],    approach:[1.5, 2.45],   yaw:0,      yoff:0,     dur:6,
+            hit:['f_plant'], props:[['can', 'handR', [0, 0.04, 0.03], [PI, -PI/2, 0]]], fx:'water', text:'まだ枯らしていない。この鉢は三代目だが。' },
+  supp:   { name:'サプリ',  bubble:'サプリ中',      anim:'Supp',    spot:[-3.25, -0.1],  approach:[-3.25, -0.1], yaw:-PI/2,  yoff:0,     dur:7,
+            hit:['f_supp'], props:[['shaker', 'handR', [0, 0.03, 0.0], [PI/2, 0, 0]]], fx:'supp', text:'効いたかどうかは、力こぶで確認している。' },
+};
+/* ---------- 息子との互动(DUO)。dad/kid それぞれの spot・向き・アニメ ---------- */
+const DUO = {
+  game2:  { name:'一緒にゲーム', bubble:'対戦中', kb:'まけないよ', dur:11, hit:['f_ktv', 'f_kcushions'], fx:'ktv',
+            dad:{ spot:[5.25, -1.35], approach:[5.9, -1.35], yaw:-PI/2, yoff:-0.38, anim:'Game', props:[['pad', 'handR', [-0.09, 0.02, 0.02], [PI, 0, 0]]] },
+            kid:{ spot:[5.25, -1.85], approach:[5.9, -1.85], yaw:-PI/2, yoff:-0.2,  anim:'Game', props:[['kpad', 'handR', [-0.06, 0.015, 0.015], [PI, 0, 0]]] },
+            text:'本気でやって負けた。積みゲーは経験値にならない。' },
+  slide:  { name:'滑り台',      bubble:'受け止め係', kb:'もういっかい！', dur:16, hit:['f_slide'], fx:'', special:'slide',
+            dad:{ spot:[6.75, 0.85], approach:[6.75, 0.85], yaw:PI/2, yoff:0, anim:'Catch', props:[] },
+            kid:{ spot:[9.6, 0.5], approach:[9.6, 0.5], yaw:-PI/2, yoff:0, anim:'Idle', props:[] },
+            text:'何度でも受け止める。膝のほうは、あと数回だ。' },
+  study:  { name:'勉強を見る',   bubble:'先生役', kb:'わかった！', dur:11, hit:['f_kdesk', 'f_kchairs'], fx:'',
+            dad:{ spot:[6.45, -2.25], approach:[6.45, -1.6], yaw:PI, yoff:-0.2, anim:'Point', props:[] },
+            kid:{ spot:[5.85, -2.25], approach:[5.85, -1.6], yaw:PI, yoff:-0.03, anim:'Study', props:[['pencil', 'handR', [0, 0.02, 0.01], [PI/2, 0, 0]]] },
+            text:'ぬ、で鉛筆が止まる。実は私も未だに苦手な字だ。' },
+  book:   { name:'絵本',        bubble:'読み聞かせ中', kb:'それで？', dur:11, hit:['f_tent', 'f_toyshelf'], fx:'',
+            dad:{ spot:[5.7, 2.1], approach:[6.3, 2.1], yaw:PI/2, yoff:0, anim:'ReadFloor', props:[['book', 'handL', [0.13, 0.03, 0.03], [PI - 0.9, 0, 0]]] },
+            kid:{ spot:[5.7, 1.65], approach:[6.3, 1.65], yaw:PI/2, yoff:0, anim:'Listen', props:[] },
+            text:'狼の声を本気で出したら、首をかしげられた。' },
+  blocks: { name:'積み木',      bubble:'積み木中', kb:'たかくして', dur:12, hit:['f_blocks'], fx:'', special:'blocks',
+            dad:{ spot:[5.95, 1.5], approach:[5.95, 1.0], yaw:PI/2, yoff:0, anim:'Blocks', props:[] },
+            kid:{ spot:[6.75, 1.5], approach:[6.75, 1.0], yaw:-PI/2, yoff:0, anim:'Blocks', props:[] },
+            text:'六個目。ふたりとも息を止めている。' },
+  high:   { name:'高い高い',     bubble:'高い高い中', kb:'たかーい！', dur:9, hit:['kid'], fx:'', special:'high',
+            dad:{ spot:[7.4, -0.6], approach:[7.4, -0.6], yaw:PI/4, yoff:0, anim:'HighHigh', props:[] },
+            kid:{ spot:[7.75, -0.25], approach:[7.75, -0.25], yaw:PI/4 + PI, yoff:0, anim:'Cheer', props:[] },
+            text:'去年より重い。去年より天井に近い。' },
+  draw:   { name:'お絵かき',     bubble:'お絵かき中', kb:'パパもかいて', dur:11, hit:['f_ktable'], fx:'',
+            dad:{ spot:[6.2, -1.35], approach:[6.2, -1.9], yaw:0, yoff:-0.23, anim:'DrawSit', props:[['crayon', 'handR', [0, 0.03, 0.01], [PI/2, 0, 0]]] },
+            kid:{ spot:[6.2, -0.25], approach:[6.85, -0.25], yaw:PI, yoff:-0.06, anim:'Draw', props:[['crayon', 'handR', [0, 0.02, 0.01], [PI/2, 0, 0]]] },
+            text:'膝を抱えて描いた犬は、猫だそうだ。異論はない。' },
+  bed:    { name:'寝かしつけ',   bubble:'とんとん中', kb:'おやすみ…', dur:11, hit:['f_kbed'], fx:'night',
+            dad:{ spot:[8.9, -1.85], approach:[8.9, -1.35], yaw:PI, yoff:-0.18, anim:'Pat', props:[] },
+            kid:{ spot:[8.75, -2.72], approach:[8.75, -2.05], yaw:-PI/2, yoff:0.45, anim:'Sleep', props:[] },
+            text:'最後のもういっかいは寝言だった。明日も付き合う。' },
+};
+const HIT2ACT = {};
+for (const [k, a] of Object.entries(ACTS)) for (const h of a.hit) HIT2ACT[h] = { solo:k };
+for (const [k, a] of Object.entries(DUO)) for (const h of a.hit) HIT2ACT[h] = { duo:k };
+
+/* ---------- 描画 ---------- */
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
+const pixRatio = () => Math.min(devicePixelRatio || 1, 1.5);
+renderer.setPixelRatio(pixRatio());
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.02;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.32;
+
+/* 等角カメラ。目標は黄について部屋間を移動(x は 0.1〜7.16 のレール上) */
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+const cam = { az:PI / 4, el:0.6, zoom:1, target:new THREE.Vector3(0.1, 0.7, 0.1), dist:34 };
+const camGoal = { az:cam.az, el:cam.el, zoom:1, tx:0.1 };
+const ROOM_A_X = 0.1, ROOM_B_X = 7.16;
+function fitCamera() {
+  const aspect = innerWidth / innerHeight;
+  const h = Math.max(8.4, 11.2 / aspect) / cam.zoom;
+  camera.top = h / 2; camera.bottom = -h / 2;
+  camera.left = -h * aspect / 2; camera.right = h * aspect / 2;
+  camera.updateProjectionMatrix();
+}
+function placeCamera() {
+  const { az, el, dist, target } = cam;
+  camera.position.set(target.x + dist * Math.cos(el) * Math.sin(az), target.y + dist * Math.sin(el), target.z + dist * Math.cos(el) * Math.cos(az));
+  camera.lookAt(target);
+}
+fitCamera(); placeCamera();
+
+/* ---------- 埋め込みの全景 ----------
+   landing page では左に文章が載るので、家全体(2部屋)を右側の空きに収めた全景から始める。
+   ＋で寄ると黄を追う従来のカメラになり、－で引くと全景に戻る */
+const HOUSE_BOX = new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.4), new THREE.Vector3(10.3, 2.9, 3.4));
+let wholeMode = EMBED, copyFrac = 0, wholeZoom = 1;
+const wholeTarget = new THREE.Vector3(3.05, 0.7, 0);
+const _pv = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new THREE.Vector3(), _goal = new THREE.Vector3();
+function fitWhole() {
+  const saveZ = cam.zoom, saveT = cam.target.clone(), saveAz = cam.az, saveEl = cam.el;
+  cam.az = camGoal.az; cam.el = camGoal.el;
+  // zoom=1 で家の中心を注視し、8隅を投影して NDC での大きさと中心を測る
+  cam.zoom = 1; cam.target.set(3.05, 0.7, 0); fitCamera(); placeCamera(); camera.updateMatrixWorld();
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (let i = 0; i < 8; i++) {
+    _pv.set(i & 1 ? HOUSE_BOX.max.x : HOUSE_BOX.min.x, i & 2 ? HOUSE_BOX.max.y : HOUSE_BOX.min.y, i & 4 ? HOUSE_BOX.max.z : HOUSE_BOX.min.z).project(camera);
+    x0 = Math.min(x0, _pv.x); x1 = Math.max(x1, _pv.x); y0 = Math.min(y0, _pv.y); y1 = Math.max(y1, _pv.y);
+  }
+  const availW = 2 * (1 - copyFrac) * 0.9, availH = 2 * 0.84;
+  const z = Math.min(availW / (x1 - x0), availH / (y1 - y0));
+  // 右側の空きの中心(NDC x = copyFrac)に家の中心を合わせる。ずれは zoom 後の半幅で世界座標に直す
+  const dx = copyFrac - (x0 + x1) / 2 * z, dy = -(y0 + y1) / 2 * z;
+  cam.zoom = z; fitCamera();
+  _right.setFromMatrixColumn(camera.matrixWorld, 0); _up.setFromMatrixColumn(camera.matrixWorld, 1);
+  wholeTarget.set(3.05, 0.7, 0).addScaledVector(_right, -dx * camera.right).addScaledVector(_up, -dy * camera.top);
+  wholeZoom = z;
+  cam.zoom = saveZ; cam.target.copy(saveT); cam.az = saveAz; cam.el = saveEl; fitCamera(); placeCamera();
+}
+const ZMIN = () => (EMBED ? Math.min(0.75, wholeZoom) : 0.75);
+if (EMBED) { fitWhole(); cam.target.copy(wholeTarget); cam.zoom = camGoal.zoom = wholeZoom; fitCamera(); placeCamera(); }
+
+/* ---------- 光 ---------- */
+scene.add(new THREE.HemisphereLight('#fff7e8', '#cdbba0', 1.7));
+const sun = new THREE.DirectionalLight('#fff1da', 2.0);
+sun.position.set(4, 10, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -8; sun.shadow.camera.right = 8; sun.shadow.camera.top = 8; sun.shadow.camera.bottom = -8;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 40;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
+scene.add(sun, sun.target);
+const fill = new THREE.DirectionalLight('#ffe9c9', 0.55); fill.position.set(-6, 6, 8); scene.add(fill);
+const lamp    = new THREE.PointLight('#ffd28a', 0, 3, 2);   lamp.position.set(-2.45, 1.0, -2.9);   scene.add(lamp);
+const tvGlow  = new THREE.PointLight('#9fdde6', 0, 3.2, 2); tvGlow.position.set(-0.55, 0.9, -1.75); scene.add(tvGlow);
+const monGlow = new THREE.PointLight('#9fe0d0', 0, 2.2, 2); monGlow.position.set(2.1, 1.1, -2.6);   scene.add(monGlow);
+const ktvGlow = new THREE.PointLight('#9fe0d0', 0, 2.5, 2); ktvGlow.position.set(4.9, 0.6, -1.6);   scene.add(ktvGlow);
+const night   = new THREE.PointLight('#ffd28a', 0, 2.5, 2); night.position.set(9.95, 0.7, -1.95);   scene.add(night);
+
+/* ---------- 床の当たり判定と、クリックの波紋 ---------- */
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const ripples = [];
+const rippleGeo = new THREE.RingGeometry(0.16, 0.2, 40);
+function ripple(x, z) {
+  const m = new THREE.Mesh(rippleGeo, new THREE.MeshBasicMaterial({ color:'#c8785a', transparent:true, opacity:0.9, depthWrite:false }));
+  m.rotation.x = -PI / 2; m.position.set(x, 0.02, z); m.renderOrder = 5;
+  scene.add(m); ripples.push({ m, t:0 });
+}
+
+/* ---------- 経路探索(0.1m格子のA*。2部屋分) ---------- */
+const G = { x0:-3.9, x1:9.95, z0:-3.1, z1:3.1, cell:0.1 };
+G.nx = Math.round((G.x1 - G.x0) / G.cell) + 1; G.nz = Math.round((G.z1 - G.z0) / G.cell) + 1;
+const blocked = new Uint8Array(G.nx * G.nz);
+const R_CHAR = 0.12;
+const cx_ = v => Math.max(0, Math.min(G.nx - 1, Math.round((v - G.x0) / G.cell)));
+const cz_ = v => Math.max(0, Math.min(G.nz - 1, Math.round((v - G.z0) / G.cell)));
+const wx_ = i => G.x0 + i * G.cell, wz_ = i => G.z0 + i * G.cell;
+const idx = (ix, iz) => iz * G.nx + ix;
+function block(minx, maxx, minz, maxz) {
+  for (let ix = cx_(minx - R_CHAR); ix <= cx_(maxx + R_CHAR); ix++)
+    for (let iz = cz_(minz - R_CHAR); iz <= cz_(maxz + R_CHAR); iz++) blocked[idx(ix, iz)] = 1;
+}
+const free = (ix, iz) => ix >= 0 && iz >= 0 && ix < G.nx && iz < G.nz && !blocked[idx(ix, iz)];
+function nearestFree(ix, iz) {
+  if (free(ix, iz)) return [ix, iz];
+  for (let r = 1; r < 14; r++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++)
+    if (Math.max(Math.abs(dx), Math.abs(dz)) === r && free(ix + dx, iz + dz)) return [ix + dx, iz + dz];
+  return null;
+}
+function astar(sx, sz, gx, gz) {
+  const s = nearestFree(cx_(sx), cz_(sz)), g = nearestFree(cx_(gx), cz_(gz));
+  if (!s || !g) return null;
+  const N = G.nx * G.nz, gScore = new Float32Array(N).fill(1e9), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
+  const si = idx(s[0], s[1]), gi = idx(g[0], g[1]);
+  const open = [[0, si]]; gScore[si] = 0;
+  const h = i => { const ix = i % G.nx, iz = (i / G.nx) | 0; return Math.hypot(ix - g[0], iz - g[1]); };
+  while (open.length) {
+    let bi = 0; for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
+    const [, cur] = open.splice(bi, 1)[0];
+    if (cur === gi) break;
+    if (closed[cur]) continue; closed[cur] = 1;
+    const cx = cur % G.nx, cz = (cur / G.nx) | 0;
+    for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+      if (!dx && !dz) continue;
+      const nx = cx + dx, nz = cz + dz;
+      if (!free(nx, nz)) continue;
+      if (dx && dz && (!free(cx + dx, cz) || !free(cx, cz + dz))) continue;
+      const ni = idx(nx, nz), ng = gScore[cur] + Math.hypot(dx, dz);
+      if (ng < gScore[ni]) { gScore[ni] = ng; came[ni] = cur; open.push([ng + h(ni), ni]); }
+    }
+  }
+  if (came[gi] === -1 && gi !== si) return null;
+  const path = []; for (let i = gi; i !== -1; i = came[i]) path.push([wx_(i % G.nx), wz_((i / G.nx) | 0)]);
+  path.reverse();
+  const lineFree = (a, b) => { const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.04) || 1;
+    for (let i = 0; i <= n; i++) { const t = i / n; if (!free(cx_(a[0] + (b[0] - a[0]) * t), cz_(a[1] + (b[1] - a[1]) * t))) return false; } return true; };
+  const out = [path[0]]; let i = 0;
+  while (i < path.length - 1) { let j = path.length - 1; while (j > i + 1 && !lineFree(path[i], path[j])) j--; out.push(path[j]); i = j; }
+  return out;
+}
+
+/* ---------- 読み込み ---------- */
+const loader = new GLTFLoader();
+const load = url => new Promise((ok, ng) => loader.load(url, ok, undefined, ng));
+const [roomG, chibiG, kidG] = await Promise.all([
+  load(`../assets/models/room.glb?v=${ROOM_V}`), load(`../assets/models/chibi.glb?v=${ROOM_V}`), load(`../assets/models/kid.glb?v=${ROOM_V}`)]);
+
+const room = roomG.scene;
+const furn = {}, emis = {}, pieces = [];
+let divider = null;
+room.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+for (const o of [...room.children]) {
+  const name = o.name;
+  const mats = [];
+  o.traverse(c => { if (c.isMesh) { c.material = c.material.clone(); mats.push(c.material); } });
+  if (name.startsWith('f_')) furn[name] = { obj:o, mats };
+  if (name.startsWith('e_')) emis[name] = mats;
+  if (name === 's_divider') divider = o;
+  if (name.startsWith('f_') || name.startsWith('d_') || name === 's_half') {
+    const bb = new THREE.Box3().setFromObject(o);
+    if (bb.max.y - bb.min.y > 0.12) {
+      if (name === 'f_rack') block(bb.max.x - 0.3, bb.max.x, bb.min.z, bb.max.z);
+      else if (name === 'f_slide') block(bb.min.x + 0.2, bb.max.x - 0.25, bb.min.z + 0.05, bb.max.z - 0.05);   // はしごの下と滑り終わりは踏める
+      else block(bb.min.x, bb.max.x, bb.min.z, bb.max.z);
+    }
+  }
+  pieces.push(o);
+}
+block(-5, -3.82, -5, 5); block(-5, 12, -5, -3.02); block(10.0, 12, -5, 5);      // 壁ぎわ・右端
+block(3.95, 4.25, -5, -0.62); block(3.95, 4.25, 0.32, 5);                    // 仕切り壁(ドアの所だけ通す)
+for (const m of Object.values(emis).flat()) m.emissiveIntensity = 0;
+function setEmis(name, color, k) { for (const m of emis[name] || []) { m.emissive.set(color); m.emissiveIntensity = k; } }
+scene.add(room);
+
+/* ---------- 人物(黄と息子は同じ仕組み) ---------- */
+function makeActor(g, name, speed) {
+  const obj = g.scene;
+  const props = {};
+  for (const o of [...obj.children]) if (o.name.startsWith('prop_')) { props[o.name.slice(5)] = o; obj.remove(o); }
+  const mats = [];
+  obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; o.material = o.material.clone(); mats.push(o.material); } });
+  const bones = {};
+  obj.traverse(o => { if (o.isBone) bones[o.name] = o; });
+  const mixer = new THREE.AnimationMixer(obj);
+  const clips = {};
+  for (const c of g.animations) clips[c.name] = mixer.clipAction(c);
+  const a = {
+    name, obj, props, mats, bones, mixer, clips, cur:null, held:[],
+    pos:new THREE.Vector3(), yaw:0, path:null, wp:0, speed, state:'idle', pending:null, settle:null, stepAcc:0,
+    play(n, fade = 0.28) { const next = clips[n]; if (!next || next === a.cur) return; next.reset().setEffectiveWeight(1).fadeIn(fade).play(); if (a.cur) a.cur.fadeOut(fade); a.cur = next; },
+    hold(list) { a.drop(); for (const [pn, bn, pos, rot] of list) { const p = props[pn]?.clone(); const b = bones[bn]; if (!p || !b) continue; p.position.set(...pos); p.rotation.set(...rot); b.add(p); a.held.push(p); } },
+    drop() { for (const p of a.held) p.parent?.remove(p); a.held.length = 0; },
+    bonePos(n, out) { const b = bones[n]; return b ? b.getWorldPosition(out) : out.copy(a.pos); },
+    walkTo(x, z, then = null) { const p = astar(a.pos.x, a.pos.z, x, z); if (!p) return false; a.path = p; a.wp = 1; a.state = 'walk'; a.pending = then; a.play('Walk'); return true; },
+    settleTo(spot, yaw, yoff, then) { a.settle = { from:a.pos.clone(), to:new THREE.Vector3(spot[0], yoff, spot[1]), yaw0:a.yaw, yaw1:yaw, t:0, then }; a.state = 'settle'; },
+  };
+  scene.add(obj);
+  return a;
+}
+const dad = makeActor(chibiG, 'dad', 1.35);
+const kid = makeActor(kidG, 'kid', 1.3);
+furn.kid = { obj:kid.obj, mats:kid.mats };
+const stepAll = (a, dt, onArrive) => {
+  if (a.state === 'walk') {
+    const wp = a.path[a.wp];
+    if (!wp) { a.path = null; onArrive(); return; }
+    const d = new THREE.Vector3(wp[0] - a.pos.x, 0, wp[1] - a.pos.z); const len = d.length();
+    if (len < 0.04) { a.wp++; return; }
+    d.normalize(); a.pos.addScaledVector(d, Math.min(len, a.speed * dt));
+    const want = Math.atan2(d.x, d.z); let diff = want - a.yaw; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    a.yaw += diff * (1 - Math.exp(-dt * 12));
+    a.stepAcc += dt; if (a.stepAcc > (a === kid ? 0.19 : 0.26)) { a.stepAcc = 0; sfx.step(a === kid); }
+  } else if (a.state === 'settle') {
+    const s = a.settle; s.t = Math.min(1, s.t + dt / 0.42);
+    const k = 1 - Math.pow(1 - s.t, 3);
+    a.pos.lerpVectors(s.from, s.to, k); a.pos.y = s.to.y * k;
+    let diff = s.yaw1 - s.yaw0; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); a.yaw = s.yaw0 + diff * k;
+    if (s.t >= 1) { const then = s.then; a.settle = null; a.state = 'ready'; then?.(); }
+  }
+};
+
+/* ---------- 登場演出: 家具が奥から順に落ちて弾む → 黄がドアから入って手を振る ---------- */
+let introStart = performance.now() / 1000;
+const order = pieces.map(o => ({ o, d:(o.name.startsWith('s_') ? -3 : 0) + (o.position.x + 4) * 0.3 + (-o.position.z + 3.2) * 0.4 })).sort((a, b) => a.d - b.d);
+order.forEach((e, i) => { e.t0 = 0.15 + i * 0.04; e.o.scale.setScalar(0.0001); e.o.userData.baseY = e.o.position.y; });
+const elastic = t => t >= 1 ? 1 : 1 - Math.pow(2, -9 * t) * Math.cos(t * 10.5 * PI / 3 - 0.9) * 1.05;
+let introDone = false;
+function tickIntro(now) {
+  let all = true;
+  for (const e of order) {
+    const t = (now - introStart - e.t0) / 0.9;
+    if (t < 0) { all = false; continue; }
+    const k = Math.min(1, t); if (k < 1) all = false;
+    const s = e.o.name.startsWith('s_') ? Math.min(1, k * 1.6) : elastic(k);
+    e.o.scale.setScalar(Math.max(0.0001, s));
+    if (!e.o.name.startsWith('s_')) e.o.position.y = e.o.userData.baseY + (1 - Math.min(1, k * 1.4)) * 0.9;
+  }
+  if (all) introDone = true;
+}
+
+/* ---------- 状態 ---------- */
+const DOOR_X = -0.75, ENTRY = new THREE.Vector3(-0.25, 0, -2.35);
+dad.pos.set(DOOR_X, 0, -3.7); dad.state = 'enter'; dad.play('Walk');
+kid.pos.set(7.0, 0, 1.0); kid.yaw = PI / 4; kid.state = 'idle'; kid.play('Idle');
+const S = { act:null, actT:0, ambT:0, fxT:0, waveT:0, duo:null, lastAct:null, kidIdleT:2 + Math.random() * 3, kidPlan:null, kidPoseT:0 };
+const bubble = $('#bubble'), kbubble = $('#kbubble'), card = $('#card');
+let lastInput = performance.now() / 1000, autoAt = 0;
+const AUTO_IDLE = 7;
+function note() { lastInput = performance.now() / 1000; }
+
+/* ---------- 黄ひとりの行動 ---------- */
+function startAct(key) {
+  if (S.duo) endDuo(true);
+  if (S.act === key && dad.state === 'act') return;
+  if (dad.state === 'act') endAct(true);
+  const a = ACTS[key];
+  if (dad.walkTo(a.approach[0], a.approach[1], () => {
+    let yaw = a.yaw; if (a.look) yaw = Math.atan2(a.look[0] - a.spot[0], a.look[1] - a.spot[1]);
+    dad.settleTo(a.spot, yaw, a.yoff, () => enterAct(key));
+  })) S.lastAct = key;
+}
+function enterAct(key) {
+  const a = ACTS[key];
+  dad.state = 'act'; S.act = key; S.actT = 0; S.ambT = 0; S.fxT = 0; seenActs.add(key);
+  dad.pos.set(a.spot[0], a.yoff, a.spot[1]);
+  dad.play(a.anim, 0.22); dad.hold(a.props); fxOn(key);
+  showCard(a.name, a.text); bubble.textContent = a.bubble; bubble.classList.add('on');
+  sfx.blip(660, 0.07, 0.06);
+}
+function endAct(interrupted = false) {
+  if (dad.state !== 'act') return;
+  fxOff(); dad.drop(); dad.pos.y = 0;
+  S.act = null; dad.state = 'idle';
+  hideCard(); dad.play('Idle', interrupted ? 0.15 : 0.35);
+}
+const seenActs = new Set(), TOTAL_ACTS = Object.keys(ACTS).length + Object.keys(DUO).length;
+function postNow(title, text) { if (EMBED) parent.postMessage({ type:'room:now', title, text, done: seenActs.size, total: TOTAL_ACTS }, '*'); }
+function setMeter(p) { $('#card-meter').style.width = p.toFixed(1) + '%'; if (EMBED && Math.abs(p - (S.lastMeter || 0)) > 2) { S.lastMeter = p; parent.postMessage({ type:'room:meter', p }, '*'); } }
+function showCard(title, text) { $('#card-title').textContent = title; $('#card-text').textContent = text; $('#card-meter').style.width = '0%'; card.classList.add('on'); postNow(title, text); }
+function hideCard() { bubble.classList.remove('on'); kbubble.classList.remove('on'); card.classList.remove('on'); postNow('', ''); }
+
+/* ---------- 親子の互动 ---------- */
+function startDuo(key) {
+  if (S.duo) endDuo(true);
+  if (dad.state === 'act') endAct(true);
+  const d = DUO[key];
+  S.duo = { key, t:0, dadReady:false, kidReady:false, started:false, phase:null, pt:0, blocks:[], nBlocks:0, cycles:0 };
+  S.lastAct = key; seenActs.add(key);
+  kidAbort();
+  dad.walkTo(d.dad.approach[0], d.dad.approach[1], () => dad.settleTo(d.dad.spot, d.dad.yaw, d.dad.yoff, () => { S.duo && (S.duo.dadReady = true); }));
+  kid.walkTo(d.kid.approach[0], d.kid.approach[1], () => kid.settleTo(d.kid.spot, d.kid.yaw, d.kid.yoff, () => { S.duo && (S.duo.kidReady = true); }));
+  showCard(d.name, d.text);
+}
+function beginDuo() {
+  const D = S.duo, d = DUO[D.key];
+  D.started = true; D.t = 0; D.pt = 0; D.phase = 'run';
+  dad.state = 'act'; kid.state = 'act';
+  dad.play(d.dad.anim, 0.25); dad.hold(d.dad.props);
+  kid.play(d.kid.anim, 0.25); kid.hold(d.kid.props);
+  bubble.textContent = d.bubble; bubble.classList.add('on');
+  kbubble.textContent = d.kb; kbubble.classList.add('on');
+  if (d.fx === 'ktv') { setEmis('e_ktv', '#9fe0d0', 2.0); ktvGlow.intensity = 1.2; }
+  if (d.fx === 'night') { setEmis('e_night', '#ffd88a', 1.8); night.intensity = 1.4; }
+  if (d.special === 'slide') { D.phase = 'toLadder'; kidSlideStart(); }
+  if (d.special === 'high') { D.phase = 'lift'; kid.play('Fly', 0.2); }
+  sfx.blip(760, 0.07, 0.06); sfx.giggle();
+}
+function endDuo(interrupted = false) {
+  const D = S.duo; if (!D) return;
+  const d = DUO[D.key];
+  setEmis('e_ktv', '#000', 0); ktvGlow.intensity = 0; setEmis('e_night', '#000', 0); night.intensity = 0;
+  for (const b of D.blocks) { scene.remove(b); b.geometry.dispose(); b.material.dispose(); }
+  dad.drop(); kid.drop();
+  dad.pos.y = 0; kid.pos.y = 0;
+  if (d.special === 'high') { kid.pos.copy(dad.pos).add(new THREE.Vector3(Math.sin(dad.yaw), 0, Math.cos(dad.yaw)).multiplyScalar(0.5)); kid.pos.y = 0; }
+  S.duo = null; hideCard();
+  dad.state = 'idle'; dad.play('Idle', 0.3);
+  kid.state = 'idle'; kid.play(interrupted ? 'Idle' : 'Cheer', 0.3); S.kidIdleT = interrupted ? 1 : 2.5; S.kidPlan = null;
+}
+/* 滑り台: 息子だけスクリプトで動く(はしご→頂上→滑る→着地→戻る) */
+const SL = { base:[9.4, 0.5], top:[8.85, 0.94, 0.5], sit:[8.72, 0.94, 0.5], end:[7.25, 0.14, 0.5], out:[6.95, 0.5] };
+function kidSlideStart() { const D = S.duo; D.phase = 'toLadder'; kid.walkTo(9.62, 0.5, () => { D.phase = 'toBase'; D.pt = 0; kid.state = 'script'; kid.play('Walk'); }); }
+function tickSlide(dt) {
+  const D = S.duo; D.pt += dt;
+  if (D.phase === 'toBase') { const t = Math.min(1, D.pt / 0.35); kid.pos.set(9.62 + (SL.base[0] - 9.62) * t, 0, 0.5); kid.yaw = -PI / 2; if (t >= 1) { D.phase = 'climb'; D.pt = 0; kid.play('Climb', 0.15); } }
+  else if (D.phase === 'climb') { const t = Math.min(1, D.pt / 1.3); kid.pos.set(SL.base[0] + (SL.top[0] - SL.base[0]) * t, SL.top[1] * t, 0.5); kid.yaw = -PI / 2; if (t >= 1) { D.phase = 'top'; D.pt = 0; kid.play('SitFloor', 0.2); } }
+  else if (D.phase === 'top') { const t = Math.min(1, D.pt / 0.5); kid.pos.set(SL.top[0] + (SL.sit[0] - SL.top[0]) * t, 0.94, 0.5); if (t >= 1) { D.phase = 'slide'; D.pt = 0; kid.play('Slide', 0.12); sfx.whee(); } }
+  else if (D.phase === 'slide') { const t = Math.min(1, D.pt / 0.9); const k = t * t; kid.pos.set(SL.sit[0] + (SL.end[0] - SL.sit[0]) * k, 0.94 + (0.14 - 0.94) * k, 0.5); if (t >= 1) { D.phase = 'runout'; D.pt = 0; kid.play('Walk', 0.1); } }
+  else if (D.phase === 'runout') { const t = Math.min(1, D.pt / 0.3); kid.pos.set(SL.end[0] + (SL.out[0] - SL.end[0]) * t, 0.14 * (1 - t), 0.5); if (t >= 1) { D.phase = 'land'; D.pt = 0; kid.play('Cheer', 0.15); dad.play('Clap', 0.15); D.cycles++; sfx.giggle(); const [x, y] = project(kid.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.3, 0))); spawnFx('heart', x, y, '♥'); } }
+  else if (D.phase === 'land') { if (D.pt > 1.1) { dad.play('Catch', 0.3); D.phase = 'toLadder'; if (!kid.walkTo(9.62, 0.5, () => { D.phase = 'toBase'; D.pt = 0; kid.state = 'script'; kid.play('Walk'); })) { D.phase = 'toBase'; D.pt = 0; kid.state = 'script'; } } }
+}
+/* 積み木: 2秒ごとに1個、上から落ちて弾む */
+function tickBlocks(dt) {
+  const D = S.duo; const want = Math.min(6, Math.floor((D.t + 1.1) / 2));
+  while (D.nBlocks < want) {
+    const k = D.nBlocks++;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), new THREE.MeshStandardMaterial({ color:['#e08a7a', '#a9c7d6', '#f1d27a', '#bfe0c8', '#c9b8e0', '#9fae8e'][k % 6], roughness:0.85 }));
+    m.castShadow = true; m.position.set(6.35, 0.045 + k * 0.09 + 0.6, 1.5); m.rotation.y = (k % 2) * 0.3; m.userData = { y0:0.045 + k * 0.09, t:0 };
+    scene.add(m); D.blocks.push(m); sfx.tock();
+  }
+  for (const b of D.blocks) { b.userData.t = Math.min(1, b.userData.t + dt / 0.45); const t = b.userData.t; const bounce = t < 0.8 ? (1 - t / 0.8) : Math.abs(Math.sin((t - 0.8) / 0.2 * PI)) * 0.08; b.position.y = b.userData.y0 + bounce * 0.6; }
+}
+/* 高い高い: 息子は黄の両手の上で揺れる */
+function tickHigh(dt) {
+  const D = S.duo;
+  const hl = dad.bonePos('handL', new THREE.Vector3()), hr = dad.bonePos('handR', new THREE.Vector3());
+  const hands = hl.add(hr).multiplyScalar(0.5);
+  const fwd = new THREE.Vector3(Math.sin(dad.yaw), 0, Math.cos(dad.yaw));
+  const target = hands.add(fwd.clone().multiplyScalar(0.06)).add(new THREE.Vector3(0, -0.24, 0));
+  if (D.phase === 'lift') { D.pt += dt; const t = Math.min(1, D.pt / 0.6); const k = 1 - Math.pow(1 - t, 3); kid.pos.lerp(target, k); kid.yaw = dad.yaw; if (t >= 1) { D.phase = 'run'; D.pt = 0; } }
+  else if (D.phase === 'run') { kid.pos.copy(target); kid.yaw = dad.yaw; D.pt += dt; if (D.pt > 1.4) { D.pt = 0; sfx.giggle(); const [x, y] = project(kid.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.25, 0))); spawnFx('note', x + (Math.random() - 0.5) * 30, y, '♪'); } }
+  else if (D.phase === 'down') { D.pt += dt; const t = Math.min(1, D.pt / 0.5); const floor = dad.pos.clone().add(fwd.clone().multiplyScalar(0.5)); floor.y = 0; kid.pos.lerp(floor, 1 - Math.pow(1 - t, 3)); if (t >= 1) { kid.pos.copy(floor); endDuo(); } }
+}
+/* 息子の自動行動: 子ども部屋の遊び場所を巡る */
+const KID_SPOTS = [
+  { at:[6.8, 1.0], yaw:PI / 4, anim:'Cheer', t:2.5 }, { at:[9.0, 1.7], yaw:PI / 2, anim:'Idle', t:3 },
+  { at:[5.7, 2.4], yaw:PI / 2, anim:'SitFloor', t:4 }, { at:[7.6, -1.9], yaw:PI, anim:'Idle', t:3 },
+  { at:[6.5, 0.2], yaw:-PI / 4, anim:'Cheer', t:2 }, { at:[8.0, 1.9], yaw:0, anim:'SitFloor', t:4 },
+];
+function kidAbort() { kid.path = null; kid.settle = null; kid.pending = null; S.kidPlan = null; kid.pos.y = 0; kid.state = 'idle'; }
+function tickKidAuto(dt) {
+  if (S.duo) return;
+  if (kid.state === 'idle') {
+    S.kidIdleT -= dt;
+    if (S.kidPlan) { S.kidPoseT -= dt; if (S.kidPoseT <= 0) { S.kidPlan = null; kid.play('Idle', 0.3); S.kidIdleT = 2 + Math.random() * 4; } return; }
+    if (S.kidIdleT <= 0) {
+      const sp = KID_SPOTS[(Math.random() * KID_SPOTS.length) | 0];
+      if (kid.walkTo(sp.at[0], sp.at[1], () => { kid.yaw = sp.yaw; kid.play(sp.anim, 0.3); kid.state = 'idle'; S.kidPlan = sp; S.kidPoseT = sp.t; if (sp.anim === 'Cheer') sfx.giggle(); })) S.kidIdleT = 99;
+      else S.kidIdleT = 2;
+    }
+  }
+}
+
+/* ---------- 演出 ---------- */
+function fxOn(key) {
+  if (key === 'work') { setEmis('e_monitor', '#9fe0d0', 2.0); monGlow.intensity = 1.2; }
+  if (key === 'tv')   { setEmis('e_tv', '#8fd0d8', 2.0); tvGlow.intensity = 1.6; sfx.hum(true); }
+  if (key === 'game') { setEmis('e_tv', '#e0b04a', 2.2); setEmis('e_led', '#ffcc66', 3); tvGlow.intensity = 1.6; tvGlow.color.set('#e0b04a'); }
+  if (key === 'sleep'){ setEmis('e_lamp', '#ffd88a', 1.6); lamp.intensity = 1.6; }
+  if (key === 'read') { setEmis('e_flamp', '#ffd88a', 1.4); }
+}
+function fxOff() {
+  setEmis('e_monitor', '#000', 0); monGlow.intensity = 0;
+  setEmis('e_tv', '#000', 0); setEmis('e_led', '#000', 0); tvGlow.intensity = 0; tvGlow.color.set('#9fdde6'); sfx.hum(false);
+  setEmis('e_lamp', '#000', 0); lamp.intensity = 0; setEmis('e_flamp', '#000', 0);
+}
+const fxLayer = $('#fx');
+const v3 = new THREE.Vector3();
+function project(v) { v3.copy(v).project(camera); return [(v3.x + 1) / 2 * innerWidth, (1 - v3.y) / 2 * innerHeight]; }
+function spawnFx(cls, x, y, text = '') {
+  const s = document.createElement('span'); s.className = cls; s.textContent = text;
+  s.style.left = x + 'px'; s.style.top = y + 'px'; fxLayer.appendChild(s);
+  setTimeout(() => s.remove(), 2400);
+}
+const tmpV = new THREE.Vector3();
+function tickFx(dt) {
+  if (S.duo?.started) {
+    const D = S.duo; D.t += dt; S.fxT += dt; S.ambT += dt;
+    const k = D.key;
+    if (k === 'bed' && S.fxT > 1.2) { S.fxT = 0; const [x, y] = project(kid.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.25, 0))); spawnFx('zz', x, y, 'z'); }
+    if (k === 'game2' && S.ambT > 0.4 + Math.random() * 0.5) { S.ambT = 0; sfx.bleep(); if (Math.random() < 0.3) sfx.giggle(); }
+    if (k === 'study' && S.fxT > 2.4) { S.fxT = 0; sfx.key(); const [x, y] = project(kid.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.3, 0))); spawnFx('spark', x, y, '✦'); }
+    if (k === 'book' && S.fxT > 2.2) { S.fxT = 0; sfx.flip(); }
+    if (k === 'draw' && S.fxT > 1.6) { S.fxT = 0; const [x, y] = project(new THREE.Vector3(6.2, 0.6, -0.8)); spawnFx('spark', x + (Math.random() - 0.5) * 40, y, '✎'); }
+    if (k === 'blocks') tickBlocks(dt);
+    if (k === 'slide') tickSlide(dt);
+    if (k === 'high') tickHigh(dt);
+    return;
+  }
+  if (dad.state !== 'act') return;
+  S.actT += dt; S.fxT += dt; S.ambT += dt;
+  const key = S.act;
+  if (key === 'sleep' && S.fxT > 1.1) { S.fxT = 0; const [x, y] = project(dad.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.25, 0))); spawnFx('zz', x, y, 'z'); sfx.snore(); }
+  if (key === 'coffee' && S.fxT > 0.28) { S.fxT = 0; const [x, y] = project(dad.bonePos('handR', tmpV).add(new THREE.Vector3(0, 0.1, 0))); spawnFx('steam', x + (Math.random() - 0.5) * 10, y); }
+  if (key === 'water' && S.fxT > 0.12) { S.fxT = 0; const [x, y] = project(dad.bonePos('handR', tmpV).add(new THREE.Vector3(0, -0.02, 0.3))); spawnFx('drop', x + (Math.random() - 0.5) * 16, y);
+    if (Math.random() < 0.25) { const [sx, sy] = project(new THREE.Vector3(1.5 + (Math.random() - 0.5) * 0.5, 0.85 + Math.random() * 0.3, 2.95 + (Math.random() - 0.5) * 0.3)); spawnFx('spark', sx, sy, '✦'); } }
+  if (key === 'work' && S.ambT > 0.07 + Math.random() * 0.13) { S.ambT = 0; sfx.key(); }
+  if (key === 'game') { if (S.ambT > 0.35 + Math.random() * 0.5) { S.ambT = 0; sfx.bleep(); } if (Math.random() < 0.03) { const [x, y] = project(dad.bonePos('head', tmpV).add(new THREE.Vector3(0.2, 0.3, 0))); spawnFx('note', x, y, '♪'); } }
+  if (key === 'tv' && S.ambT > 2.5) { S.ambT = 0; setEmis('e_tv', ['#8fd0d8', '#b9e6ea', '#7fb8c8', '#d7efe9'][(Math.random() * 4) | 0], 1.6 + Math.random()); }
+  if (key === 'read' && S.fxT > 1.9) { S.fxT = 0; sfx.flip(); }
+  if (key === 'lift' && S.fxT > 1.0) { S.fxT = 0; sfx.grunt(); }
+  if (key === 'supp') { const t = S.actT % 3; if (t < 1.0 && S.fxT > 0.11) { S.fxT = 0; sfx.rattle(); } if (t > 1.3 && t < 1.5 && S.ambT > 1.0) { S.ambT = 0; sfx.gulp(); }
+    if (t > 2.3 && t < 2.5 && S.fxT > 0.6) { S.fxT = 0; const [x, y] = project(dad.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.45, 0))); spawnFx('note', x, y, '💪'); sfx.grunt(); } }
+}
+
+/* ---------- 入力 ---------- */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let hoverName = null, hoverT = 0;
+const hitTargets = Object.values(furn).map(f => f.obj);
+function pick(clientX, clientY) {
+  ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(hitTargets, true);
+  if (hits.length) { let o = hits[0].object; while (o && !furn[o.name] && o !== kid.obj) o = o.parent; const nm = o === kid.obj ? 'kid' : o?.name; if (nm && HIT2ACT[nm]) return { name:nm, ...HIT2ACT[nm] }; }
+  const p = new THREE.Vector3();
+  if (ray.ray.intersectPlane(floorPlane, p) && p.x > G.x0 && p.x < G.x1 && p.z > G.z0 && p.z < G.z1) return { floor:p };
+  return null;
+}
+const hitGroup = name => { const h = HIT2ACT[name]; return h?.solo ? ACTS[h.solo].hit : h?.duo ? DUO[h.duo].hit : [name]; };
+function setHover(name) {
+  if (name === hoverName) return;
+  if (hoverName) for (const k of hitGroup(hoverName)) for (const m of furn[k]?.mats || []) { m.emissive.set('#000'); m.emissiveIntensity = 0; }
+  hoverName = name; hoverT = 0;
+  stage.classList.toggle('hand', !!name);
+}
+function tickHover(dt) {
+  if (!hoverName) return;
+  hoverT += dt;
+  const k = 0.22 + 0.1 * Math.sin(hoverT * 5);
+  for (const n of hitGroup(hoverName)) for (const m of furn[n]?.mats || []) { m.emissive.copy(HILITE); m.emissiveIntensity = k; }
+}
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  drag = { x:e.clientX, y:e.clientY, az:cam.az, el:cam.el, moved:false, id:e.pointerId };
+  stage.setPointerCapture(e.pointerId); note();
+});
+stage.addEventListener('pointermove', e => {
+  if (drag && drag.id === e.pointerId) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; stage.classList.add('grab'); }
+    if (drag.moved) { camGoal.az = THREE.MathUtils.clamp(drag.az - dx * 0.006, 0.2, 1.36); camGoal.el = THREE.MathUtils.clamp(drag.el + dy * 0.005, 0.36, 1.05); }
+    return;
+  }
+  if (e.pointerType === 'mouse') { const h = pick(e.clientX, e.clientY); setHover(h && !h.floor ? h.name : null); }
+});
+const endDrag = e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const d = drag; drag = null; stage.classList.remove('grab');
+  if (d.moved || !introDone || dad.state === 'enter' || dad.state === 'wave') return;
+  const h = pick(e.clientX, e.clientY);
+  if (!h) return;
+  if (h.solo) { startAct(h.solo); sfx.blip(880, 0.06, 0.05); }
+  else if (h.duo) { startDuo(h.duo); sfx.blip(880, 0.06, 0.05); }
+  else if (h.floor) { if (S.duo) endDuo(true); if (dad.state === 'act') endAct(true); if (dad.walkTo(h.floor.x, h.floor.z, () => { dad.state = 'idle'; dad.play('Idle'); autoAt = performance.now() / 1000 + 4; })) { ripple(h.floor.x, h.floor.z); sfx.blip(520, 0.05, 0.04); } }
+};
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grab'); });
+stage.addEventListener('wheel', e => { e.preventDefault(); if (EMBED) { parent.postMessage({ type:'room:wheel', deltaX:e.deltaX, deltaY:e.deltaY }, '*'); return; } camGoal.zoom = THREE.MathUtils.clamp(camGoal.zoom * (e.deltaY > 0 ? 0.92 : 1.08), 0.75, 2.2); note(); }, { passive:false });
+function setZoom(z) {
+  // 全景より少し寄った所までは全景扱い(引くと全景にぴたりと戻る)
+  if (EMBED && z <= wholeZoom * 1.12) { wholeMode = true; camGoal.zoom = wholeZoom; }
+  else { wholeMode = false; camGoal.zoom = THREE.MathUtils.clamp(z, ZMIN(), 2.2); }
+}
+$('#zoomIn').onclick = () => { setZoom(wholeMode ? Math.max(wholeZoom * 1.5, 1) : camGoal.zoom * 1.25); note(); sfx.blip(700, 0.05, 0.04); };
+$('#zoomOut').onclick = () => { setZoom(EMBED && !wholeMode && camGoal.zoom <= 1.01 ? wholeZoom : camGoal.zoom / 1.25); note(); sfx.blip(600, 0.05, 0.04); };
+$('#rotL').onclick = () => { camGoal.az = THREE.MathUtils.clamp(camGoal.az + 0.35, 0.2, 1.36); if (EMBED) { fitWhole(); if (wholeMode) camGoal.zoom = wholeZoom; } note(); sfx.blip(700, 0.05, 0.04); };
+$('#rotR').onclick = () => { camGoal.az = THREE.MathUtils.clamp(camGoal.az - 0.35, 0.2, 1.36); if (EMBED) { fitWhole(); if (wholeMode) camGoal.zoom = wholeZoom; } note(); sfx.blip(700, 0.05, 0.04); };
+$('#rotReset').onclick = () => { camGoal.az = PI / 4; camGoal.el = 0.6; if (EMBED) { fitWhole(); wholeMode = true; camGoal.zoom = wholeZoom; } else camGoal.zoom = 1; note(); sfx.blip(560, 0.05, 0.04); };
+const goRoom = (x, z) => { note(); if (!introDone || dad.state === 'enter' || dad.state === 'wave') return; if (S.duo) endDuo(true); if (dad.state === 'act') endAct(true); if (dad.walkTo(x, z, () => { dad.state = 'idle'; dad.play('Idle'); autoAt = performance.now() / 1000 + 3; })) { ripple(x, z); sfx.blip(520, 0.05, 0.04); } };
+$('#goA').onclick = () => goRoom(-0.3, -1.9);
+$('#goB').onclick = () => goRoom(7.2, 0.3);
+let pinch = null;
+stage.addEventListener('touchstart', e => { if (e.touches.length === 2) pinch = { d:Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY), z:camGoal.zoom }; }, { passive:true });
+stage.addEventListener('touchmove', e => { if (pinch && e.touches.length === 2) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); setZoom(pinch.z * d / pinch.d); } }, { passive:true });
+stage.addEventListener('touchend', () => { pinch = null; }, { passive:true });
+
+/* ---------- 音(WebAudio合成) ---------- */
+let actx = null, muted = false, humNode = null;
+const audio = () => (actx ??= new (window.AudioContext || window.webkitAudioContext)());
+function env(g, t0, a, d, peak) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d); }
+function noiseBuf(ctx, sec) { const b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * sec), ctx.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
+function tone(type, f0, f1, d, g, delay = 0) { if (muted) return; const c = audio(), o = c.createOscillator(), a = c.createGain(); o.type = type; const t0 = c.currentTime + delay; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + d); env(a, t0, 0.005, d, g); o.connect(a).connect(c.destination); o.start(t0); o.stop(t0 + d + 0.05); }
+const sfx = {
+  blip(f = 880, d = 0.08, g = 0.08) { tone('sine', f, f * 0.6, d, g); },
+  noise(d = 0.05, g = 0.05, lp = 1200, hp = 80) { if (muted) return; const c = audio(), s = c.createBufferSource(); s.buffer = noiseBuf(c, d + 0.02); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; const h = c.createBiquadFilter(); h.type = 'highpass'; h.frequency.value = hp; const a = c.createGain(); env(a, c.currentTime, 0.004, d, g); s.connect(f).connect(h).connect(a).connect(c.destination); s.start(); },
+  step(small = false) { this.noise(small ? 0.03 : 0.045, small ? 0.02 : 0.035, small ? 1200 : 700, 120); },
+  key() { this.noise(0.02, 0.04, 5000, 900); },
+  flip() { this.noise(0.14, 0.05, 3000, 300); },
+  rattle() { this.noise(0.03, 0.04, 3200, 900); },
+  tock() { tone('triangle', 520, 380, 0.09, 0.05); },
+  gulp() { tone('sine', 260, 140, 0.14, 0.06); },
+  grunt() { tone('triangle', 140, 90, 0.25, 0.05); },
+  snore() { if (muted) return; const c = audio(), o = c.createOscillator(), a = c.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(70, c.currentTime); o.frequency.linearRampToValueAtTime(52, c.currentTime + 0.7); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 220; env(a, c.currentTime, 0.15, 0.6, 0.06); o.connect(f).connect(a).connect(c.destination); o.start(); o.stop(c.currentTime + 0.9); },
+  bleep() { if (muted) return; const notes = [523, 659, 784, 880, 1047]; const f = notes[(Math.random() * notes.length) | 0]; tone('square', f, f, 0.09, 0.025); },
+  giggle() { for (let i = 0; i < 3; i++) tone('sine', 700 + i * 120, 900 + i * 120, 0.07, 0.035, i * 0.09); },
+  whee() { tone('sine', 500, 1100, 0.7, 0.04); },
+  hum(on) { const c = actx; if (!on) { if (humNode && c) { humNode.g.gain.setTargetAtTime(0.0001, c.currentTime, 0.2); const n = humNode; setTimeout(() => n.s.stop(), 600); humNode = null; } return; }
+    if (muted || humNode) return; const ctx = audio(); const s = ctx.createBufferSource(); s.buffer = noiseBuf(ctx, 2); s.loop = true; const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.7; const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.018, ctx.currentTime + 0.6); s.connect(f).connect(g).connect(ctx.destination); s.start(); humNode = { s, g }; },
+};
+$('#mute').onclick = () => { muted = !muted; $('#mute').textContent = muted ? '🔇' : '🔊'; if (muted) sfx.hum(false); };
+
+/* ---------- 毎フレーム ---------- */
+const clock = new THREE.Clock();
+let raf = 0, running = false;
+const smooth = (a, b, x) => { const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function frame() {
+  raf = requestAnimationFrame(frame);
+  if (document.hidden) return;
+  const dt = Math.min(0.05, clock.getDelta());
+  const now = performance.now() / 1000;
+
+  // カメラ: 黄について部屋間を移動。仕切り壁は部屋1を見ているとき低くなる
+  camGoal.tx = THREE.MathUtils.clamp(dad.pos.x, ROOM_A_X, ROOM_B_X);
+  if (wholeMode) _goal.copy(wholeTarget);
+  else {
+    _goal.set(camGoal.tx, 0.7, 0.1);
+    // 寄ったときも左の文章を避けて、家は右側の空きの中心に置く
+    if (copyFrac) { _right.setFromMatrixColumn(camera.matrixWorld, 0); _goal.addScaledVector(_right, -copyFrac * camera.right); }
+  }
+  cam.target.lerp(_goal, 1 - Math.exp(-dt * 2.2));
+  cam.az += (camGoal.az - cam.az) * (1 - Math.exp(-dt * 6));
+  cam.el += (camGoal.el - cam.el) * (1 - Math.exp(-dt * 6));
+  if (Math.abs(camGoal.zoom - cam.zoom) > 1e-4) { cam.zoom += (camGoal.zoom - cam.zoom) * (1 - Math.exp(-dt * 6)); fitCamera(); }
+  placeCamera();
+
+  if (!introDone) tickIntro(now);
+
+  // 黄
+  if (dad.state === 'enter') {
+    if (introDone) {
+      const d = ENTRY.clone().sub(dad.pos); const len = d.length();
+      if (len < 0.03) { dad.state = 'wave'; S.waveT = 0; dad.yaw = PI / 4; dad.play('Wave', 0.2); sfx.blip(760, 0.08, 0.05); }
+      else { d.normalize(); dad.pos.addScaledVector(d, Math.min(len, dad.speed * dt)); dad.yaw = Math.atan2(d.x, d.z); dad.stepAcc += dt; if (dad.stepAcc > 0.26) { dad.stepAcc = 0; sfx.step(); } }
+    }
+  } else if (dad.state === 'wave') {
+    S.waveT += dt;
+    if (S.waveT > 2.2) { dad.state = 'idle'; dad.play('Idle'); $('#bar').classList.add('on'); autoAt = now + 2.5; }
+  } else if (dad.state === 'walk' || dad.state === 'settle') {
+    stepAll(dad, dt, () => { if (dad.pending) { const f = dad.pending; dad.pending = null; f(); } else { dad.state = 'idle'; dad.play('Idle'); } });
+  } else if (dad.state === 'act' && !S.duo) {
+    const a = ACTS[S.act];
+    setMeter(Math.min(100, S.actT / a.dur * 100));
+    if (S.actT >= a.dur) { endAct(); autoAt = now + 1.5 + Math.random() * 2; }
+  } else if (dad.state === 'idle' && !S.duo) {
+    if (__room.auto && now - lastInput > AUTO_IDLE && now > autoAt) {
+      const keys = [...Object.keys(ACTS), ...Object.keys(DUO), ...Object.keys(DUO)].filter(k => k !== S.lastAct);
+      const k = keys[(Math.random() * keys.length) | 0];
+      if (DUO[k]) startDuo(k); else startAct(k);
+      autoAt = now + 60;
+    }
+  }
+  // 息子
+  if (kid.state === 'walk' || kid.state === 'settle') {
+    stepAll(kid, dt, () => { if (kid.pending) { const f = kid.pending; kid.pending = null; f(); } else { kid.state = 'idle'; kid.play('Idle'); } });
+  }
+  tickKidAuto(dt);
+  // 互动の進行
+  if (S.duo) {
+    const D = S.duo, d = DUO[D.key];
+    if (!D.started) { if (D.dadReady && dad.state === 'ready' && dad.cur !== dad.clips.Idle) dad.play('Idle'); if (D.kidReady && kid.state === 'ready' && kid.cur !== kid.clips.Idle) kid.play('Idle'); if (D.dadReady && D.kidReady) beginDuo(); }
+    else {
+      setMeter(Math.min(100, D.t / d.dur * 100));
+      if (D.t >= d.dur) { if (d.special === 'high') { if (D.phase !== 'down') { D.phase = 'down'; D.pt = 0; kid.play('Cheer', 0.2); } } else { endDuo(); autoAt = now + 2 + Math.random() * 2; } }
+    }
+  }
+  dad.obj.position.copy(dad.pos); dad.obj.rotation.y = dad.yaw;
+  kid.obj.position.copy(kid.pos); kid.obj.rotation.y = kid.yaw;
+  dad.mixer.update(dt); kid.mixer.update(dt);
+  tickFx(dt); tickHover(dt);
+
+  if (bubble.classList.contains('on')) { const [x, y] = project(dad.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.42, 0))); bubble.style.left = x + 'px'; bubble.style.top = y + 'px'; }
+  if (kbubble.classList.contains('on')) { const [x, y] = project(kid.bonePos('head', tmpV).add(new THREE.Vector3(0, 0.36, 0))); kbubble.style.left = x + 'px'; kbubble.style.top = y + 'px'; }
+  for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.t += dt / 0.55; if (r.t >= 1) { scene.remove(r.m); r.m.material.dispose(); ripples.splice(i, 1); continue; } r.m.scale.setScalar(1 + r.t * 2.2); r.m.material.opacity = 0.9 * (1 - r.t); }
+
+  renderer.render(scene, camera);
+}
+let wantAwake = !EMBED, introArmed = !EMBED;
+function start() { if (running || !wantAwake) return; running = true; if (!introArmed) { introArmed = true; introStart = performance.now() / 1000; } clock.getDelta(); frame(); }
+function sleep() { cancelAnimationFrame(raf); running = false; actx?.suspend?.(); sfx.hum(false); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) sleep(); else { actx?.resume?.(); start(); } });
+addEventListener('message', e => {
+  const d = e.data; if (!d || typeof d.type !== 'string') return;
+  if (d.type === 'room:sleep') { wantAwake = false; sleep(); }
+  if (d.type === 'room:wake') { wantAwake = true; actx?.resume?.(); start(); }
+  if (d.type === 'room:layout') { copyFrac = +d.copyFrac || 0; fitWhole(); if (wholeMode) { camGoal.zoom = wholeZoom; cam.zoom = wholeZoom; cam.target.copy(wholeTarget); fitCamera(); placeCamera(); } }
+});
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(pixRatio()); fitCamera(); if (EMBED) { fitWhole(); if (wholeMode) camGoal.zoom = wholeZoom; } });
+
+$('#loader').classList.add('off');
+$('#head').classList.add('on');
+start();
+
+// 検証用
+function snap(w = 640) { renderer.render(scene, camera); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * innerHeight / innerWidth); c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.72); }
+function view(tx, tz, az, el, zoom) { cam.target.set(tx, 0.7, tz); cam.az = camGoal.az = az; cam.el = camGoal.el = el; cam.zoom = camGoal.zoom = zoom; fitCamera(); placeCamera(); }
+const __room = window.__room = { auto:true, snap, view, get running() { return running; }, S, dad, kid, ACTS, DUO, startAct, startDuo, endAct, endDuo, cam, camGoal, furn, emis, blocked, G, astar, nearestFree, divider, get introDone() { return introDone; } };
+</script>
+</body>
+</html>

@@ -1,0 +1,2869 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不動産 — 黄梓健</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body { background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%); font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  #stage { position:fixed; inset:0; }
+
+  .back { position:fixed; top:clamp(18px, 3.5vh, 40px); left:clamp(18px, 2.5vw, 40px); z-index:9;
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#6f6d62; text-decoration:none; border:1px solid rgba(96,102,88,.3); border-radius:999px;
+    padding:.9em 1.5em; transition: all .25s ease; background:rgba(255,255,255,.4); backdrop-filter:blur(6px); }
+  .back:hover { border-color:#7f8a6b; color:#4a4a43; box-shadow:0 0 20px rgba(96,102,88,.25); }
+
+  .head { position:fixed; left:clamp(18px, 2.5vw, 40px); top:clamp(76px, 11vh, 118px); z-index:8;
+    opacity:0; transform:translateY(10px); transition:.8s cubic-bezier(.22,.9,.3,1); }
+  .head.on { opacity:1; transform:none; }
+  .eyebrow { font:600 clamp(10px, .9vw, 13px)/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing:.4em; color:#7f8a6b; margin-bottom:.9em; }
+  h1 { font:800 clamp(24px, 3vw, 44px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; }
+
+  .lbl { position:fixed; z-index:6; pointer-events:none; transform:translate(-50%,-50%);
+    text-align:center; white-space:nowrap; opacity:0;
+    text-shadow:0 0 4px rgba(255,255,255,.95), 0 0 10px rgba(255,255,255,.9), 0 2px 18px rgba(255,255,255,.9); }
+  .lbl b { display:block; font:700 clamp(11px, 1.05vw, 16px)/1.4 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; letter-spacing:.06em; }
+  .lbl i { display:block; font-style:normal; font:600 clamp(9px, .82vw, 12px)/1.4 "Helvetica Neue", sans-serif;
+    color:#7a786e; margin-top:.35em; }
+  .lbl.dim b { font-weight:600; color:#7f8a6b; font-size:clamp(9px, .8vw, 12px); letter-spacing:.14em; }
+
+  .intro { position:fixed; right:clamp(16px, 2.6vw, 46px); top:50%; transform:translateY(-50%) translateX(40px);
+    width:clamp(280px, 25vw, 380px); z-index:8; opacity:0; pointer-events:none;
+    background:rgba(255,255,255,.72); border:1px solid rgba(96,102,88,.22); border-radius:18px;
+    padding:clamp(20px, 1.8vw, 30px); backdrop-filter:blur(14px);
+    transition: opacity .8s ease, transform .8s cubic-bezier(.22,.9,.3,1); }
+  .intro.on { opacity:1; transform:translateY(-50%); pointer-events:auto; }
+  .intro-label { font:600 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", sans-serif; letter-spacing:.34em; color:#7f8a6b; }
+  .intro p { margin:1.1em 0 0; color:#5a5a52;
+    font:600 clamp(11px, .98vw, 14.5px)/1.85 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .intro p.intro-em { color:#c48d7e; font-weight:800; }
+  .intro .vbtn { margin-top:1.5em; width:100%; padding:.9em 0; font-size:clamp(11px,.95vw,14px); }
+  @media (max-width: 820px) {
+    .intro { right:50%; top:auto; bottom:clamp(10px, 2vh, 20px); transform:translateX(50%) translateY(30px);
+      width:min(440px, 94vw); padding:16px 18px; }
+    .intro.on { transform:translateX(50%); }
+    .intro p { margin-top:.7em; font-size:12px; line-height:1.7; }
+    .lbl i { display:none; }
+  }
+
+  /* ── クイズ ──
+     画面の使い方: 右に縦のパネル(問い・案A/B/C・答え合わせ)、左の残りに模型。
+     模型は左の領域の中央に収め、演出中も結果表示中も隠れない。縦画面はパネルを下に置く */
+  :root { --panel: clamp(360px, 30vw, 440px); --gap: 22px; }
+  body.staging .lbl { opacity:0 !important; }
+  body.staging .intro, body.verdicting .intro, body.quizzing .intro { opacity:0; pointer-events:none; }
+  body.quizzing .head h1 { font-size:clamp(15px,1.3vw,20px); opacity:0; height:0; margin:0; overflow:hidden; }
+  body.quizzing .head .eyebrow { opacity:.45; }
+  .head h1, .head .eyebrow { transition: all .7s ease; }
+  .panel { position:fixed; z-index:20; right:var(--gap); top:var(--gap); bottom:var(--gap); width:var(--panel);
+    display:flex; flex-direction:column; gap:12px; pointer-events:none; overflow:hidden; }
+  .panel > * { pointer-events:auto; }
+  .qhead { flex:none; opacity:0; transition:opacity .6s ease; padding:16px 18px 14px; border-radius:16px;
+    background:rgba(255,255,255,.72); border:1px solid rgba(96,102,88,.2); backdrop-filter:blur(10px); text-align:left; }
+  .qhead.on { opacity:1; }
+  /* 出ていないときは場所も取らない(縦画面でパネルの高さから模型の領域を決めるため) */
+  .qhead:not(.on), .cards:not(.on) { display:none; }
+  .qhead em { font-style:normal; display:block; color:#7f8a6b; letter-spacing:.3em;
+    font:700 clamp(9px,.78vw,12px)/1 "Helvetica Neue",sans-serif; }
+  .qhead b { display:block; margin-top:.6em; color:#4a4a43; letter-spacing:.02em;
+    font:800 clamp(14px,1.25vw,19px)/1.5 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .qdots { display:flex; gap:.4em; margin-top:.9em; }
+  .qdots i { width:34px; height:4px; border-radius:3px; background:rgba(96,102,88,.22); transition:.4s ease; }
+  .qdots i.on { background:#7f8a6b; box-shadow:0 0 12px rgba(96,102,88,.7); }
+  .qdots i.ok { background:#c48d7e; }
+
+  .cards { display:flex; flex-direction:column; gap:10px; opacity:0; transition:opacity .6s ease; pointer-events:none !important; min-height:0; }
+  .cards.on { opacity:1; pointer-events:auto !important; }
+  .card { display:flex; align-items:stretch; flex:none; border-radius:14px; cursor:pointer; overflow:hidden;
+    background:rgba(255,255,255,.78); border:1px solid rgba(96,102,88,.20);
+    backdrop-filter:blur(10px); transition:all .25s ease; text-align:left; }
+  .card:hover { border-color:rgba(96,102,88,.55); transform:translateX(-3px); }
+  .card.sel { border-color:#c48d7e; box-shadow:0 0 0 1px #c48d7e, 0 14px 40px rgba(80,80,60,.18); }
+  .card canvas { width:46%; height:auto; flex:none; display:block; background:#f3f0e8; align-self:stretch; object-fit:cover; }
+  .card .txt { flex:1; min-width:0; padding:.75em .9em .7em; display:flex; flex-direction:column; }
+  .card b { display:block; color:#4a4a43; font:700 clamp(11px,.95vw,14px)/1.35 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .card i { display:block; color:#a5a398; font-style:normal;
+    font:600 clamp(9px,.74vw,11.5px)/1.5 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .card i.ex { color:#a9b394; }
+  .card i.tr { color:#6f6d62; padding-top:.2em; }
+  .verdict-box h4 .tr { display:block; color:#a5a398; font-weight:600; font-size:.72em; margin-top:.2em; }
+  .go { display:none; }
+  /* 決定はカードの中。模型の上に浮かせると必ず重なるし、どの案を決めるのかの対応も弱くなる */
+  .card .pick { margin:.6em 0 0; padding:.6em 0; border-radius:999px; text-align:center;
+    background:linear-gradient(180deg,#d7aa9c,#c48d7e); color:#ffffff; opacity:0; max-height:0;
+    overflow:hidden; transition:all .3s ease; padding-top:0; padding-bottom:0;
+    font:800 clamp(10px,.85vw,13px)/1 "Hiragino Kaku Gothic ProN",sans-serif; letter-spacing:.08em; }
+  .card.sel .pick { opacity:1; max-height:44px; padding:.6em 0; }
+  .card.sel .pick:hover { filter:brightness(1.08); }
+  /* 演出中は選んだ案だけ残す。答え合わせ中はカードを畳む */
+  body.staging .card:not(.sel) { display:none; }
+  body.staging .card .pick { display:none; }
+  body.verdicting .cards { display:none; }
+
+  /* 演出中の実況。模型の領域の下辺の中央に置く(位置はJSが領域から決める) */
+  .tick { position:fixed; z-index:21; left:50%; bottom:clamp(22px,4vh,44px); transform:translateX(-50%);
+    display:flex; align-items:center; gap:clamp(10px,1.2vw,18px); padding:.55em 1.1em; border-radius:999px;
+    background:rgba(255,255,255,.72); border:1px solid rgba(230,96,96,.35); backdrop-filter:blur(8px);
+    opacity:0; transition:opacity .4s ease, border-color .4s ease; pointer-events:none; white-space:nowrap; }
+  .tick.on { opacity:1; }
+  .tick b { font:800 clamp(15px,1.4vw,21px)/1 "Helvetica Neue",sans-serif; color:#d0525a; min-width:3.2em; text-align:right; }
+  .tick .tk { display:flex; flex-direction:column; gap:.3em; text-align:left; padding-left:1em; border-left:1px solid rgba(96,102,88,.14); }
+  .tick .tk i { font-style:normal; font:700 8.5px/1 "Helvetica Neue",sans-serif; letter-spacing:.22em; color:#a5a398; }
+  .tick .tk em { font-style:normal; font:700 clamp(10px,.9vw,13px)/1.25 "Hiragino Kaku Gothic ProN",sans-serif; color:#4a4a43; }
+  .tick .tk.in em { color:#c05a5a; } .tick .tk.out em { color:#7f8a6b; }
+  .tick.alert { border-color:rgba(230,96,96,.85); box-shadow:0 0 22px rgba(255,74,82,.35); }
+  .tick.warm { border-color:rgba(196,141,126,.5); }
+  .tick.warm b { color:#c48d7e; }
+  /* 演出中の小さな文字(出口の名前、鍵) */
+  .xlbl { position:fixed; z-index:6; transform:translate(-50%,-50%); pointer-events:none; white-space:nowrap;
+    color:#7f8a6b; font:700 clamp(9px,.78vw,11px)/1 "Hiragino Kaku Gothic ProN",sans-serif; letter-spacing:.1em;
+    text-shadow:0 1px 8px #fff, 0 0 3px #fff; opacity:0; transition:opacity .3s ease; }
+  .xlbl.key { color:#a9b394; opacity:.0; }
+  .xlbl.key.on { color:#d0525a; }
+  .xlbl.key.broken { color:#b5b3a8; text-decoration:line-through; }
+
+  /* 答え合わせ・採点。パネルの中に出す */
+  .verdict-box { display:none; flex:none; padding:clamp(14px,1.4vw,20px) clamp(16px,1.6vw,22px); border-radius:18px; text-align:left;
+    background:rgba(255,255,255,.9); border:1px solid rgba(96,102,88,.25); backdrop-filter:blur(16px);
+    opacity:0; transition:opacity .45s ease; overflow:auto; min-height:0; }
+  .verdict-box.on { display:block; opacity:1; }
+  .verdict-box .head-row { display:flex; align-items:center; gap:.8em; }
+  .verdict-box .mark { flex:none; font:800 clamp(30px,3vw,44px)/1 "Helvetica Neue",sans-serif; }
+  .verdict-box .mark.ok { color:#4f8a5c; } .verdict-box .mark.ng { color:#d0525a; } .verdict-box .mark.mid { color:#c48d7e; }
+  .verdict-box h4 { margin:0; color:#4a4a43;
+    font:800 clamp(14px,1.3vw,19px)/1.45 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .verdict-box p { margin:.9em 0 0; color:#6f6d62;
+    font:600 clamp(11px,.95vw,13.5px)/1.8 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .facts { display:flex; gap:.5em; flex-wrap:wrap; margin-top:1em; }
+  .facts span { padding:.42em .8em; border-radius:999px; border:1px solid rgba(96,102,88,.3);
+    color:#6f6d62; font:700 clamp(9px,.78vw,12px)/1 "Hiragino Kaku Gothic ProN",sans-serif; }
+  .facts span.hot { border-color:rgba(230,96,96,.5); color:#c05a5a; }
+  .facts span.cool { border-color:rgba(96,150,110,.5); color:#4f8a5c; }
+  .vbtns { display:flex; gap:.6em; flex-wrap:wrap; margin-top:1.2em; }
+  .vbtn { padding:.75em 1.5em; border-radius:999px; cursor:pointer; border:1px solid rgba(96,102,88,.3);
+    background:transparent; color:#6f6d62; transition:all .25s ease;
+    font:700 clamp(10px,.85vw,13px)/1 "Hiragino Kaku Gothic ProN",sans-serif; letter-spacing:.08em; }
+  .vbtn:hover { border-color:#7f8a6b; color:#4a4a43; }
+  .vbtn.main { background:linear-gradient(180deg,#d7aa9c,#c48d7e); color:#ffffff; border-color:transparent; }
+
+  /* 縦画面・狭い画面: パネルを下に、カードは横に3枚 */
+  @media (max-width:860px), (max-aspect-ratio:1/1) {
+    .panel { left:10px; right:10px; top:auto; bottom:10px; width:auto; max-height:54vh; gap:8px; }
+    .qhead { padding:10px 12px 9px; border-radius:12px; }
+    .qhead b { font-size:13px; margin-top:.4em; }
+    .qdots { margin-top:.5em; } .qdots i { width:18px; }
+    .cards { flex-direction:row; gap:6px; }
+    .card { flex:1; min-width:0; flex-direction:column; border-radius:12px; }
+    .card:hover { transform:none; }
+    .card canvas { width:100%; }
+    .card .txt { padding:.5em .6em .5em; }
+    .card b { font-size:10px; } .card i { font-size:8.5px; line-height:1.35; }
+    .card .pick { font-size:10px; }
+    .card.sel .pick { max-height:38px; padding:.5em 0; }
+    .verdict-box { padding:12px 14px; border-radius:14px; }
+    .verdict-box .mark { font-size:26px; }
+    .verdict-box h4 { font-size:13px; }
+    .verdict-box p { font-size:11px; line-height:1.65; margin-top:.6em; }
+    .facts { gap:.35em; margin-top:.7em; }
+    .facts span { padding:.34em .6em; font-size:9px; }
+    .vbtns { margin-top:.9em; gap:.4em; }
+    .vbtn { padding:.6em 1.1em; font-size:11px; }
+    .tick { gap:8px; padding:.45em .8em; } .tick .tk em { font-size:10px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+<!-- 右の縦パネル: 問い → 案A/B/C → 答え合わせ。模型は左の領域に収めるので、何も重ならない -->
+<aside class="panel" id="panel">
+  <div class="qhead" id="qhead"><em>QUESTION</em><b id="qtitle">—</b>
+    <div class="qdots" id="qdots"></div></div>
+  <div class="cards" id="cards"></div>
+  <div class="verdict-box" id="vbox">
+    <div class="head-row"><div class="mark" id="vmark">—</div><h4 id="vtitle">—</h4></div>
+    <p id="vwhy">—</p>
+    <div class="facts" id="vfacts"></div>
+    <div class="vbtns" id="vbtns"></div>
+  </div>
+</aside>
+<button class="go" id="qgo">この間取りにする</button>
+<div class="tick" id="tick"><b id="tick-t">0.0</b>
+  <span class="tk in"><i>侵入者</i><em id="tick-a">—</em></span>
+  <span class="tk out"><i>住人</i><em id="tick-b">—</em></span></div>
+
+
+<div class="head" id="head">
+  <p class="eyebrow">SAFE HOUSE PROJECT</p>
+  <h1>世界一安全な家を、<br>あなたに。</h1>
+</div>
+
+<div class="intro" id="intro">
+  <div class="intro-label">はじめに</div>
+  <p>家を選ぶとき、駅までの分数や築年数より先に見ているものがある。</p>
+  <p>夜中に玄関から侵入者が入ってきたとき、あなたが生き延びられる間取りかどうか。</p>
+  <p>本気で世界一安全な家を建てる前に、まずは一緒に勉強しよう。</p>
+  <p class="intro-em">全5問。侵入者を1人、放ちます。</p>
+  <button class="vbtn main" id="qstart">クイズタイムをはじめる</button>
+</div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "../assets/vendor/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from '../assets/vendor/environments/RoomEnvironment.js';
+
+/* ================================================================
+   間取り図が立ち上がり、34階の夜景の上に現れる
+   ---------------------------------------------------------------
+   ① 方眼の上に線が引かれる(製図)
+   ② 線から壁がせり上がり、床と家具が現れる
+   ③ カメラが引くと、眼下に夜の街が広がっている ← 山場
+   ④ 部屋の灯りが順に点き、物件概要が出る。以降はドラッグで見回せる
+   平面座標は「メートル・原点は南西角・+yが北」。3Dへは (x, 0, -y)。
+   ================================================================ */
+
+/* ================================================================
+   間取りのデータ。1件ぶんをこの形にまとめておけば、何件でも差し替えられる。
+   x は東(右)、y は南(手前)。単位はメートル。
+   ================================================================ */
+// 家具 [x, y, 幅, 奥行, 高さ, 色, 角丸]
+/* 家具の組み立て。箱1つでは家具に見えないので、部品を重ねて形を作る。
+   返すのは既存と同じ [x, y, w, d, h, 色, 角丸, 持ち上げ] の配列なので、
+   出現アニメーションなど後段はそのまま使える。
+   x,y は手前左の角、w は x方向、d は y方向の寸法。 */
+/* @@PURE-BEGIN plan */
+const box = (x, y, w, d, h, c, r = .04, up = 0) => [x, y, w, d, h, c, r, up];
+
+/* ソファ: 台座 + 背もたれ + 肘掛け + 座クッション + 背クッション。
+   dir は背もたれのある向き('n'=y大きい側 / 's'=y小さい側) */
+function sofa(x, y, w, d, dir, body, cush) {
+  const BACK = .20, ARM = .17, SEAT_H = .30;
+  const back = dir === 'n' ? y + d - BACK : y;
+  const seatY = dir === 'n' ? y : y + BACK;
+  const seatD = d - BACK;
+  const out = [
+    [x, y, w, d, SEAT_H, body, .06, 0, 'fab'],                        // 台座
+    [x, back, w, BACK, .78, body, .07, 0, 'fab'],                     // 背もたれ
+    [x, seatY, ARM, seatD, .56, body, .07, 0, 'fab'],                 // 肘掛け(左)
+    [x + w - ARM, seatY, ARM, seatD, .56, body, .07, 0, 'fab'],       // 肘掛け(右)
+  ];
+  const n = w > 2.0 ? 3 : 2, cw = (w - ARM * 2 - .04) / n;
+  for (let i = 0; i < n; i++) {
+    out.push([x + ARM + .02 + i * cw, seatY + .04, cw - .03, seatD - .08, .17, cush, .06, SEAT_H, 'fab']);
+    // 背クッションは少し内側に立てる
+    out.push([x + ARM + .04 + i * cw, dir === 'n' ? back - .13 : back + BACK - .05,
+              cw - .07, .18, .34, cush, .08, .46, 'fab']);
+  }
+  return out;
+}
+
+/* ダイニングテーブル: 天板 + 脚4本 */
+function table(x, y, w, d, h, top, leg) {
+  const T = .055, L = .07, o = .10;
+  return [
+    [x, y, w, d, T, top, .02, h - T, 'wood'],
+    [x + o, y + o, L, L, h - T, leg, .01, 0, 'wood'],
+    [x + w - o - L, y + o, L, L, h - T, leg, .01, 0, 'wood'],
+    [x + o, y + d - o - L, L, L, h - T, leg, .01, 0, 'wood'],
+    [x + w - o - L, y + d - o - L, L, L, h - T, leg, .01, 0, 'wood'],
+  ];
+}
+
+/* 椅子: 座面 + 背 + 脚4本 */
+function chair(x, y, dir, seat, leg) {
+  const W = .44, D = .44, SH = .43, T = .05, L = .045;
+  const bk = dir === 'n' ? y + D - .06 : y;
+  return [
+    [x, y, W, D, T, seat, .03, SH - T, 'fab'],
+    [x + .03, bk, W - .06, .06, .44, seat, .03, SH, 'fab'],        // 背
+    [x + .04, y + .04, L, L, SH - T, leg, .01, 0, 'wood'],
+    [x + W - .04 - L, y + .04, L, L, SH - T, leg, .01, 0, 'wood'],
+    [x + .04, y + D - .04 - L, L, L, SH - T, leg, .01, 0, 'wood'],
+    [x + W - .04 - L, y + D - .04 - L, L, L, SH - T, leg, .01, 0, 'wood'],
+  ];
+}
+
+/* ベッド: ヘッドボード + マットレス + 掛け布団 + 枕2つ。head は枕側 */
+function bed(x, y, w, d, head, frame, duvet, pillow) {
+  const HB = .09, MH = .46;
+  const hbY = head === 'n' ? y + d - HB : y;
+  const pilY = head === 'n' ? y + d - HB - .42 : y + HB + .06;
+  const duvY = head === 'n' ? y : y + HB + .52;
+  return [
+    [x - .04, hbY, w + .08, HB, 1.02, frame, .03, 0, 'wood'],          // ヘッドボード
+    [x, y, w, d, MH, frame, .05, 0, 'wood'],                           // マットレス台
+    [x + .02, duvY, w - .04, d - HB - .52, .13, duvet, .07, MH, 'fab'],   // 掛け布団
+    [x + .07, pilY, w / 2 - .12, .36, .15, pillow, .09, MH, 'fab'],
+    [x + w / 2 + .05, pilY, w / 2 - .12, .36, .15, pillow, .09, MH, 'fab'],
+  ];
+}
+
+/* テレビ: 台 + 画面 + 脚 */
+function tv(x, y, w, d, dir, board, panel) {
+  const BH = .40, SW = w * .74, SH = SW * .56;
+  return [
+    [x, y, w, d, BH, board, .04, 0, 'wood'],
+    [x + (w - SW) / 2, y + d / 2 - .03, SW, .05, SH, panel, .01, BH + .10, 'tv'],
+    [x + w / 2 - .14, y + d / 2 - .05, .28, .12, .10, C_DARK, .02, BH],
+  ];
+}
+
+/* 観葉植物: 鉢 + 丸い葉の塊をいくつか重ねる */
+function plant(x, y, s, pot, leaf1, leaf2) {
+  const sph = (cx, cy, w, h, d, c, up) => [cx - w / 2, cy - d / 2, w, d, h, c, 0, up, 'sph'];
+  const cx = x + s * .46, cy = y + s * .46;
+  return [
+    box(x, y, s * .92, s * .92, s * .70, pot, s * .26),          // 鉢
+    box(x + s * .06, y + s * .06, s * .80, s * .80, s * .06, 0x2a2118, s * .22, s * .70),  // 土
+    sph(cx, cy, s * 1.30, s * 1.05, s * 1.30, leaf1, s * .70),
+    sph(cx - s * .30, cy + s * .22, s * .78, s * .66, s * .78, leaf2, s * 1.02),
+    sph(cx + s * .26, cy - s * .18, s * .62, s * .56, s * .62, leaf2, s * 1.16),
+  ];
+}
+
+/* 部屋ごとに色の家族を変える。全部が同じ青紫グレーだと、
+   どの部屋も同じ顔になって「暮らし」が伝わらない。
+   LDK=暖かい布と木 / 寝室=柔らかい寝具 / 水回り=冷たい白 */
+const C_SOFA = 0x6b675f, C_CUSH = 0x8b857a;          // 布(グレージュ)
+const C_WOODF = 0x8a6a44, C_WOODD = 0x6b5233;        // 木(明・暗)
+const C_DARK = 0x26272f;                              // テレビ・家電
+const C_RUG = 0x5c4433;                               // ラグ(テラコッタ)
+const C_BED = 0x6d6152, C_DUVET = 0xcfc7b8, C_PILLOW = 0xe6e0d4;
+const C_CHAIR = 0x7a736a, C_CHAIRL = 0x4a443c;        // 椅子(布+木脚)
+const C_KIT = 0x3c414f;                               // キッチン
+const C_WET = 0xccd4de, C_WET2 = 0xb9c3d0;            // 水回り
+const C_GREEN = 0x4f7a49, C_GREEN2 = 0x5d8c50, C_POT = 0x33302a;
+
+/* 開口の書式: [x1,y1,x2,y2, sw, f]
+   sw … 開き戸の開く角度(±90)。無ければ引き戸か通り抜け
+   f  … 文字で性質を足す。
+        's' 引き戸/襖   'o' 最初から開いている   'l' 鍵が掛かる(開き戸だけ)
+        'w' 掃き出し窓(視線は通る。出るのに0.8秒)   sw も f も無い = 建具なしの通り抜け */
+function deriveDoors(gaps) {
+  return gaps.map((g, i) => {
+    const [x1, y1, x2, y2, sw, f = ''] = g;
+    const w = Math.hypot(x2 - x1, y2 - y1);
+    const ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    let kind = 'open';
+    if (f.includes('w')) kind = 'window';
+    else if (f.includes('s')) kind = 'slide';
+    else if (sw) kind = 'hinge';
+    return { i, x1, y1, x2, y2, w, ang, sw: sw || 0, kind,
+      open0: kind === 'open' || f.includes('o'),
+      lock: kind === 'hinge' && f.includes('l'),
+      mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
+  });
+}
+/* 扉の記号(板+開く軌跡)を線分にする。引き戸は板だけ、窓は二重線 */
+function doorLines(DOORS) {
+  const out = [];
+  for (const d of DOORS) {
+    if (d.kind === 'open') continue;
+    const a0 = d.ang * Math.PI / 180;
+    if (d.kind === 'hinge') {
+      const sw = d.sw * Math.PI / 180;
+      out.push([d.x1, d.y1, d.x1 + Math.cos(a0 + sw) * d.w, d.y1 + Math.sin(a0 + sw) * d.w]);
+      const n = 10;
+      for (let i = 0; i < n; i++) {
+        const t1 = a0 + sw * (i / n), t2 = a0 + sw * ((i + 1) / n);
+        out.push([d.x1 + Math.cos(t1) * d.w, d.y1 + Math.sin(t1) * d.w, d.x1 + Math.cos(t2) * d.w, d.y1 + Math.sin(t2) * d.w]);
+      }
+    } else {
+      const nx = -Math.sin(a0) * .05, ny = Math.cos(a0) * .05;
+      out.push([d.x1 + nx, d.y1 + ny, d.x2 + nx, d.y2 + ny]);
+      if (d.kind === 'window') out.push([d.x1 - nx, d.y1 - ny, d.x2 - nx, d.y2 - ny]);
+    }
+  }
+  return out;
+}
+
+/* ================================================================
+   間取りコンパイラ
+   15件を手書きすると必ず破綻するので、「部屋の矩形」と「開口」だけ書けば
+   壁・扉・寸法線・家具・照明が全部生成されるようにしてある。
+   ・壁 = 全部屋の辺の和集合 から 開口を引いたもの
+   ・家具 = 部屋の種別(ldk/bed/bath...)ごとの自動配置
+   ================================================================ */
+const EPS = 1e-6;
+
+/* 同じ直線上の区間をまとめる */
+function mergeSpans(spans) {
+  spans.sort((a, b) => a[0] - b[0]);
+  const out = [];
+  for (const s of spans) {
+    const last = out[out.length - 1];
+    if (last && s[0] <= last[1] + EPS) last[1] = Math.max(last[1], s[1]);
+    else out.push([s[0], s[1]]);
+  }
+  return out;
+}
+/* 区間から穴を引く */
+function cutSpans(spans, holes) {
+  let out = spans;
+  for (const h of holes) {
+    const next = [];
+    for (const [a, b] of out) {
+      if (h[1] <= a + EPS || h[0] >= b - EPS) { next.push([a, b]); continue; }
+      if (h[0] > a + EPS) next.push([a, h[0]]);
+      if (h[1] < b - EPS) next.push([h[1], b]);
+    }
+    out = next;
+  }
+  return out;
+}
+
+/* 部屋の矩形と開口から壁の線分を作る */
+function deriveWalls(rooms, gaps) {
+  const vLines = new Map(), hLines = new Map();   // 座標 → 区間の配列
+  const push = (map, key, a, b) => {
+    const k = key.toFixed(3);
+    if (!map.has(k)) map.set(k, { c: key, sp: [] });
+    map.get(k).sp.push([Math.min(a, b), Math.max(a, b)]);
+  };
+  for (const r of rooms) {
+    if (r.out) continue;                          // バルコニーは壁を持たない
+    push(hLines, r.y,        r.x, r.x + r.w);
+    push(hLines, r.y + r.h,  r.x, r.x + r.w);
+    push(vLines, r.x,        r.y, r.y + r.h);
+    push(vLines, r.x + r.w,  r.y, r.y + r.h);
+  }
+  // 開口を線ごとに振り分ける
+  const holeV = new Map(), holeH = new Map();
+  for (const g of gaps) {
+    const [x1, y1, x2, y2] = g;
+    if (Math.abs(x1 - x2) < EPS) {                // 縦の開口
+      const k = x1.toFixed(3);
+      if (!holeV.has(k)) holeV.set(k, []);
+      holeV.get(k).push([Math.min(y1, y2), Math.max(y1, y2)]);
+    } else {
+      const k = y1.toFixed(3);
+      if (!holeH.has(k)) holeH.set(k, []);
+      holeH.get(k).push([Math.min(x1, x2), Math.max(x1, x2)]);
+    }
+  }
+  const out = [];
+  for (const [k, v] of hLines) {
+    const spans = cutSpans(mergeSpans(v.sp), holeH.get(k) || []);
+    for (const [a, b] of spans) if (b - a > .02) out.push([a, v.c, b, v.c]);
+  }
+  for (const [k, v] of vLines) {
+    const spans = cutSpans(mergeSpans(v.sp), holeV.get(k) || []);
+    for (const [a, b] of spans) if (b - a > .02) out.push([v.c, a, v.c, b]);
+  }
+  return out;
+}
+
+/* ── 家具の自動配置 ──
+   部屋の種別と向き(縦長/横長)から、それらしい配置を決める。
+   手で15部屋ぶん置くのは無理なので、ここで質を担保する。 */
+function autoFurn(rooms, plan) {
+  const F = [];
+  const inset = (r, m) => ({ x: r.x + m, y: r.y + m, w: r.w - m * 2, h: r.h - m * 2 });
+  for (const r of rooms) {
+    const wide = r.w >= r.h;
+    if (r.t === 'ldk') {
+      const a = inset(r, .35);
+      // ソファ+ローテーブル+テレビ を短辺方向に並べる
+      const sw = Math.min(2.5, a.w * .62), sd = 1.05;
+      const sx = a.x + (a.w - sw) / 2;
+      const sy = a.y + a.h * .06;
+      F.push(...sofa(sx, sy, sw, sd, 's', C_SOFA, C_CUSH));
+      F.push([sx + sw * .1, sy + sd + .30, sw * .8, Math.min(1.7, a.h * .30), .026, C_RUG, .34, 0, 'fab']);   // ラグ
+      F.push(...table(sx + sw * .22, sy + sd + .55, sw * .56, .68, .40, C_WOODD, 0x54402a));
+      const tvy = Math.min(a.y + a.h - .5, sy + sd + 1.5);
+      F.push(...tv(sx + sw * .02, tvy, sw * .96, .46, 'n', C_WOODD, 0x121319));
+      // ダイニング(部屋の残りの側)
+      if (a.w > 5.4) {
+        const dx = a.x + a.w - 2.6;
+        F.push(...table(dx, a.y + a.h * .25, 1.7, 1.0, .72, C_WOODF, 0x63503c));
+        F.push(...chair(dx + .12, a.y + a.h * .25 - .55, 's', C_CHAIR, C_CHAIRL));
+        F.push(...chair(dx + .80, a.y + a.h * .25 - .55, 's', C_CHAIR, C_CHAIRL));
+        F.push(...chair(dx + .12, a.y + a.h * .25 + 1.09, 'n', C_CHAIR, C_CHAIRL));
+        F.push(...chair(dx + .80, a.y + a.h * .25 + 1.09, 'n', C_CHAIR, C_CHAIRL));
+        F.push([a.x + a.w - 3.0, a.y + a.h - .70, 2.9, .66, .90, C_KIT, .04, 0, 'wet']);   // キッチン
+        F.push(...plant(a.x + a.w - .75, a.y + .15, .58, C_POT, C_GREEN, C_GREEN2));
+      } else {
+        F.push(...table(a.x + a.w - 1.9, a.y + a.h - 1.5, 1.4, .85, .72, C_WOODF, 0x63503c));
+        F.push([a.x + .1, a.y + a.h - .68, Math.min(2.4, a.w - .3), .62, .88, C_KIT, .04, 0, 'wet']);
+        F.push(...plant(a.x + a.w - .70, a.y + .12, .50, C_POT, C_GREEN, C_GREEN2));
+      }
+    } else if (r.t === 'bed') {
+      const a = inset(r, .30);
+      const bw = Math.min(a.w * .74, r.w > 3.2 ? 2.2 : 1.5), bd = Math.min(a.h * .82, 2.10);
+      F.push(...bed(a.x + (a.w - bw) / 2, a.y + a.h - bd, bw, bd, 'n', C_BED, C_DUVET, C_PILLOW));
+      F.push([a.x + a.w - .55, a.y, .5, .5, .40, C_WOODD, .10, 0, 'wood']);   // サイドテーブル
+      if (a.w > 3.0) F.push([a.x, a.y, 1.2, .55, .70, C_WOODD, .04, 0, 'wood']);    // デスク
+      if (a.h > 2.9) F.push(...plant(a.x + .06, a.y + .06, .44, C_POT, C_GREEN, C_GREEN2));
+    } else if (r.t === 'bath') {
+      F.push([r.x + .18, r.y + .18, r.w - .36, Math.min(.85, r.h - .5), .55, C_WET, .14, 0, 'wet']);
+    } else if (r.t === 'wash') {
+      F.push([r.x + .16, r.y + r.h - .68, r.w - .32, .5, .82, C_WET2, .05, 0, 'wet']);
+      F.push([r.x + .3, r.y + .18, r.w - .6, .06, .70, 0xb8cadf, .04, .95, 'wet']);   // 鏡
+    } else if (r.t === 'wc') {
+      // 'wc' は納戸・書斎・WIC・前室にも使っている。名前で中身を変える
+      if (r.n === 'トイレ') {
+        F.push([r.x + r.w / 2 - .22, r.y + .2, .45, .62, .42, C_WET, .12, 0, 'wet']);
+      } else if (r.n === '書斎') {
+        F.push([r.x + .18, r.y + r.h - .74, Math.min(1.7, r.w - .36), .56, .72, C_WOODD, .03, 0, 'wood']);
+        F.push(...chair(r.x + .5, r.y + r.h - 1.5, 'n', C_CHAIR, C_CHAIRL));
+        F.push([r.x + r.w - .5, r.y + .2, .34, .34, 1.5, C_WOODD, .02, 0, 'wood']);
+      } else {
+        // 納戸・WIC・前室: 壁づけの棚
+        const d2 = Math.min(.42, r.w * .3);
+        F.push([r.x + .1, r.y + .12, d2, r.h - .24, 1.85, C_WOODD, .02, 0, 'wood']);
+        if (r.w > 1.5) F.push([r.x + r.w - .1 - d2, r.y + .12, d2, r.h - .24, 1.85, C_WOODD, .02, 0, 'wood']);
+      }
+    } else if (r.t === 'ent') {
+      F.push([r.x + .12, r.y + r.h - .5, r.w - .24, .38, 1.05, C_WOODD, .04, 0, 'wood']);  // 靴箱
+    } else if (r.t === 'bal') {
+      F.push([r.x + r.w * .12, r.y + r.h * .3, .5, .5, .40, C_CHAIRL, .10, 0, 'wood']);
+      F.push([r.x + r.w * .12 + .9, r.y + r.h * .3, .5, .5, .40, C_CHAIRL, .10, 0, 'wood']);
+    }
+  }
+  return F;
+}
+
+/* 照明も部屋ごとに自動 */
+function autoLamps(rooms) {
+  const L = [];
+  for (const r of rooms) {
+    if (r.out) continue;
+    const c = r.t === 'ldk' ? 0xffd9a0 : r.t === 'bed' ? 0xffc98a : 0xd8ecff;
+    const i = r.t === 'ldk' ? 32 : r.t === 'bed' ? 17 : 8;
+    L.push([r.x + r.w / 2, r.y + r.h / 2, 2.3, c, i]);
+  }
+  return L;
+}
+
+/* 間取り全体(部屋・庭・出口)の範囲 */
+function planBounds(plan) {
+  let x0 = 0, y0 = 0, x1 = plan.W, y1 = plan.D;
+  for (const r of plan.ROOMS) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+  for (const e of (plan.EXITS || [])) { x0 = Math.min(x0, e.x - .3); y0 = Math.min(y0, e.y - .3); x1 = Math.max(x1, e.x + .3); y1 = Math.max(y1, e.y + .3); }
+  return { x0, y0, x1, y1 };
+}
+/* ベッドの位置(autoFurn と同じ置き方)。住人はここで寝ている */
+function bedSpot(r) {
+  const a = { x: r.x + .30, y: r.y + .30, w: r.w - .60, h: r.h - .60 };
+  const bw = Math.min(a.w * .74, r.w > 3.2 ? 2.2 : 1.5), bd = Math.min(a.h * .82, 2.10);
+  return [a.x + (a.w - bw) / 2 + bw / 2, a.y + a.h - bd + bd / 2];
+}
+/* 定義から実際に使う形へ */
+function makePlan(def) {
+  const rooms = def.rooms;
+  // resident は部屋名(そのベッドで寝ている)か [x,y]
+  const resident = typeof def.resident === 'string'
+    ? bedSpot(rooms.find(r => r.n === def.resident) || rooms.find(r => r.t === 'bed'))
+    : def.resident;
+  const WALLS = deriveWalls(rooms, def.gaps || []);
+  const outs = rooms.filter(r => r.out);
+  const BALCONY = [];
+  for (const b of outs) {
+    // 手すりの線。住戸に接している辺は引かない
+    const edges = [[b.x, b.y + b.h, b.x, b.y], [b.x, b.y, b.x + b.w, b.y], [b.x + b.w, b.y, b.x + b.w, b.y + b.h], [b.x + b.w, b.y + b.h, b.x, b.y + b.h]];
+    for (const e of edges) {
+      const mx = (e[0] + e[2]) / 2, my = (e[1] + e[3]) / 2;
+      const touch = rooms.some(r => !r.out && mx >= r.x - .02 && mx <= r.x + r.w + .02 && my >= r.y - .02 && my <= r.y + r.h + .02);
+      if (!touch) BALCONY.push([...e, (b.n.includes('庭') || b.n.includes('テラス') || b.n.includes('ヤード')) ? 'g' : 'b']);
+    }
+  }
+  const south = outs.filter(r => r.y < 0);
+  const padS = south.length ? Math.max(...south.map(r => -r.y)) : 0;
+  const DOORS = deriveDoors(def.gaps || []);
+  /* 鍵の掛かる扉は「どちら側から掛けるか」を決めておく。
+     居室・水回りの側(内側)に入ったときだけ掛けられる。廊下側からは掛けられない */
+  for (const d of DOORS) {
+    if (!d.lock) continue;
+    const on = r => !r.out && (
+      (Math.abs(d.mx - r.x) < .02 || Math.abs(d.mx - (r.x + r.w)) < .02) && d.my > r.y - .02 && d.my < r.y + r.h + .02 ||
+      (Math.abs(d.my - r.y) < .02 || Math.abs(d.my - (r.y + r.h)) < .02) && d.mx > r.x - .02 && d.mx < r.x + r.w + .02);
+    const adj = rooms.filter(on);
+    d.lockRoom = adj.find(r => r.t === 'bed') || adj.find(r => r.t !== 'hall' && r.t !== 'ent' && r.t !== 'ldk') || null;
+  }
+  return Object.assign({}, def, {
+    WALLS, BALCONY, resident,
+    DOORS,
+    WINDOWS: def.windows || [],
+    ROOMS: rooms,
+    EXITS: (def.exits || []).map(e => Object.assign({}, e)),
+    DIMS: [{ t: (def.W * 1000).toFixed(0), x: def.W / 2, y: -(padS + 1.0) },
+           { t: (def.D * 1000).toFixed(0), x: -1.5, y: def.D / 2 }],
+    FURN: autoFurn(rooms, def),
+    LAMPS: autoLamps(rooms),
+  });
+}
+/* @@PURE-END plan */
+
+/* @@PURE-BEGIN defs */
+/* ================================================================
+   15間取り = 5問 × 3案。全部、実在の物件・標準設計の部屋構成と広さから起こした
+   (出典は src。図面そのものは機械で読めないので、位置関係は記事の記述と型の標準寸法で再構成)。
+   正解は各問1つ。判定は simulate() の計算に一致させ、validate() で全件チェックしている。
+   座標: x は右、y は手前(バルコニー側)が 0 で玄関側が D。単位はメートル。
+   ================================================================ */
+const R = (n, s, x, y, w, h, t) => ({ n, s, x, y, w, h, t, wood: (t === 'ldk' || t === 'bed') ? 1 : 0 });
+const BAL = (x, y, w, h, n = 'バルコニー') => ({ n, s: '', x, y, w, h, out: 1 });
+const EX = (x, y, n, k) => ({ x, y, n, k });
+
+const DEFS = [
+/* ══ 第1問: 昭和の団地 40㎡台。襖が開いているか、扉が閉まっているか ══ */
+{ q:1, id:'1a', name:'公営住宅 51C型', addr:'1951年 標準設計 / 3階', kind:'2DK', area:'39.7', dir:'南向き',
+  age:'築74年', views:'—', price:'0.18', W:6.2, D:6.4, mech:'sight', safe:false,
+  src:'公営住宅標準設計51C型(日本建築学会 住宅系研究報告会 2019)',
+  shape:'玄関土間から直接DK。襖は開けっ放し',
+  rooms:[ R('和室','6畳',0,0,3.3,3.0,'bed'), R('DK','6畳',3.3,0,2.9,4.4,'ldk'),
+          R('和室','4.5畳',0,3.0,3.3,2.2,'bed'), R('押入','',0,5.2,3.3,1.2,'wc'),
+          R('便所','',3.3,4.4,1.1,1.0,'wc'), R('洗濯場','',3.3,5.4,1.1,1.0,'wash'),
+          R('玄関','',4.4,4.4,1.8,2.0,'ent'),
+          BAL(3.3,-0.9,2.9,0.9,'サービスヤード') ],
+  gaps:[ [4.9,6.4,5.7,6.4,-90,'o'], [4.6,4.4,6.0,4.4], [3.3,0.5,3.3,2.5,0,'so'], [3.3,3.2,3.3,4.2,0,'so'],
+         [0.6,5.2,2.8,5.2,0,'so'], [3.5,4.4,4.2,4.4,90], [4.4,5.6,4.4,6.2,90], [3.6,0,5.9,0,0,'w'] ],
+  windows:[[0.3,.06,3.0,.06],[0.3,-.06,3.0,-.06]],
+  entry:[5.3,5.8], resident:'和室', exits:[],
+  why:'土間からそのままDK、襖は開けっ放し。侵入者はDKに一歩入っただけで両方の和室が丸見え。外に出る道は玄関ひとつで、サービスヤードは庇。1951年の家に防犯を求めるのは酷だけど。' },
+
+{ q:1, id:'1b', name:'UR 団地 田の字型', addr:'1970年代 / 4階', kind:'2DK', area:'40.0', dir:'南向き',
+  age:'築50年', views:'—', price:'0.32', W:7.0, D:6.4, mech:'sight', safe:false,
+  src:'UR賃貸 田の字型2DK(goodroom journal 暮らし心地レポート)',
+  shape:'田の字。DKのガラス戸と襖が開いている',
+  rooms:[ R('和室','6畳',0,0,3.2,3.1,'bed'), R('DK','7畳',3.2,0,3.8,3.1,'ldk'),
+          R('洋室','6畳',4.0,3.1,3.0,3.3,'bed'), R('廊下','',2.6,3.1,1.4,1.9,'hall'),
+          R('玄関','',2.6,5.0,1.4,1.4,'ent'), R('洗面','',1.2,3.1,1.4,1.9,'wash'),
+          R('便所','',0,3.1,1.2,1.9,'wc'), R('浴室','',0,5.0,2.6,1.4,'bath'),
+          BAL(0,-1.2,7.0,1.2) ],
+  gaps:[ [2.9,6.4,3.7,6.4,-90,'o'], [2.8,5.0,3.8,5.0], [3.3,3.1,3.9,3.1,0,'so'], [4.0,3.5,4.0,4.4,90],
+         [3.2,0.5,3.2,2.6,0,'so'], [4.6,3.1,6.2,3.1,0,'s'], [2.6,3.5,2.6,4.3,-90], [1.2,3.4,1.2,4.1,-90],
+         [1.4,5.0,2.2,5.0,90], [0.5,0,2.7,0,0,'w'], [3.6,0,6.6,0,0,'w'] ],
+  windows:[[4.3,6.34,6.7,6.34]],
+  entry:[3.3,5.7], resident:'和室',
+  exits:[EX(-0.5,-0.6,'隔て板','partition'), EX(7.5,-0.6,'隔て板','partition')],
+  why:'玄関を入って、ガラス戸、襖、と開きっぱなし。侵入者がDKに立った瞬間に、和室で寝ているあなたが見える。バルコニーに出ても、隔て板を蹴破る4.5秒の間に背中を掴まれる。' },
+
+{ q:1, id:'1c', name:'団地リノベ 1LDK', addr:'MUJI×UR / 3階', kind:'1LDK', area:'47.0', dir:'南向き',
+  age:'築55年', views:'—', price:'0.41', W:7.4, D:6.4, mech:'sight', safe:true,
+  src:'MUJI×UR 団地リノベーション 1LDK 47㎡(goodroom journal)',
+  shape:'玄関横の4.5畳が寝室と裏でつながる',
+  rooms:[ R('洋室','6畳',0,0,3.1,3.2,'bed'), R('LDK','8畳',3.1,0,4.3,3.0,'ldk'),
+          R('洋室','4.5畳',0,3.2,3.1,2.4,'bed'), R('押入','',0,5.6,3.1,0.8,'wc'),
+          R('廊下','',3.1,3.0,1.5,2.0,'hall'), R('玄関','',3.1,5.0,1.5,1.4,'ent'),
+          R('トイレ','',4.6,3.0,1.1,1.6,'wc'), R('納戸','',5.7,3.0,1.7,1.6,'wc'),
+          R('洗面','',4.6,4.6,1.4,1.8,'wash'), R('浴室','',6.0,4.6,1.4,1.8,'bath'),
+          BAL(0,-1.2,7.4,1.2) ],
+  gaps:[ [3.4,6.4,4.2,6.4,-90,'o'], [3.3,5.0,4.4,5.0], [3.4,3.0,4.3,3.0,90], [3.1,3.6,3.1,4.5,-90],
+         [0.8,3.2,1.7,3.2,-90], [3.1,0.7,3.1,1.6,90], [4.6,3.4,4.6,4.2,90], [4.6,5.3,4.6,6.1,90],
+         [6.0,5.0,6.0,5.8,90], [5.9,3.0,7.2,3.0], [0.5,5.6,2.6,5.6,0,'so'],
+         [0.5,0,2.6,0,0,'w'], [3.6,0,7.0,0,0,'w'] ],
+  windows:[[0.3,6.34,2.8,6.34]],
+  entry:[3.85,5.7], resident:'洋室',
+  exits:[EX(-0.5,-0.6,'隔て板','partition'), EX(7.9,-0.6,'隔て板','partition')],
+  why:'扉が全部閉まっている。玄関に立った侵入者には廊下しか見えない。玄関横の4.5畳を開けている隙に、寝室の窓からバルコニーへ。隔て板を蹴破って隣の家へ転がり込む。差はたった1秒。ぎりぎりだけど、生きている。' },
+
+/* ══ 第2問: 2LDK 50〜60㎡。建具の種類と、玄関から寝室までの距離 ══ */
+{ q:2, id:'2a', name:'団地リノベ 2LDK', addr:'MUJI×UR / 4階', kind:'2LDK', area:'51.0', dir:'南向き',
+  age:'築58年', views:'—', price:'0.46', W:8.0, D:7.0, mech:'door', safe:false,
+  src:'MUJI×UR 団地リノベーション 2LDK 51㎡(goodroom journal)',
+  shape:'襖主体。押入を抜いて回遊できる',
+  rooms:[ R('リビング','6.5畳',0,0,3.4,3.2,'ldk'), R('DK','8.5畳',3.4,0,4.6,3.2,'ldk'),
+          R('寝室','4.5畳',0,3.2,3.4,2.4,'bed'), R('洋室','4.5畳',5.0,3.2,3.0,2.4,'bed'),
+          R('廊下','',3.4,3.2,1.6,2.4,'hall'), R('玄関','',3.4,5.6,1.6,1.4,'ent'),
+          R('洗面','',1.7,5.6,1.7,1.4,'wash'), R('浴室','',0,5.6,1.7,1.4,'bath'),
+          R('トイレ','',5.0,5.6,1.2,1.4,'wc'), R('押入','',6.2,5.6,1.8,1.4,'wc'),
+          BAL(0,-1.2,8.0,1.2) ],
+  gaps:[ [3.7,7.0,4.6,7.0,-90,'o'], [3.6,5.6,4.8,5.6], [3.6,3.2,4.8,3.2,0,'so'], [3.4,3.6,3.4,5.2,0,'s'],
+         [0.6,3.2,2.8,3.2], [3.4,0.5,3.4,2.7,0,'so'], [5.0,3.6,5.0,5.2,0,'s'], [6.4,5.6,7.8,5.6,0,'so'],
+         [3.4,5.9,3.4,6.7,-90], [1.7,5.9,1.7,6.7,-90], [5.0,5.9,5.0,6.6,90],
+         [0.5,0,2.9,0,0,'w'], [3.8,0,7.6,0,0,'w'] ],
+  windows:[[0.3,5.54,3.1,5.54],[5.2,5.54,7.8,5.54]],
+  entry:[4.2,6.3], resident:'寝室',
+  exits:[EX(-0.5,-0.6,'隔て板','partition'), EX(8.5,-0.6,'隔て板','partition')],
+  why:'寝室が玄関の隣で、建具は全部襖。閉めても0.5秒で開く。押入を抜いた回遊はおしゃれだけど、侵入者にとっても近道。窓からバルコニーに出た4.5秒後、隔て板の前で捕まる。' },
+
+{ q:2, id:'2b', name:'護国寺 最上階角', addr:'文京区 / 12階', kind:'2LDK+WIC', area:'58.05', dir:'南向き 角部屋',
+  age:'築45年', views:'—', price:'0.98', W:8.8, D:7.2, mech:'door', safe:true,
+  src:'ライオンズマンション護国寺 最上階角(cowcamo)',
+  shape:'洋室Bは廊下から。鍵付きの開き戸',
+  rooms:[ R('LDK','13.8帖',2.4,0,5.4,4.15,'ldk'), R('洋室A','5.7帖',0,0,2.4,3.9,'bed'),
+          R('洋室B','4.6帖',5.8,4.15,3.0,2.45,'bed'), R('収納','',5.8,6.6,3.0,0.6,'wc'),
+          R('廊下','',2.4,4.15,3.4,1.45,'hall'), R('玄関','',2.4,5.6,2.0,1.6,'ent'),
+          R('WIC','',4.4,5.6,1.4,1.6,'wc'), R('洗面','',0,3.9,2.4,1.7,'wash'),
+          R('浴室','',0,5.6,1.4,1.6,'bath'), R('トイレ','',1.4,5.6,1.0,1.6,'wc'),
+          BAL(0,-1.2,7.8,1.2), BAL(7.8,0,2.6,4.15,'ルーフバルコニー') ],
+  gaps:[ [2.8,7.2,3.7,7.2,-90,'o'], [2.6,5.6,4.2,5.6], [2.9,4.15,3.8,4.15,90], [5.8,4.5,5.8,5.4,90,'l'],
+         [4.6,5.6,5.5,5.6,-90], [2.4,4.4,2.4,5.3,-90], [0.3,5.6,1.1,5.6,90], [2.4,5.9,2.4,6.7,-90],
+         [2.4,0.6,2.4,3.3,0,'so'], [6.2,6.6,8.4,6.6,0,'so'], [7.8,0.6,7.8,2.0,0,'w'], [8.0,4.15,8.6,4.15,0,'w'],
+         [3.0,0,7.4,0,0,'w'], [0.4,0,2.0,0,0,'w'] ],
+  windows:[[6.2,7.14,8.4,7.14]],
+  entry:[3.4,6.4], resident:'洋室A',
+  exits:[EX(-0.5,-0.6,'隔て板','partition')],
+  why:'玄関から見えるのは廊下だけ。侵入者は手前の洋室Bから順に開けていく。その間に主寝室の掃き出し窓からバルコニーへ出て、隔て板を蹴破る。差は3秒。閉まった扉が時間を稼いだ。' },
+
+{ q:2, id:'2c', name:'梅丘 最上階角', addr:'世田谷区 / 4階', kind:'2LDK', area:'61.71', dir:'北西向き 角部屋',
+  age:'築29年', views:'—', price:'0.86', W:9.0, D:7.2, mech:'door', safe:false,
+  src:'プレミスト世田谷梅丘 最上階角(nomu.com)',
+  shape:'寝室とLDはウォールドアで一続き。廊下からルーフバルコニー',
+  rooms:[ R('LD','10.1帖',2.6,0,4.2,3.9,'ldk'), R('キッチン','',6.8,0,2.2,2.6,'ldk'), R('納戸','',6.8,2.6,2.2,1.3,'wc'),
+          R('洋室1','6帖',0,0,2.6,3.9,'bed'), R('洋室2','5帖',6.0,4.7,3.0,2.5,'bed'),
+          R('廊下','',2.6,3.9,3.4,1.6,'hall'), R('','',6.0,3.9,3.0,0.8,'hall'),
+          R('玄関','',2.6,5.5,1.8,1.7,'ent'), R('収納','',4.4,5.5,1.6,1.7,'wc'),
+          R('洗面','',0,3.9,2.6,1.6,'wash'), R('浴室','',0,5.5,1.6,1.7,'bath'), R('トイレ','',1.6,5.5,1.0,1.7,'wc'),
+          BAL(0,-1.2,6.8,1.2), BAL(9.0,3.9,1.8,3.3,'ルーフバルコニー') ],
+  gaps:[ [3.0,7.2,3.9,7.2,-90,'o'], [2.8,5.5,4.2,5.5], [3.4,3.9,4.3,3.9,90], [2.6,0.4,2.6,3.5,0,'so'],
+         [6.6,4.7,7.5,4.7,-90], [9.0,4.0,9.0,4.6,90], [6.0,3.95,6.0,4.65], [4.6,5.5,5.5,5.5,-90],
+         [2.6,4.2,2.6,5.1,-90], [0.3,5.5,1.1,5.5,90], [2.6,5.8,2.6,6.6,-90], [6.8,0.3,6.8,2.3], [6.8,2.9,6.8,3.6,90],
+         [0.4,0,2.2,0,0,'w'], [3.0,0,6.4,0,0,'w'] ],
+  windows:[[6.2,7.14,8.8,7.14]],
+  entry:[3.5,6.4], resident:'洋室1',
+  exits:[EX(7.3,-0.6,'隔て板','partition')],
+  why:'寝室とLDはウォールドアで一続き。おしゃれ。でも侵入者がLDの扉を開けた瞬間、寝室のベッドまで見える。廊下からルーフバルコニーへ出る扉は、行き止まりの扉。' },
+
+/* ══ 第3問: 1階の庭付き。庭へ出られる部屋と、そこから先 ══ */
+{ q:3, id:'3a', name:'中野 1階 庭付き', addr:'中野区 / 1階', kind:'2LDK', area:'52.48', dir:'南向き 専用庭',
+  age:'築54年', views:'—', price:'0.62', W:8.4, D:6.8, mech:'exit', safe:false,
+  src:'中野ハイム 1階 2LDK 専用庭(cowcamo)',
+  shape:'庭の先はフェンス、その向こうが駐車場',
+  rooms:[ R('LDK','14帖',0,0,5.4,4.2,'ldk'), R('洋室A','4帖',5.4,0,3.0,2.2,'bed'),
+          R('WIC','',5.4,2.2,3.0,1.0,'wc'), R('トランク','',5.4,3.2,3.0,1.0,'wc'),
+          R('廊下','',3.0,4.2,5.4,1.2,'hall'), R('玄関','',6.6,5.4,1.8,1.4,'ent'),
+          R('洗面','',5.2,5.4,1.4,1.4,'wash'), R('浴室','',4.0,5.4,1.2,1.4,'bath'), R('トイレ','',3.0,5.4,1.0,1.4,'wc'),
+          R('洋室B','5帖',0,4.2,3.0,2.6,'bed'),
+          BAL(0,-2.4,8.4,2.4,'専用庭') ],
+  gaps:[ [7.1,6.8,7.9,6.8,-90,'o'], [6.8,5.4,8.2,5.4], [3.4,4.2,4.4,4.2,90], [5.4,0.5,5.4,1.6,90],
+         [6.0,2.2,7.8,2.2,0,'s'], [6.0,4.2,7.8,4.2,0,'s'], [5.5,5.4,6.3,5.4,-90], [5.2,5.8,5.2,6.5,-90],
+         [3.2,5.4,3.9,5.4,-90], [3.0,4.5,3.0,5.3,-90],
+         [0.8,0,4.6,0,0,'w'], [5.8,0,8.0,0,0,'w'] ],
+  windows:[[0.3,6.74,2.7,6.74]],
+  entry:[7.5,6.1], resident:'洋室B',
+  exits:[EX(4.2,-3.0,'フェンス','fence')],
+  why:'寝室が玄関側の洋室B。庭に出るには、侵入者の目の前を横切ってLDKへ行くしかない。庭の先はフェンス。越えるのに4秒。駐車場に着く前に追いつかれる。' },
+
+{ q:3, id:'3b', name:'高井戸 1階 庭付き', addr:'杉並区 / 1階', kind:'3LDK', area:'61.50', dir:'西向き 専用庭',
+  age:'築40年', views:'—', price:'0.71', W:9.0, D:7.6, mech:'exit', safe:false,
+  src:'高井戸ハウス 1階 3LDK(cowcamo)',
+  shape:'庭へ出られるのは洋室Aの掃き出し窓だけ',
+  rooms:[ R('LDK','11.3帖',0,0,4.2,4.6,'ldk'), R('洋室A','6帖',4.2,0,3.0,3.3,'bed'),
+          R('納戸','',7.2,0,1.8,3.3,'wc'), R('廊下','',4.2,3.3,4.8,1.3,'hall'),
+          R('洋室C','5帖',0,4.6,2.8,3.0,'bed'), R('洋室B','4帖',2.8,4.6,2.4,3.0,'bed'),
+          R('','',5.2,4.6,1.4,1.8,'hall'), R('玄関','',5.2,6.4,1.4,1.2,'ent'),
+          R('洗面','',6.6,4.6,2.4,1.5,'wash'), R('トイレ','',6.6,6.1,1.0,1.5,'wc'), R('浴室','',7.6,6.1,1.4,1.5,'bath'),
+          BAL(0,-3.0,9.0,3.0,'専用庭') ],
+  gaps:[ [5.5,7.6,6.3,7.6,-90,'o'], [5.4,6.4,6.4,6.4], [5.4,4.6,6.4,4.6], [4.2,3.5,4.2,4.4,-90],
+         [5.0,3.3,5.9,3.3,-90], [7.6,3.3,8.6,3.3,0,'s'], [1.0,4.6,1.9,4.6,90], [5.2,5.0,5.2,5.9,-90],
+         [6.6,5.0,6.6,5.8,90], [8.0,6.1,8.7,6.1,90], [6.6,6.6,6.6,7.3,90],
+         [4.8,0,6.8,0,0,'w'] ],
+  windows:[[0.4,.06,3.8,.06],[0.4,-.06,3.8,-.06],[0.3,7.54,2.5,7.54],[3.0,7.54,5.0,7.54]],
+  entry:[5.9,7.0], resident:'洋室A',
+  exits:[EX(4.5,-3.6,'庭の門','garden')],
+  why:'庭に面しているのは寝室の洋室Aだけ。掃き出し窓から庭へ出て、門を開ければ外。悪くない。ただ玄関から寝室の扉まで5mしかなくて、余裕は5秒。' },
+
+{ q:3, id:'3c', name:'井草 1階 角 テラス付き', addr:'杉並区 / 1階 角部屋', kind:'3LDK', area:'77.09', dir:'南東向き 専用庭+テラス',
+  age:'築22年', views:'—', price:'0.98', W:9.8, D:8.4, mech:'exit', safe:true,
+  src:'ハイセレサ井草の森デュオガーデン 1階角(cowcamo)',
+  shape:'LDKからは庭へ、寝室からはテラスへ。出口が2つ',
+  rooms:[ R('LDK','17.6帖',0,0,5.5,5.2,'ldk'), R('洋室A','7.1帖',5.5,0,4.3,2.2,'bed'), R('','',7.5,2.2,2.3,1.7,'bed'),
+          R('WIC','',5.5,2.2,2.0,1.7,'wc'), R('廊下','',5.5,3.9,4.3,1.3,'hall'), R('','',5.0,5.2,1.6,3.2,'hall'),
+          R('洋室C','5帖',0,5.2,2.6,3.2,'bed'), R('洋室B','4.8帖',2.6,5.2,2.4,3.2,'bed'),
+          R('洗面','',6.6,5.2,1.6,1.8,'wash'), R('浴室','',8.2,5.2,1.6,1.8,'bath'),
+          R('玄関','',6.6,7.0,1.6,1.4,'ent'), R('トイレ','',8.2,7.0,1.6,1.4,'wc'),
+          BAL(0,-2.4,5.5,2.4,'専用庭'), BAL(5.5,-2.4,4.3,2.4,'テラス') ],
+  gaps:[ [6.9,8.4,7.8,8.4,-90,'o'], [6.6,7.2,6.6,8.2], [5.6,5.2,6.5,5.2], [5.5,4.1,5.5,5.0,-90],
+         [7.7,2.2,9.6,2.2], [8.2,3.9,9.1,3.9,-90], [7.5,2.5,7.5,3.5,0,'s'], [5.0,5.8,5.0,6.7,-90],
+         [0.8,5.2,1.7,5.2,90], [6.6,5.6,6.6,6.5,90], [8.2,5.6,8.2,6.4,90], [8.2,7.3,8.2,8.1,90],
+         [0.8,0,4.6,0,0,'w'], [6.0,0,9.2,0,0,'w'] ],
+  windows:[[0.3,8.34,2.4,8.34],[2.9,8.34,4.8,8.34]],
+  entry:[7.4,7.7], resident:'洋室A',
+  exits:[EX(2.6,-3.0,'庭の門','garden'), EX(10.4,-1.2,'テラスの門','garden')],
+  why:'庭とテラス、門が2つ。寝室のテラス側の窓から出れば、侵入者が来た側と反対の門へ走れる。玄関から寝床まで10m。角部屋の1階は、逃げ道が2方向にある。' },
+
+/* ══ 第4問: 3LDK 73㎡。廊下の型 = 玄関から寝室までの距離と扉 ══ */
+{ q:4, id:'4a', name:'6mスパン 縦長リビング', addr:'田の字型 標準 / 8階', kind:'3LDK', area:'73.2', dir:'南向き',
+  age:'築12年', views:'—', price:'0.88', W:6.1, D:12.0, mech:'both', safe:true,
+  src:'6mスパン 田の字型 縦長リビング 73.2㎡(takenote)',
+  shape:'一直線の廊下。玄関から寝室まで12m',
+  rooms:[ R('LD','12.6畳',0,0,3.5,5.8,'ldk'), R('洋室A','6畳',3.5,0,2.6,3.8,'bed'), R('キッチン','',3.5,3.8,2.6,2.0,'ldk'),
+          R('廊下','',2.3,5.8,1.4,4.8,'hall'), R('玄関','',2.3,10.6,1.4,1.4,'ent'),
+          R('浴室','',0,5.8,2.3,1.6,'bath'), R('洗面','',0,7.4,2.3,1.4,'wash'), R('洋室B','4.5畳',0,8.8,2.3,3.2,'bed'),
+          R('納戸','',3.7,5.8,2.4,1.6,'wc'), R('トイレ','',3.7,7.4,1.1,1.2,'wc'), R('収納','',4.8,7.4,1.3,1.2,'wc'),
+          R('洋室C','5畳',3.7,8.6,2.4,3.4,'bed'),
+          BAL(0,-1.4,6.1,1.4) ],
+  gaps:[ [2.6,12.0,3.4,12.0,-90,'o'], [2.5,10.6,3.5,10.6], [2.5,5.8,3.5,5.8,-90], [3.5,0.8,3.5,3.0,0,'s'],
+         [3.5,4.2,3.5,5.4], [2.3,9.2,2.3,10.1,-90], [3.7,9.2,3.7,10.1,90], [2.3,7.7,2.3,8.5,-90],
+         [0.6,7.4,1.4,7.4,90], [3.7,7.7,3.7,8.4,90], [3.7,6.2,3.7,7.0,90], [4.8,7.7,4.8,8.4,0,'s'],
+         [0.5,0,3.0,0,0,'w'], [3.9,0,5.7,0,0,'w'] ],
+  windows:[[0.3,11.94,2.0,11.94],[4.0,11.94,5.8,11.94]],
+  entry:[3.0,11.3], resident:'洋室A',
+  exits:[EX(-0.5,-0.7,'隔て板','partition'), EX(6.6,-0.7,'隔て板','partition')],
+  why:'一直線の廊下は玄関から丸見えに思える。でも寝室まで12m。侵入者が奥の扉に手を掛ける頃、あなたはもう寝室の窓からバルコニーに出ている。距離は、鍵より強い。' },
+
+{ q:4, id:'4b', name:'8mスパン 横長リビング', addr:'ワイドスパン型 / 9階 角部屋', kind:'3LDK', area:'73.6', dir:'南西 角部屋',
+  age:'築9年', views:'—', price:'0.96', W:8.0, D:9.6, mech:'both', safe:false,
+  src:'ワイドスパン 横長リビング 73.6㎡ 8m×9.6m(takenote)',
+  shape:'廊下が短い。寝室は玄関のすぐ脇',
+  rooms:[ R('洋室B','5畳',0,0,2.6,3.3,'bed'), R('LDK','14.9畳',2.6,0,5.4,4.5,'ldk'),
+          R('洋室A','6畳',0,3.3,2.6,3.8,'bed'), R('WIC','',0,7.1,2.6,2.5,'wc'),
+          R('廊下','',2.6,4.5,1.6,3.7,'hall'), R('玄関','',2.6,8.2,1.6,1.4,'ent'),
+          R('洋室C','4.5畳',4.2,4.5,3.8,2.0,'bed'),
+          R('洗面','',4.2,6.5,1.6,1.5,'wash'), R('浴室','',5.8,6.5,2.2,1.5,'bath'),
+          R('トイレ','',4.2,8.0,1.0,1.6,'wc'), R('納戸','',5.2,8.0,2.8,1.6,'wc'),
+          BAL(0,-1.4,8.0,1.4), BAL(-1.4,0,1.4,7.1) ],
+  gaps:[ [2.9,9.6,3.8,9.6,-90,'o'], [2.8,8.2,4.0,8.2], [3.0,4.5,3.9,4.5,-90], [2.6,5.0,2.6,5.9,-90],
+         [2.6,0.6,2.6,2.8,0,'s'], [4.2,4.9,4.2,5.8,90], [4.2,6.8,4.2,7.6,90], [5.8,6.8,5.8,7.6,90],
+         [4.2,8.4,4.2,9.2,90], [5.2,8.4,5.2,9.2,0,'s'], [0.6,7.1,2.0,7.1,0,'s'],
+         [0.4,0,2.2,0,0,'w'], [3.2,0,7.6,0,0,'w'], [0,3.8,0,6.6,0,'w'] ],
+  windows:[],
+  entry:[3.4,8.9], resident:'洋室A',
+  exits:[EX(8.5,-0.7,'隔て板','partition'), EX(-0.7,7.6,'隔て板','partition')],
+  why:'廊下が短くて、主寝室の扉は玄関から5m。角部屋で出口は2つあるけど、隔て板を蹴破る4.5秒の間に追いつかれる。近い寝室は、出口が多くても救えない。' },
+
+{ q:4, id:'4c', name:'角部屋 センターイン', addr:'ienakanote 3LDK / 6階 角部屋', kind:'3LDK', area:'74.84', dir:'南東 角部屋',
+  age:'築7年', views:'—', price:'1.05', W:11.0, D:7.2, mech:'both', safe:false,
+  src:'角部屋×センターイン 3LDK 74.84㎡(ienakanote)',
+  shape:'主寝室は玄関の隣。鍵は掛かるが、出口がそこにない',
+  rooms:[ R('LDK','17.4帖',0,0,4.4,4.8,'ldk'), R('','',4.4,3.4,6.6,1.4,'ldk'),
+          R('和室','6帖',4.4,0,3.0,3.4,'bed'), R('洋室','5帖',7.4,0,2.5,3.4,'bed'), R('WIC','',9.9,0,1.1,3.4,'wc'),
+          R('主寝室','6帖',0,4.8,4.1,2.4,'bed'), R('廊下','',4.1,4.8,1.6,2.4,'hall'),
+          R('玄関','',5.7,5.8,1.6,1.4,'ent'), R('','',5.7,4.8,3.2,1.0,'hall'),
+          R('洗面','',7.3,5.8,1.6,1.4,'wash'), R('浴室','',8.9,5.8,2.1,1.4,'bath'),
+          R('トイレ','',8.9,4.8,1.0,1.0,'wc'), R('収納','',9.9,4.8,1.1,1.0,'wc'),
+          BAL(0,-1.2,7.4,1.2,'ルーフバルコニー') ],
+  gaps:[ [6.0,7.2,6.9,7.2,-90,'o'], [5.7,6.0,5.7,7.0], [6.0,5.8,7.1,5.8], [5.7,5.0,5.7,5.6],
+         [4.6,4.8,5.5,4.8,-90], [4.4,3.6,4.4,4.6], [4.1,5.4,4.1,6.3,-90,'l'], [4.4,0.6,4.4,2.8,0,'s'], [8.0,3.4,9.0,3.4,90],
+         [9.9,0.5,9.9,1.5,90], [7.6,5.8,8.5,5.8,-90], [8.9,6.1,8.9,6.9,90], [8.9,5.0,8.9,5.6,90],
+         [10.0,4.8,10.9,4.8,0,'s'], [0.6,0,3.8,0,0,'w'], [4.8,0,7.0,0,0,'w'] ],
+  windows:[[0.3,7.14,3.8,7.14],[10.94,0.4,10.94,3.0],[11.06,0.4,11.06,3.0]],
+  entry:[6.5,6.5], resident:'主寝室',
+  exits:[EX(-0.5,-0.6,'隔て板','partition')],
+  why:'主寝室は玄関の隣。鍵を掛けて3秒稼ぐ。でもその部屋に、窓以外の出口がない。3秒後、扉が壊れる。鍵は時間を稼ぐ道具で、逃げ道ではない。' },
+
+/* ══ 第5問: 3LDK 72〜78㎡。全部が効く ══ */
+{ q:5, id:'5a', name:'1階 センターイン 庭付き', addr:'ienakanote 3LDK / 1階', kind:'3LDK', area:'77.82', dir:'南西・北東 2面',
+  age:'築5年', views:'—', price:'1.12', W:11.0, D:7.4, mech:'all', safe:false,
+  src:'1階専用庭+2面バルコニー センターイン 3LDK 77.82㎡(ienakanote)',
+  shape:'主寝室は奥。鍵付きで、自分のバルコニーから庭へ',
+  rooms:[ R('LDK','17.3帖',0,0,5.8,4.8,'ldk'), R('和室','6帖',5.8,0,3.0,3.3,'bed'),
+          R('主寝室','5.6帖',8.8,0,2.2,4.8,'bed'), R('WIC','',9.7,4.8,1.3,2.6,'wc'),
+          R('廊下','',5.8,3.3,3.0,1.5,'hall'), R('洋室','4.9帖',0,4.8,3.1,2.6,'bed'),
+          R('','',3.1,4.8,1.6,2.6,'hall'), R('','',4.7,4.8,2.0,1.2,'hall'), R('玄関','',4.7,6.0,2.0,1.4,'ent'),
+          R('トイレ','',6.7,4.8,0.8,1.2,'wc'), R('収納','',7.5,4.8,2.2,1.2,'wc'),
+          R('洗面','',6.7,6.0,1.4,1.4,'wash'), R('浴室','',8.1,6.0,1.6,1.4,'bath'),
+          BAL(0,-1.4,8.8,1.4), BAL(0,-3.4,6.2,2.0,'専用庭'), BAL(11.0,0,1.2,4.8) ],
+  gaps:[ [5.1,7.4,6.0,7.4,-90,'o'], [4.9,6.0,6.5,6.0], [4.7,6.2,4.7,7.2], [4.7,5.0,4.7,5.8], [5.9,4.8,6.6,4.8],
+         [3.4,4.8,4.4,4.8,-90], [3.1,5.3,3.1,6.2,-90], [5.8,0.5,5.8,2.9,0,'s'], [5.8,3.6,5.8,4.5,90],
+         [8.8,3.6,8.8,4.5,90,'l'], [9.9,4.8,10.8,4.8,0,'s'], [6.7,5.0,6.7,5.7,90], [7.8,4.8,8.6,4.8,0,'s'],
+         [6.7,6.3,6.7,7.1,90], [8.1,6.3,8.1,7.1,90],
+         [0.6,0,4.6,0,0,'w'], [6.2,0,8.4,0,0,'w'], [11.0,0.6,11.0,2.6,0,'w'] ],
+  windows:[],
+  entry:[5.7,6.7], resident:'主寝室',
+  exits:[EX(3.0,-4.0,'庭の門','garden'), EX(12.6,2.4,'脇の門','garden')],
+  why:'主寝室の鍵で3秒稼いで、自分のバルコニーから脇の門へ。1階だから門を開けるだけで外。ただ玄関から寝室の扉まで7m、余裕は5秒。惜しい。' },
+
+{ q:5, id:'5b', name:'東京ベイ タワー 3-75L', addr:'内廊下 / 20階 中住戸', kind:'3LDK+N', area:'72.76', dir:'西向き',
+  age:'新築', views:'—', price:'1.38', W:8.6, D:10.4, mech:'all', safe:true,
+  src:'シティタワーズ東京ベイ 3-75Lタイプ(athome)',
+  shape:'折れた廊下。玄関からリビングが見えない',
+  rooms:[ R('LDK','15帖',0,0,4.9,5.0,'ldk'), R('洋室1','6帖',4.9,0,3.7,2.7,'bed'), R('洋室2','5帖',4.9,2.7,3.7,2.2,'bed'),
+          R('洋室3','5帖',0,5.0,2.6,3.2,'bed'), R('納戸','',0,8.2,2.6,2.2,'wc'),
+          R('廊下','',2.6,5.0,1.4,2.6,'hall'), R('','',2.6,7.6,5.0,1.4,'hall'), R('玄関','',6.0,9.0,1.6,1.4,'ent'),
+          R('収納','',2.6,9.0,3.4,1.4,'wc'), R('洗面','',4.0,5.0,1.6,2.6,'wash'), R('浴室','',5.6,5.0,1.6,2.6,'bath'),
+          R('WIC','',7.2,4.9,1.4,2.7,'wc'), R('トイレ','',7.6,7.6,1.0,1.4,'wc'), R('SIC','',7.6,9.0,1.0,1.4,'wc'),
+          BAL(0,-1.6,8.6,1.6) ],
+  gaps:[ [6.3,10.4,7.2,10.4,-90,'o'], [6.2,9.0,7.4,9.0], [2.8,7.6,3.8,7.6], [2.9,5.0,3.8,5.0,-90],
+         [4.9,0.4,4.9,1.6,90], [4.9,3.0,4.9,4.4,0,'s'], [2.6,5.4,2.6,6.3,-90], [2.6,8.3,2.6,8.9,-90],
+         [4.0,5.4,4.0,6.3,90], [5.6,5.5,5.6,6.4,90], [7.6,7.9,7.6,8.7,90], [7.6,9.3,7.6,10.1,90],
+         [7.6,4.9,8.4,4.9,0,'s'], [3.4,9.0,5.4,9.0,0,'s'],
+         [0.6,0,4.4,0,0,'w'], [5.3,0,8.2,0,0,'w'] ],
+  windows:[],
+  entry:[6.8,9.7], resident:'洋室1',
+  exits:[EX(-0.5,-0.8,'隔て板','partition'), EX(8.0,-2.0,'避難ハッチ','hatch')],
+  why:'折れた廊下で玄関からリビングが見えない。寝床まで15m、扉2枚。侵入者がリビングに着く前に、避難ハッチで下の階へ降りられる。差は6秒。全部が効いた家。' },
+
+{ q:5, id:'5c', name:'勝どき タワー 37階', addr:'内廊下 / 37階', kind:'3LDK+WIC', area:'72.49', dir:'南東向き',
+  age:'築8年', views:'—', price:'1.52', W:10.4, D:7.0, mech:'all', safe:false,
+  src:'パークタワー勝どき サウス 37階 3LDK(homes.co.jp)',
+  shape:'ワイドスパン。廊下が短く、寝室が近い',
+  rooms:[ R('洋室2','5帖',0,0,2.6,3.2,'bed'), R('LDK','15帖',2.6,0,5.2,4.6,'ldk'), R('洋室1','6帖',7.8,0,2.6,3.8,'bed'),
+          R('WIC','',7.8,3.8,2.6,0.8,'wc'), R('洋室3','5帖',0,3.2,2.6,3.2,'bed'), R('収納','',0,6.4,2.6,0.6,'wc'),
+          R('廊下','',2.6,4.6,5.2,1.0,'hall'), R('トイレ','',2.6,5.6,1.0,1.4,'wc'), R('納戸','',3.6,5.6,1.0,1.4,'wc'),
+          R('玄関','',4.6,5.6,1.6,1.4,'ent'), R('洗面','',6.2,5.6,1.6,1.4,'wash'), R('浴室','',7.8,4.6,2.6,2.4,'bath'),
+          BAL(0,-1.5,10.4,1.5) ],
+  gaps:[ [4.9,7.0,5.8,7.0,-90,'o'], [4.8,5.6,6.0,5.6], [3.6,4.6,4.6,4.6,-90], [2.6,4.8,2.6,5.5,-90],
+         [2.6,0.5,2.6,2.7,0,'s'], [7.8,0.5,7.8,1.4,90], [8.2,3.8,10.0,3.8,0,'so'], [0.6,6.4,2.0,6.4,0,'so'],
+         [2.8,5.6,3.4,5.6,-90], [3.8,5.6,4.4,5.6,0,'s'], [6.5,5.6,7.4,5.6,-90], [7.8,5.9,7.8,6.7,90],
+         [0.4,0,2.2,0,0,'w'], [3.0,0,7.4,0,0,'w'], [8.2,0,10.0,0,0,'w'] ],
+  windows:[],
+  entry:[5.4,6.3], resident:'洋室1',
+  exits:[EX(-0.5,-0.75,'隔て板','partition'), EX(10.9,-0.75,'隔て板','partition')],
+  why:'ワイドスパンで寝床まで12m。でも廊下からLDKの扉を1枚開けると、寝室の扉まで一直線。隔て板を蹴破る4.5秒がぎりぎりで、余裕は4秒。' },
+];
+
+const PLANS = DEFS.map(makePlan);
+/* @@PURE-END defs */
+/* いま表示している間取り */
+let PLAN = PLANS[0];
+/* 間取りごとに変わる寸法。P() がこれを参照するので let で持つ */
+let W = PLAN.W, D = PLAN.D, CX = W / 2, CY = D / 2 - .4;
+const WALL_H = 2.55, WALL_T = 0.16;
+
+/* ── 描画基盤 ── */
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setClearColor(0xf1eee6, 1);   // 昼: 空は紙の色
+/* 倍率の上限だけでは大きな窓で効かないので、総画素数にも上限を設ける */
+const pixRatio = () => {
+  let pr = Math.min(devicePixelRatio || 1, 1.5);
+  const px = innerWidth * innerHeight * pr * pr;
+  return px > 5.2e6 ? pr * Math.sqrt(5.2e6 / px) : pr;
+};
+renderer.setPixelRatio(pixRatio());
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;   // r185でPCFSoftは廃止(警告が出て実際は効かない)
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0xf1eee6, .0030);   // 昼: 紙の色へ溶ける
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, .1, 1400);
+const root = new THREE.Group();
+scene.add(root);
+const P = (x, y, h = 0) => new THREE.Vector3(x - CX, h, -(y - CY));
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+scene.environmentIntensity = .20;
+
+const moon = new THREE.DirectionalLight(0xfff4e2, 2.1);   // 昼の太陽(名前は据え置き)
+moon.position.set(-16, 22, 14);
+moon.castShadow = true;
+moon.shadow.mapSize.set(3072, 3072);
+moon.shadow.camera.left = -12; moon.shadow.camera.right = 12;
+moon.shadow.camera.top = 12; moon.shadow.camera.bottom = -12;
+moon.shadow.camera.near = 4; moon.shadow.camera.far = 70;
+moon.shadow.bias = -.0002; moon.shadow.normalBias = .07;   // 壁の上面に出ていた黒い欠けを潰す
+scene.add(moon);
+scene.add(new THREE.AmbientLight(0xe4e6dc, .55));
+
+/* ── 眼下の夜の街 ──
+   窓明かりを描いたテクスチャを貼った箱を1500棟。霧で地平へ溶かす。 */
+const FLOOR_Y = -150;                                  // 眼下。冒頭の引きの画でだけ見せる                                  // 眼下。深く取らないと「見下ろしている」感じが出ない
+function windowTex(seed) {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#d9d6cb'; g.fillRect(0, 0, 128, 256);
+  const cols = 16, rows = 64;
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    if (Math.random() > .38) continue;
+    const warm = Math.random();
+    g.fillStyle = warm > .82 ? '#dcecff' : warm > .38 ? '#ffdcaa' : '#ffc275';
+    g.globalAlpha = .4 + Math.random() * .6;
+    g.fillRect(x * 8 + 2.4, y * 4 + 1.2, 3.4, 1.9);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+/* 窓の柄を3種類に分けて建てる。1種類だと全棟が同じ模様になって繰り返しが見えてしまう */
+const cityMeshes = [];
+for (let g = 0; g < 3; g++) {
+  const N = 950;
+  const im = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({
+      color: 0xe0ddd2, roughness: .9, metalness: .02,
+      emissive: 0xffffff, emissiveMap: windowTex(g), emissiveIntensity: .06,
+      transparent: true, opacity: 0,
+    }), N);
+  const m = new THREE.Object3D();
+  const col = new THREE.Color();
+  for (let k = 0; k < N; k++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 55 + Math.pow(Math.random(), .55) * 520;
+    const near = 1 - Math.min(1, r / 520);
+    const h = (14 + Math.random() * 52) * (.5 + near * .9);
+    m.position.set(Math.cos(a) * r, FLOOR_Y + h / 2, Math.sin(a) * r);
+    m.scale.set(7 + Math.random() * 15, h, 7 + Math.random() * 15);
+    m.rotation.y = Math.random() * .7;
+    m.updateMatrix();
+    im.setMatrixAt(k, m.matrix);
+    const v = .72 + Math.random() * .5;
+    im.setColorAt(k, col.setRGB(v * .95, v * .96, v));
+  }
+  im.instanceMatrix.needsUpdate = true;
+  im.visible = false;
+  if (im.instanceColor) im.instanceColor.needsUpdate = true;
+  scene.add(im);
+  cityMeshes.push(im);
+}
+/* 模型の足元に敷く淡い光。街を消したクイズ中に、模型が真っ黒な空間に
+   ぽつんと浮いて寂しくならないようにする */
+const halo = new THREE.Mesh(
+  new THREE.PlaneGeometry(46, 46),
+  new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+    uniforms: { uOp: { value: 0 } },
+    vertexShader: `varying vec2 vU; void main(){ vU = uv - .5;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying vec2 vU; uniform float uOp;
+      void main(){
+        float d = length(vU) * 2.;
+        float f = pow(max(0., 1. - d), 2.4);
+        gl_FragColor = vec4(vec3(.72, .76, .62) * f, f * .35 * uOp);
+      }`,
+  })
+);
+halo.rotation.x = -Math.PI / 2;
+halo.position.y = -1.2;
+halo.renderOrder = -5;
+scene.add(halo);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(1600, 1600),
+  new THREE.MeshBasicMaterial({ color: 0xdcd8cc, transparent: true, opacity: 0 })
+);
+ground.rotation.x = -Math.PI / 2; ground.position.y = FLOOR_Y; ground.visible = false;
+scene.add(ground);
+
+/* ── 方眼紙(製図の段階だけ) ── */
+const grid = new THREE.Mesh(
+  new THREE.PlaneGeometry(90, 90),
+  new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { uOp: { value: 0 }, uSrc: { value: new THREE.Vector2() } },
+    vertexShader: `varying vec2 vP;
+      void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying vec2 vP; uniform float uOp;
+      float line(vec2 p, float s){
+        vec2 g = abs(fract(p/s - .5) - .5) / fwidth(p/s);
+        return 1. - min(min(g.x, g.y), 1.);
+      }
+      void main(){
+        float f = line(vP, .5) * .42 + line(vP, 2.5) * .75;
+        float d = 1. - smoothstep(8., 24., length(vP));
+        gl_FragColor = vec4(vec3(.50, .55, .42), f * d * uOp);
+        #include <colorspace_fragment>
+      }`,
+  })
+);
+grid.rotation.x = -Math.PI / 2; grid.position.y = -.004;
+root.add(grid);
+
+/* ── ① 引かれていく線 ──
+   WebGLは線の太さを指定できないので、線分ごとに細長い板を作る。
+   各頂点に「図面の何メートル目か」を持たせ、uReveal を伸ばすと
+   そこまでが現れる。1本の uniform だけで製図の進行を表せる。 */
+function buildLines(list, color, half) {
+  const pos = [], dist = [], idx = [];
+  let acc = 0, v = 0;
+  for (const [x1, y1, x2, y2] of list) {
+    const a = P(x1, y1), b = P(x2, y2);
+    const len = a.distanceTo(b);
+    const dx = (b.x - a.x) / len, dz = (b.z - a.z) / len;
+    const px = -dz * half, pz = dx * half;
+    const ex = dx * half, ez = dz * half;             // 端を少し伸ばして角を繋ぐ
+    pos.push(a.x - ex + px, 0, a.z - ez + pz,  a.x - ex - px, 0, a.z - ez - pz,
+             b.x + ex + px, 0, b.z + ez + pz,  b.x + ex - px, 0, b.z + ez - pz);
+    dist.push(acc, acc, acc + len, acc + len);
+    idx.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+    v += 4; acc += len;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aDist', new THREE.Float32BufferAttribute(dist, 1));
+  g.setIndex(idx);
+  const m = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    blending: THREE.NormalBlending, fog: false,
+    uniforms: { uReveal: { value: 0 }, uCol: { value: new THREE.Color(color) }, uOp: { value: 1 } },
+    vertexShader: `attribute float aDist; varying float vD;
+      void main(){ vD = aDist; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying float vD; uniform float uReveal; uniform vec3 uCol; uniform float uOp;
+      void main(){
+        if (vD > uReveal) discard;
+        float tip = 1. - smoothstep(0., 1.4, uReveal - vD);   // 先端が少し明るい
+        gl_FragColor = vec4(mix(uCol, vec3(1.), tip * .5), uOp);
+      }`,
+  });
+  const mesh = new THREE.Mesh(g, m);
+  mesh.position.y = .012;
+  mesh.userData.total = acc;
+  root.add(mesh);
+  return mesh;
+}
+
+/* ── 物件を差し替えても作り直さないもの(材質・テクスチャ・共有ジオメトリ) ── */
+/* ── ② 壁・床・家具 ── */
+const matWall = new THREE.MeshStandardMaterial({ color: 0xf1eee6, roughness: .86, metalness: .01 });
+const BASE_H = .085;   // 巾木の高さ
+const matBase = new THREE.MeshStandardMaterial({ color: 0xf8f6f0, roughness: .5, metalness: .02 });
+/* 壁の上端。真上から見ると壁が白い箱の集合になって図面として読めないので、
+   上面だけ暗くして輪郭を立たせる */
+const CAP_H = .035;
+const matCap = new THREE.MeshStandardMaterial({ color: 0x8d9280, roughness: .75, metalness: .04 });
+/* 床は単色だと模型に見える。板と目地をその場で描いて本物の床にする。
+   1枚のテクスチャを作って、部屋ごとに繰り返し回数だけ変える(板幅を揃えるため) */
+function woodTex(px = 1024, span = 2.4) {   // span = このテクスチャが覆う実寸(m)
+  const c = document.createElement('canvas'); c.width = c.height = px;
+  const g = c.getContext('2d');
+  const PLANK = 0.19;                        // 板1枚の幅(m)
+  const rows = Math.round(span / PLANK);
+  const h = px / rows;
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  g.fillStyle = '#8a6a4a'; g.fillRect(0, 0, px, px);
+  for (let i = 0; i < rows; i++) {
+    const y = i * h;
+    // 板ごとに色みを少しずらす。これが無いと「1枚の板」に見えてしまう
+    const t = rnd(), L = 0.86 + t * 0.28;
+    g.fillStyle = `rgb(${Math.round(138*L)},${Math.round(106*L*0.98)},${Math.round(74*L*0.95)})`;
+    g.fillRect(0, y, px, h);
+    // 木目
+    g.strokeStyle = 'rgba(60,38,22,.13)'; g.lineWidth = 1;
+    for (let k = 0; k < 7; k++) {
+      const yy = y + h * (0.12 + rnd() * 0.76);
+      g.beginPath(); g.moveTo(0, yy);
+      for (let x = 0; x <= px; x += 48) g.lineTo(x, yy + Math.sin(x * .012 + k) * h * .05);
+      g.stroke();
+    }
+    // 板の継ぎ目(横)
+    const cut = Math.round(px * (0.2 + rnd() * 0.6));
+    g.strokeStyle = 'rgba(48,30,18,.42)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cut, y); g.lineTo(cut, y + h); g.stroke();
+    // 目地(縦方向の板間)
+    g.strokeStyle = 'rgba(44,28,16,.5)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(px, y); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+function tileTex(px = 512, span = 1.8) {     // 水回り: 大判タイル
+  const c = document.createElement('canvas'); c.width = c.height = px;
+  const g = c.getContext('2d');
+  const n = 3, s = px / n;
+  let seed = 19;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const L = 0.94 + rnd() * 0.1;
+    g.fillStyle = `rgb(${Math.round(185*L)},${Math.round(194*L)},${Math.round(214*L)})`;
+    g.fillRect(i * s, j * s, s, s);
+  }
+  g.strokeStyle = 'rgba(120,128,150,.55)'; g.lineWidth = 2;
+  for (let i = 0; i <= n; i++) {
+    g.beginPath(); g.moveTo(i * s, 0); g.lineTo(i * s, px); g.stroke();
+    g.beginPath(); g.moveTo(0, i * s); g.lineTo(px, i * s); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+const WOOD_SPAN = 2.4, TILE_SPAN = 1.8;
+const woodBase = woodTex(1024, WOOD_SPAN), tileBase = tileTex(512, TILE_SPAN);
+
+// 角の丸い箱(家具は角が丸いだけで一気に本物らしくなる)
+function roundBox(w, d, h, r) {
+  r = Math.min(r, w / 2 - .01, d / 2 - .01);
+  const sh = new THREE.Shape();
+  sh.moveTo(-w / 2 + r, -d / 2);
+  sh.lineTo(w / 2 - r, -d / 2); sh.quadraticCurveTo(w / 2, -d / 2, w / 2, -d / 2 + r);
+  sh.lineTo(w / 2, d / 2 - r);  sh.quadraticCurveTo(w / 2, d / 2, w / 2 - r, d / 2);
+  sh.lineTo(-w / 2 + r, d / 2); sh.quadraticCurveTo(-w / 2, d / 2, -w / 2, d / 2 - r);
+  sh.lineTo(-w / 2, -d / 2 + r); sh.quadraticCurveTo(-w / 2, -d / 2, -w / 2 + r, -d / 2);
+  const bev = Math.min(.03, h / 3);
+  const g = new THREE.ExtrudeGeometry(sh, { depth: Math.max(.01, h - bev * 2),
+    bevelEnabled: true, bevelSize: bev, bevelThickness: bev, bevelSegments: 2, curveSegments: 6 });
+  g.rotateX(-Math.PI / 2);
+  // 回転後のyは [-bev, h-bev]。bevだけ持ち上げれば足元が0になる。
+  // ここを h-bev にしていたため、家具が全部 h ぶん浮いていた。
+  g.translate(0, bev, 0);
+  return g;
+}
+const sphGeo = new THREE.SphereGeometry(.5, 20, 14);
+
+/* ── ② 間取りを組み立てる。物件を差し替えられるよう関数にまとめてある ── */
+let lineWall, lineBal, lineDoor, lineWin, TOTAL_LEN, slab, dimEls;
+let walls = [], floors = [], furn = [], lamps = [], labels = [], doorMeshes = [];
+const DOOR_H = 2.0;
+const matDoor = new THREE.MeshStandardMaterial({ color: 0x9a7b58, roughness: .62, metalness: .02 });
+const matFusuma = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: .85, metalness: 0 });
+const matFrame = new THREE.MeshStandardMaterial({ color: 0xece8f2, roughness: .5, metalness: .02 });
+const matSash = new THREE.MeshStandardMaterial({ color: 0x8f96ad, roughness: .35, metalness: .6 });
+const matKnob = new THREE.MeshStandardMaterial({ color: 0xd9c27a, roughness: .3, metalness: .8 });
+const matGlass = new THREE.MeshPhysicalMaterial({ color: 0xbcd8f2, roughness: .05, metalness: 0, transparent: true, opacity: .20, side: THREE.DoubleSide, depthWrite: false });
+const matHedge = new THREE.MeshStandardMaterial({ color: 0x3f6b3c, roughness: .95, metalness: 0 });
+
+/* 前の物件を捨てる。ジオメトリとラベルのDOMを必ず解放する */
+function clearPlan() {
+  for (const o of [lineWall, lineBal, lineDoor, lineWin, slab]) {
+    if (!o) continue;
+    root.remove(o); o.geometry.dispose();
+    if (o.material.dispose) o.material.dispose();
+  }
+  for (const w of walls) { root.remove(w.m); if (w.m.geometry) w.m.geometry.dispose(); else w.m.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  doorMeshes = [];
+  // 床のテクスチャは複製だが source を共有しているので、
+  // 複製を dispose すると元(woodBase/tileBase)までGPUから消えて床が真っ白になる
+  for (const f of floors) { root.remove(f); f.geometry.dispose(); f.material.dispose(); }
+  for (const m of furn)   { root.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  for (const o of lamps)  root.remove(o.l);
+  for (const l of labels) l.el.remove();
+  walls = []; floors = []; furn = []; lamps = []; labels = [];
+  lineWall = lineBal = lineDoor = lineWin = slab = null;
+}
+
+function buildPlan(plan) {
+  clearPlan();
+  PLAN = plan;
+  W = plan.W; D = plan.D; CX = W / 2; CY = D / 2 - .4;
+  lineWall = buildLines(PLAN.WALLS, 0x7f8a6b, .055);
+  lineBal  = buildLines(PLAN.BALCONY, 0xa9b394, .035);
+  lineDoor = buildLines(doorLines(PLAN.DOORS), 0x8a9479, .028);
+  lineWin  = buildLines(PLAN.WINDOWS, 0x9db3bf, .026);
+  TOTAL_LEN = lineWall.userData.total;
+
+  {
+  let acc = 0, wi = 0;
+  for (const [x1, y1, x2, y2] of PLAN.WALLS) {
+    const a = P(x1, y1), b = P(x2, y2);
+    const len = a.distanceTo(b);
+    // 角で箱が重なると上面が同一平面になってZファイティングが出る(黒い三角の欠け)。
+    // 壁ごとに高さをごくわずかにずらして平面を分ける。
+    const hh = WALL_H + (wi++ % 9) * .0022;
+    const g = new THREE.BoxGeometry(len + WALL_T, hh, WALL_T);
+    g.translate(0, hh / 2, 0);
+    const m = new THREE.Mesh(g, matWall);
+    m.position.copy(a.clone().add(b).multiplyScalar(.5));
+    m.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+    m.castShadow = m.receiveShadow = true;
+    m.scale.y = .0001; m.visible = false;
+    walls.push({ m, at: acc / TOTAL_LEN });
+    root.add(m);
+    // 壁の上端の暗い帯。真上からの見えを図面に近づける
+    const cg = new THREE.BoxGeometry(len + WALL_T + .012, CAP_H, WALL_T + .012);
+    cg.translate(0, -CAP_H / 2 + .005, 0);   // 上面を壁の頭より 5mm 上へ(同じ高さだと z-fighting でちらつく)
+    const cm = new THREE.Mesh(cg, matCap);
+    cm.position.copy(m.position); cm.position.y = WALL_H;   // 壁ごとの微差を持ち込まない
+    cm.rotation.y = m.rotation.y;
+    cm.scale.y = .0001; cm.visible = false;
+    walls.push({ m: cm, at: acc / TOTAL_LEN, cap: WALL_H });
+    root.add(cm);
+    // 巾木。壁と床の境に細い帯が入るだけで、模型が建築に見える
+    const bg = new THREE.BoxGeometry(len + WALL_T + .008, BASE_H, WALL_T + .022);
+    bg.translate(0, BASE_H / 2, 0);
+    const bm = new THREE.Mesh(bg, matBase);
+    bm.position.copy(m.position);
+    bm.rotation.y = m.rotation.y;
+    bm.receiveShadow = true;
+    bm.scale.y = .0001; bm.visible = false;
+    walls.push({ m: bm, at: acc / TOTAL_LEN });
+    root.add(bm);
+    acc += len;
+  }
+  // バルコニーの手すり(ガラス+笠木)。庭・テラスは生け垣
+  for (const [x1, y1, x2, y2, kind] of PLAN.BALCONY) {
+    const a = P(x1, y1), b = P(x2, y2), len = a.distanceTo(b);
+    const mid = a.clone().add(b).multiplyScalar(.5), ry = -Math.atan2(b.z - a.z, b.x - a.x);
+    if (kind === 'g') {
+      const hg = new THREE.BoxGeometry(len + .1, .85, .22); hg.translate(0, .425, 0);
+      const hm = new THREE.Mesh(hg, matHedge); hm.position.copy(mid); hm.rotation.y = ry;
+      hm.castShadow = hm.receiveShadow = true; hm.scale.y = .0001; hm.visible = false;
+      walls.push({ m: hm, at: .96 }); root.add(hm);
+      continue;
+    }
+    const g = new THREE.BoxGeometry(len, 1.05, .05); g.translate(0, .525, 0);
+    const m = new THREE.Mesh(g, matGlass); m.position.copy(mid); m.rotation.y = ry;
+    m.scale.y = .0001; m.visible = false; walls.push({ m, at: .96 }); root.add(m);
+    const cg = new THREE.BoxGeometry(len + .04, .05, .09); cg.translate(0, 1.075, 0);
+    const cap = new THREE.Mesh(cg, matSash); cap.position.copy(mid); cap.rotation.y = ry;
+    cap.castShadow = true; cap.scale.y = .0001; cap.visible = false; walls.push({ m: cap, at: .97 }); root.add(cap);
+  }
+  /* 建具: 開口の上の垂れ壁と、枠・扉の板・引き戸・窓。
+     扉は演出で開閉するので、蝶番の位置に回転軸を置く */
+  doorMeshes = PLAN.DOORS.map(d => {
+    const a0 = d.ang * Math.PI / 180;
+    const mid = P(d.mx, d.my, 0), hinge = P(d.x1, d.y1, 0);
+    const lg = new THREE.BoxGeometry(d.w + .02, WALL_H - DOOR_H, WALL_T);
+    lg.translate(0, DOOR_H + (WALL_H - DOOR_H) / 2, 0);
+    const lm = new THREE.Mesh(lg, matWall);
+    lm.position.copy(mid); lm.rotation.y = a0; lm.castShadow = lm.receiveShadow = true;
+    lm.scale.y = .0001; lm.visible = false; walls.push({ m: lm, at: .5 }); root.add(lm);
+    const cg = new THREE.BoxGeometry(d.w + .02 + .012, CAP_H, WALL_T + .012); cg.translate(0, -CAP_H / 2 + .005, 0);
+    const cm = new THREE.Mesh(cg, matCap); cm.position.copy(mid); cm.position.y = WALL_H; cm.rotation.y = a0;
+    cm.scale.y = .0001; cm.visible = false; walls.push({ m: cm, at: .5, cap: WALL_H }); root.add(cm);
+    if (d.kind === 'open') return null;
+    const fm = d.kind === 'window' ? matSash : matFrame;
+    const frame = new THREE.Group(); frame.position.copy(hinge); frame.rotation.y = a0;
+    for (const x of [.03, d.w - .03]) {
+      const fg = new THREE.BoxGeometry(.06, DOOR_H + .02, WALL_T + .02); fg.translate(0, (DOOR_H + .02) / 2, 0);
+      const fr = new THREE.Mesh(fg, fm); fr.position.x = x; fr.castShadow = true; frame.add(fr);
+    }
+    { const fg = new THREE.BoxGeometry(d.w, .05, WALL_T + .02); fg.translate(0, DOOR_H, 0);
+      const fr = new THREE.Mesh(fg, fm); fr.position.x = d.w / 2; frame.add(fr); }
+    frame.scale.y = .0001; frame.visible = false; walls.push({ m: frame, at: .55 }); root.add(frame);
+    const dm = { kind: d.kind, a0, sw: d.sw * Math.PI / 180, w: d.w, cur: d.open0 ? 1 : 0, target: d.open0 ? 1 : 0,
+                 state: d.open0 ? 'open' : 'closed', frame };
+    if (d.kind === 'hinge') {
+      const piv = new THREE.Group(); piv.position.copy(hinge); piv.rotation.y = a0 + dm.sw * dm.cur;
+      const lw = d.w - .08, lh = DOOR_H - .03;
+      const g2 = new THREE.BoxGeometry(lw, lh, .045); g2.translate(lw / 2 + .04, lh / 2 + .01, 0);
+      const leaf = new THREE.Mesh(g2, matDoor); leaf.castShadow = true; piv.add(leaf);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(.035, 10, 8), matKnob); knob.position.set(d.w - .16, .98, .045); piv.add(knob);
+      piv.scale.y = .0001; piv.visible = false; walls.push({ m: piv, at: .6 }); root.add(piv);
+      dm.piv = piv;
+    } else {
+      const grp = new THREE.Group(); grp.position.copy(hinge); grp.rotation.y = a0;
+      const mat = d.kind === 'window' ? matGlass : matFusuma;
+      const pw = d.w / 2 - .02, ph = DOOR_H - .04, pt = d.kind === 'window' ? .02 : .035;
+      const mk = () => { const g2 = new THREE.BoxGeometry(pw, ph, pt); g2.translate(pw / 2 + .01, ph / 2 + .02, 0);
+        const m2 = new THREE.Mesh(g2, mat); if (d.kind !== 'window') m2.castShadow = true; return m2; };
+      const p1 = mk(), p2 = mk(); p1.position.z = -.028; p2.position.z = .028; p2.position.x = d.w / 2 * (1 - dm.cur);
+      grp.add(p1, p2);
+      grp.scale.y = .0001; grp.visible = false; walls.push({ m: grp, at: .6 }); root.add(grp);
+      dm.grp = grp; dm.p2 = p2;
+    }
+    return dm;
+  });
+}
+
+// フロアのスラブ。これがあると「模型」ではなく「タワーの1フロアを切り出した図」になる
+  const BB = planBounds(PLAN);
+  slab = new THREE.Mesh(
+  new THREE.BoxGeometry(BB.x1 - BB.x0 + .5, .42, BB.y1 - BB.y0 + 1.5),
+  new THREE.MeshStandardMaterial({ color: 0xcfc9bb, roughness: .95, metalness: .02 })
+);
+slab.position.copy(P((BB.x0 + BB.x1) / 2, (BB.y0 + BB.y1) / 2 + .5, -.215));
+slab.receiveShadow = true; slab.visible = false;
+root.add(slab);
+
+  for (const r of PLAN.ROOMS) {
+  let map = null;
+  if (!r.out) {
+    // 部屋ごとに繰り返し回数が違うので複製する(元テクスチャの画像は共有される)
+    map = (r.wood ? woodBase : tileBase).clone();
+    map.needsUpdate = true;
+    const span = r.wood ? WOOD_SPAN : TILE_SPAN;
+    map.repeat.set(r.w / span, r.h / span);
+  }
+  // 外部: バルコニーは暗い床、庭は芝、テラスはデッキ
+  const outCol = !r.out ? 0xffffff : r.n.includes('庭') ? 0x4a7a3f : (r.n.includes('テラス') || r.n.includes('ヤード')) ? 0x8a7b62 : 0x3a3f5c;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), new THREE.MeshStandardMaterial({
+    map,
+    color: outCol,
+    roughness: r.wood ? .62 : (r.out ? .95 : .3), metalness: .02, transparent: true, opacity: 0,
+  }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.copy(P(r.x + r.w / 2, r.y + r.h / 2, .003));
+  m.receiveShadow = true;
+  root.add(m);
+  floors.push(m);
+}
+
+  for (const [x, y, w, d, h, c, r, up = 0, kind] of PLAN.FURN) {
+  let geo, oy = up;
+  if (kind === 'sph') {                       // 葉のような塊は球でないと積み木に見える
+    geo = sphGeo.clone(); geo.scale(w, h, d);
+    oy = up + h / 2;
+  } else geo = roundBox(w, d, h, r);
+  /* 質感も分ける。布はざらつき、木は少し艶、画面はほぼ鏡面 */
+  const rough = kind === 'fab' ? .95 : kind === 'wood' ? .55 : kind === 'tv' ? .22
+              : kind === 'sph' ? .8 : kind === 'wet' ? .35 : .62;
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: c, roughness: rough,
+    metalness: kind === 'wet' ? .12 : kind === 'tv' ? .3 : .04,
+    emissive: kind === 'tv' ? 0x16203a : 0x000000, emissiveIntensity: kind === 'tv' ? 1 : 0 }));
+  m.position.copy(P(x + w / 2, y + d / 2, oy));
+  m.castShadow = m.receiveShadow = true;
+  m.scale.setScalar(.001); m.visible = false;
+  root.add(m);
+  furn.push(m);
+}
+
+/* ── 部屋の灯り ── */
+  lamps = PLAN.LAMPS.map(([x, y, h, c, i]) => {
+  const l = new THREE.PointLight(c, 0, 12, 2.0);
+  l.position.copy(P(x, y, h));
+  root.add(l);
+  return { l, max: i };
+});
+
+/* ── 部屋名・寸法 ── */
+  const mkLabel = (cls, html, v3) => {
+  const el = document.createElement('div');
+  el.className = 'lbl' + (cls ? ' ' + cls : '');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  labels.push({ el, v: v3 });
+};
+  for (const r of PLAN.ROOMS)
+    if (r.n) mkLabel('', `<b>${r.n}</b>${r.s ? `<i>${r.s}</i>` : ''}`, P(r.x + r.w / 2, r.y + r.h / 2, .02));
+  for (const d of PLAN.DIMS) mkLabel('dim', `<b>${d.t}</b>`, P(d.x, d.y, .02));
+  dimEls = labels.slice(-PLAN.DIMS.length);
+
+
+}
+
+buildPlan(PLANS[0]);   // 最初の物件を組み立てる
+
+/* @@PURE-BEGIN sim */
+/* ================================================================
+   侵入の計算(ルール)。判定は手で決めた正解に頼らず、必ずこの計算から出す。
+   ・視界   … 侵入者は正面 ±70° しか見えない。壁と閉まった扉で切られる
+   ・扉     … 閉まっていれば開ける時間がかかる。住人が鍵を掛けた扉は壊すのに3秒
+   ・出口   … 玄関 / 庭の門 / フェンス / 隔て板 / 避難ハッチ。種類ごとに使う時間が違う
+   ・住人   … 玄関から一番遠い居室で寝ている。物音で気づき、侵入者を避けて一番早い出口へ
+   計算した位置をそのまま記録して演出で再生するので、見えているものと結論がずれない。
+   ================================================================ */
+const SIM = {
+  speedIn: 1.5,    // 侵入者 m/s
+  speedOut: 1.9,   // 住人 m/s(家の中を知っているので速い)
+  react: 1.2,      // 玄関の音で住人が起きて動き出すまで
+  look: 2.0,       // 玄関に立って見回す時間
+  roomLook: .8,    // 居室に入って見回す時間
+  fov: 140,        // 侵入者の視野(度)
+  limit: 26,       // これだけ経っても捕まえられなければ諦める
+  hear: 6.0,       // 鍵を掛ける音・窓を開ける音が聞こえる距離
+  seeRoom: 7.0,    // この距離以内で部屋の中が見えたら「調べた」ことにする
+};
+/* 建具ごとの時間。in=侵入者が通る, out=住人が通る, close=住人が閉める, lock=鍵を掛ける, brk=壊す */
+const DOOR = {
+  hinge:  { in: .9, out: .4, close: .3, lock: .6, brk: 3.0, name: '扉' },
+  slide:  { in: .5, out: .3, close: 0,  name: '引き戸' },
+  window: { in: .8, out: .8, close: 0,  name: '窓' },
+  open:   { in: 0,  out: 0,  close: 0,  name: '' },
+};
+/* 出口の種類。sec=使うのにかかる時間、noise=侵入者に聞こえる距離 */
+const EXIT = {
+  door:      { sec: .8,  noise: 0,  verb: '玄関から外へ' },
+  service:   { sec: .8,  noise: 0,  verb: 'サービス玄関から外へ' },
+  garden:    { sec: 1.4, noise: 0,  verb: '庭の門を開ける' },
+  fence:     { sec: 4.0, noise: 4,  verb: 'フェンスを越える' },
+  partition: { sec: 4.5, noise: 30, verb: '隔て板を蹴破る' },
+  hatch:     { sec: 6.0, noise: 9,  verb: '避難ハッチを開けて降りる' },
+};
+/* 人の状態(再生でポーズを変える) */
+const S_WALK = 0, S_LOOK = 1, S_OPEN = 2, S_BREAK = 3, S_LOCK = 4, S_EXIT = 5, S_SLEEP = 6, S_STAND = 7;
+
+/* 光線と線分の交点までの距離 */
+function raySeg(ox, oy, dx, dy, x1, y1, x2, y2) {
+  const ex = x2 - x1, ey = y2 - y1;
+  const den = dx * ey - dy * ex;
+  if (Math.abs(den) < 1e-9) return Infinity;
+  const t = ((x1 - ox) * ey - (y1 - oy) * ex) / den;
+  const u = ((x1 - ox) * dy - (y1 - oy) * dx) / den;
+  return (t > 1e-6 && u >= -1e-6 && u <= 1 + 1e-6) ? t : Infinity;
+}
+/* 2点が壁で遮られずに見えるか */
+function canSee(walls, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return true;
+  const ux = dx / len, uy = dy / len;
+  for (const [x1, y1, x2, y2] of walls) {
+    const t = raySeg(ax, ay, ux, uy, x1, y1, x2, y2);
+    if (t < len - .06) return false;
+  }
+  return true;
+}
+const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
+/* 正面 ±fov/2 の中にあるか */
+function inCone(h, ax, ay, bx, by, fov) {
+  return Math.abs(angDiff(Math.atan2(by - ay, bx - ax), h)) <= (fov * Math.PI / 180) / 2;
+}
+/* 視界の扇。等間隔の光線に、壁の角を狙う光線を足す(角の向こうへ細く伸びる部分まで出る)。
+   h と fov を渡すと正面だけの扇になる */
+function visPoly(walls, ox, oy, rays = 96, maxR = 30, h = null, fov = 360) {
+  const half = (fov * Math.PI / 180) / 2;
+  const angs = [];
+  const a0 = h == null ? -Math.PI : h - half, a1 = h == null ? Math.PI : h + half;
+  for (let i = 0; i <= rays; i++) angs.push(a0 + (a1 - a0) * i / rays);
+  for (const w of walls) {
+    for (const [x, y] of [[w[0], w[1]], [w[2], w[3]]]) {
+      const a = Math.atan2(y - oy, x - ox);
+      if (h != null && Math.abs(angDiff(a, h)) > half) continue;
+      const ar = h == null ? a : h + angDiff(a, h);
+      angs.push(ar - .00035, ar, ar + .00035);
+    }
+  }
+  angs.sort((a, b) => a - b);
+  const pts = [];
+  for (const a of angs) {
+    const dx = Math.cos(a), dy = Math.sin(a);
+    let best = maxR;
+    for (const w of walls) {
+      const t = raySeg(ox, oy, dx, dy, w[0], w[1], w[2], w[3]);
+      if (t < best) best = t;
+    }
+    pts.push([ox + dx * best, oy + dy * best]);
+  }
+  return pts;
+}
+
+/* ── 経路探索 ── */
+const CELL = .16;
+function buildGrid(plan) {
+  const ins = plan.ROOMS;
+  const ext = plan.EXITS || [];
+  // 格子の範囲: 部屋と出口を全部含めて外側に少し足す
+  let x0 = 0, y0 = 0, x1 = plan.W, y1 = plan.D;
+  for (const r of ins) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+  for (const e of ext) { x0 = Math.min(x0, e.x); y0 = Math.min(y0, e.y); x1 = Math.max(x1, e.x); y1 = Math.max(y1, e.y); }
+  const ox = x0 - 1.2, oy = y0 - 1.2;
+  const nx = Math.ceil((x1 - x0 + 2.4) / CELL) + 2, ny = Math.ceil((y1 - y0 + 2.4 + 1.0) / CELL) + 2;
+  const blocked = new Uint8Array(nx * ny);
+  const pos = k => [ox + (k % nx) * CELL, oy + Math.floor(k / nx) * CELL];
+  /* 住戸の外は基本通れない。通れるのは玄関の外(共用廊下)と出口の周りだけ。
+     これが無いと建物の外を回り込んでバルコニーへ行く経路ができてしまう */
+  for (let k = 0; k < blocked.length; k++) {
+    const [px, py] = pos(k);
+    let inside = false;
+    for (const r of ins) if (px > r.x - .05 && px < r.x + r.w + .05 && py > r.y - .05 && py < r.y + r.h + .05) { inside = true; break; }
+    if (inside) continue;
+    let ok = (py > plan.D - .05 && Math.abs(px - plan.entry[0]) < 1.4);
+    if (!ok) for (const e of ext) if (Math.hypot(px - e.x, py - e.y) < 1.0) { ok = true; break; }
+    if (!ok) blocked[k] = 1;
+  }
+  /* 壁は線分からの距離で塞ぐ(半分の太さ R)。点を打って膨らませる方式だと
+     壁が0.6mにも太り、扉の前の点まで塞がれてしまった */
+  const R = .12;
+  for (const [wx1, wy1, wx2, wy2] of plan.WALLS) {
+    const ia = Math.max(0, Math.floor((Math.min(wx1, wx2) - ox - R) / CELL)), ib = Math.min(nx - 1, Math.ceil((Math.max(wx1, wx2) - ox + R) / CELL));
+    const ja = Math.max(0, Math.floor((Math.min(wy1, wy2) - oy - R) / CELL)), jb = Math.min(ny - 1, Math.ceil((Math.max(wy1, wy2) - oy + R) / CELL));
+    for (let j = ja; j <= jb; j++) for (let k = ia; k <= ib; k++) {
+      const px = ox + k * CELL, py = oy + j * CELL;
+      if (segDist(px, py, wx1, wy1, wx2, wy2) <= R) blocked[j * nx + k] = 1;
+    }
+  }
+  return { nx, ny, ox, oy, blocked, pos,
+    idx: (x, y) => {
+      const i = Math.round((x - ox) / CELL), j = Math.round((y - oy) / CELL);
+      return (i < 0 || i >= nx || j < 0 || j >= ny) ? -1 : j * nx + i;
+    } };
+}
+/* 壁の中に置かれた点は最寄りの空きへ寄せる */
+function nearestFree(G, x, y) {
+  let k = G.idx(x, y);
+  if (k >= 0 && !G.blocked[k]) return k;
+  for (let r = 1; r < 22; r++) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const kk = G.idx(x + dx * CELL, y + dy * CELL);
+      if (kk >= 0 && !G.blocked[kk]) return kk;
+    }
+  }
+  return -1;
+}
+/* 幅優先探索。avoid の周りを一時的に塞ぐ(逃げる住人が侵入者の真横をすり抜けないように) */
+function findPath(G, from, to, avoid, avoidR) {
+  const a = nearestFree(G, from[0], from[1]), b = nearestFree(G, to[0], to[1]);
+  if (a < 0 || b < 0) return null;
+  let mask = null;
+  if (avoid) {
+    mask = [];
+    const r2 = (avoidR || 1.0) ** 2;
+    const ia = Math.floor((avoid[0] - G.ox - avoidR) / CELL), ib = Math.ceil((avoid[0] - G.ox + avoidR) / CELL);
+    const ja = Math.floor((avoid[1] - G.oy - avoidR) / CELL), jb = Math.ceil((avoid[1] - G.oy + avoidR) / CELL);
+    for (let j = ja; j <= jb; j++) for (let i = ia; i <= ib; i++) {
+      if (i < 0 || i >= G.nx || j < 0 || j >= G.ny) continue;
+      const k = j * G.nx + i;
+      if (G.blocked[k] || k === a) continue;
+      const p = G.pos(k);
+      if ((p[0]-avoid[0])**2 + (p[1]-avoid[1])**2 <= r2) { G.blocked[k] = 1; mask.push(k); }
+    }
+  }
+  const restore = () => { if (mask) for (const k of mask) G.blocked[k] = 0; };
+  const prev = new Int32Array(G.nx * G.ny).fill(-1);
+  const seen = new Uint8Array(G.nx * G.ny);
+  const q = [a]; seen[a] = 1;
+  const DX = [1, -1, 0, 0, 1, -1, 1, -1], DY = [0, 0, 1, -1, 1, 1, -1, -1];
+  let head = 0;
+  while (head < q.length) {
+    const k = q[head++];
+    if (k === b) break;
+    const kx = k % G.nx, ky = (k - kx) / G.nx;
+    for (let d = 0; d < 8; d++) {
+      const nxp = kx + DX[d], nyp = ky + DY[d];
+      if (nxp < 0 || nxp >= G.nx || nyp < 0 || nyp >= G.ny) continue;
+      const n = nyp * G.nx + nxp;
+      if (seen[n] || G.blocked[n]) continue;
+      // 斜めは両隣が空いているときだけ(壁の角を突き抜けない)
+      if (d >= 4 && (G.blocked[ky * G.nx + nxp] || G.blocked[nyp * G.nx + kx])) continue;
+      seen[n] = 1; prev[n] = k; q.push(n);
+    }
+  }
+  restore();
+  if (!seen[b]) return null;
+  const out = [];
+  for (let k = b; k !== -1; k = prev[k]) out.push(G.pos(k));
+  return out.reverse();
+}
+const pathLen = pts => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]); return L; };
+function segCross(ax, ay, bx, by, cx, cy, dx2, dy2) {
+  const d = (bx - ax) * (dy2 - cy) - (by - ay) * (dx2 - cx);
+  if (Math.abs(d) < 1e-9) return false;
+  const t = ((cx - ax) * (dy2 - cy) - (cy - ay) * (dx2 - cx)) / d;
+  const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+/* 点と線分の距離 */
+function segDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy || 1e-9;
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / L2));
+  return Math.hypot(px - (x1 + dx * t), py - (y1 + dy * t));
+}
+/* 経路が扉をまたぐか */
+function pathCrosses(pts, d) {
+  for (let i = 1; i < pts.length; i++)
+    if (segCross(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1], d.x1, d.y1, d.x2, d.y2)) return true;
+  return false;
+}
+/* 距離場。逃げる方向と探す順番に使う */
+function distField(G, from) {
+  const st = nearestFree(G, from[0], from[1]);
+  const d = new Float32Array(G.nx * G.ny).fill(Infinity);
+  if (st < 0) return d;
+  d[st] = 0;
+  const q = [st]; let h = 0;
+  const D4 = [1, -1, G.nx, -G.nx];
+  while (h < q.length) {
+    const k = q[h++], kx = k % G.nx;
+    for (let i = 0; i < 4; i++) {
+      const n = k + D4[i];
+      if (n < 0 || n >= d.length || G.blocked[n] || d[n] < Infinity) continue;
+      if (Math.abs((n % G.nx) - kx) > 1) continue;
+      d[n] = d[k] + CELL; q.push(n);
+    }
+  }
+  return d;
+}
+/* 逃げ先。侵入者の周りを塞いだ状態で行ける範囲を出し、その中で一番遠い所 */
+function fleeGoal(G, from, avoid) {
+  const dA = distField(G, avoid);
+  const RAD = 1.6, mask = [];
+  const ia = Math.floor((avoid[0]-G.ox-RAD)/CELL), ib = Math.ceil((avoid[0]-G.ox+RAD)/CELL);
+  const ja = Math.floor((avoid[1]-G.oy-RAD)/CELL), jb = Math.ceil((avoid[1]-G.oy+RAD)/CELL);
+  for (let j = ja; j <= jb; j++) for (let i = ia; i <= ib; i++) {
+    if (i < 0 || i >= G.nx || j < 0 || j >= G.ny) continue;
+    const k = j * G.nx + i;
+    if (G.blocked[k]) continue;
+    const p = G.pos(k);
+    if ((p[0]-avoid[0])**2 + (p[1]-avoid[1])**2 <= RAD*RAD) { G.blocked[k] = 1; mask.push(k); }
+  }
+  const st = nearestFree(G, from[0], from[1]);
+  let goal = null;
+  if (st >= 0) {
+    const seen = new Uint8Array(G.nx * G.ny), q = [st];
+    seen[st] = 1;
+    let h = 0, bk = -1, bv = -Infinity;
+    const D4 = [1, -1, G.nx, -G.nx];
+    while (h < q.length) {
+      const k = q[h++], kx = k % G.nx;
+      if (isFinite(dA[k]) && dA[k] > bv) { bv = dA[k]; bk = k; }
+      for (const d of D4) {
+        const n = k + d;
+        if (n < 0 || n >= seen.length || seen[n] || G.blocked[n]) continue;
+        if (Math.abs((n % G.nx) - kx) > 1) continue;
+        seen[n] = 1; q.push(n);
+      }
+    }
+    if (bk >= 0) goal = G.pos(bk);
+  }
+  for (const k of mask) G.blocked[k] = 0;
+  return goal;
+}
+
+const CATCH = 1.0;      // これだけ近づいたら捕まえた(壁越しは不可)
+const DT = 0.08;
+
+/* ── 追跡のシミュレーション ──
+   侵入者も住人も動く。0.08秒刻みで進め、各コマの位置・向き・状態と扉の変化を記録する */
+function simulate(plan) {
+  const G = buildGrid(plan);
+  const doors = plan.DOORS;
+  const ds = doors.map(d => d.open0 ? 'open' : 'closed');   // 扉の状態
+  const events = [];                                          // [t, 扉番号, 状態]
+  const noises = [];                                          // [t, x, y, 種類]
+  let t = 0;
+  const setDoor = (i, st) => { ds[i] = st; events.push([+t.toFixed(3), i, st]); };
+  const passable = i => ds[i] === 'open' || ds[i] === 'broken' || doors[i].kind === 'open';
+  /* 視線を遮るもの = 壁 + 閉まっている扉(窓は遮らない) */
+  const blockers = () => {
+    const out = plan.WALLS.slice();
+    doors.forEach((d, i) => { if ((d.kind === 'hinge' || d.kind === 'slide') && !passable(i)) out.push([d.x1, d.y1, d.x2, d.y2]); });
+    return out;
+  };
+  /* 手が届くのを遮るもの = 上に加えて閉まった窓 */
+  const touchBlockers = () => {
+    const out = blockers();
+    doors.forEach((d, i) => { if (d.kind === 'window' && !passable(i)) out.push([d.x1, d.y1, d.x2, d.y2]); });
+    return out;
+  };
+  const noise = (x, y, radius, kind) => {
+    noises.push([+t.toFixed(3), x, y, kind]);
+    if (radius > 0 && !A.chasing && Math.hypot(A.pos[0] - x, A.pos[1] - y) < radius) { A.heard = [x, y]; }
+  };
+  const inRoom = (r, x, y) => x > r.x - .02 && x < r.x + r.w + .02 && y > r.y - .02 && y < r.y + r.h + .02;
+  const mk = (x, y, h) => ({ pos: [x, y], h, wait: 0, after: null, path: null, pi: 1, repath: 0, tgt: null,
+    lastDoor: -1, doorAt: -1, state: S_STAND, moving: false, opened: 0, broke: 0, locked: 0 });
+  const hIn = Math.atan2(plan.D / 2 - plan.entry[1], plan.W / 2 - plan.entry[0]);
+  const A = Object.assign(mk(plan.entry[0], plan.entry[1], hIn), { isIn: true, chasing: false, heard: null, lookT: 0, lookDur: 0, lookBase: 0, arrived: false });
+  const B = Object.assign(mk(plan.resident[0], plan.resident[1], 0), { isIn: false, fleeing: false, exitCheck: 0, exitGoal: null, exiting: null, field: null, fieldAge: 0, goalCache: null });
+
+  /* 経路に沿って speed*DT だけ進む。扉の手前では止まって開ける/壊す/鍵を掛ける */
+  function advance(actor, target, speed, avoid, avoidR) {
+    if (actor.wait > 0) {
+      actor.wait -= DT; actor.moving = false;
+      if (actor.wait <= 0 && actor.after) { const f = actor.after; actor.after = null; f(); actor.state = S_STAND; actor.doorAt = -1; }
+      return;
+    }
+    if (!actor.path || actor.repath <= 0 || !actor.tgt || Math.hypot(actor.tgt[0] - target[0], actor.tgt[1] - target[1]) > .5) {
+      actor.path = findPath(G, actor.pos, target, avoid, avoidR || 0);
+      actor.tgt = [target[0], target[1]]; actor.repath = 6; actor.pi = 1;
+    }
+    actor.repath--;
+    const path = actor.path;
+    if (!path || actor.pi >= path.length) { actor.path = null; actor.repath = 0; actor.moving = false; actor.state = S_STAND; return; }
+    let budget = speed * DT;
+    actor.moving = true; actor.state = S_WALK;
+    while (budget > 0 && actor.pi < path.length) {
+      const nx = path[actor.pi];
+      const dx = nx[0] - actor.pos[0], dy = nx[1] - actor.pos[1];
+      const L = Math.hypot(dx, dy);
+      if (L < 1e-6) { actor.pi++; continue; }
+      const step = Math.min(budget, L);
+      const px = actor.pos[0], py = actor.pos[1];
+      const qx = px + dx / L * step, qy = py + dy / L * step;
+      actor.h = Math.atan2(dy, dx);
+      // 扉をまたぐか
+      let hit = -1;
+      for (let i = 0; i < doors.length; i++) {
+        const d = doors[i];
+        if (d.kind === 'open' || actor.lastDoor === i) continue;
+        if (segCross(px, py, qx, qy, d.x1, d.y1, d.x2, d.y2)) { hit = i; break; }
+      }
+      if (hit >= 0) {
+        const d = doors[hit], st = ds[hit], spec = DOOR[d.kind];
+        if (!passable(hit)) {
+          actor.h = Math.atan2(d.my - py, d.mx - px);
+          actor.moving = false; actor.doorAt = hit;
+          if (actor.isIn) {
+            if (st === 'locked') { actor.wait = spec.brk; actor.state = S_BREAK; setDoor(hit, 'breaking');
+              actor.after = () => { setDoor(hit, 'broken'); actor.broke++; }; }
+            else { actor.wait = spec.in; actor.state = S_OPEN; actor.after = () => { setDoor(hit, 'open'); actor.opened++; }; }
+          } else {
+            actor.wait = spec.out; actor.state = S_OPEN;
+            actor.after = () => { setDoor(hit, 'open'); if (d.kind === 'window') noise(d.mx, d.my, SIM.hear, 'window'); };
+          }
+          return;
+        }
+        // 通れる。またぐ
+        actor.pos[0] = qx; actor.pos[1] = qy; budget -= step; actor.lastDoor = hit;
+        if (step >= L - 1e-6) actor.pi++;
+        // 住人: 抜けた開き戸を閉める。部屋の内側に入った鍵付きの扉なら掛ける。侵入者が近いと閉める余裕が無い
+        if (!actor.isIn && actor.fleeing && d.kind === 'hinge' && st !== 'broken') {
+          const near = Math.hypot(A.pos[0] - qx, A.pos[1] - qy) < 2.0 && canSee(blockers(), A.pos[0], A.pos[1], qx, qy);
+          if (!near) {
+            actor.h = Math.atan2(py - qy, px - qx);
+            actor.moving = false; actor.state = S_LOCK; actor.doorAt = hit;
+            if (d.lock && d.lockRoom && inRoom(d.lockRoom, qx, qy)) { actor.wait = spec.lock; actor.after = () => { setDoor(hit, 'locked'); actor.locked++; noise(qx, qy, SIM.hear, 'lock'); }; }
+            else { actor.wait = spec.close; actor.after = () => { setDoor(hit, 'closed'); noise(qx, qy, SIM.hear * .6, 'close'); }; }
+            return;
+          }
+        }
+        continue;
+      }
+      actor.pos[0] = qx; actor.pos[1] = qy; budget -= step;
+      if (step >= L - 1e-6) actor.pi++;
+      if (actor.lastDoor >= 0) { const d = doors[actor.lastDoor]; if (segDist(qx, qy, d.x1, d.y1, d.x2, d.y2) > .30) actor.lastDoor = -1; }
+    }
+  }
+
+  const frames = [];
+  // 探す順番: 玄関から歩いて近い居室から。角の向こうの部屋は後回しになり、死角がちゃんと時間を稼ぐ
+  const df0 = distField(G, A.pos);
+  const rooms = plan.ROOMS.filter(r => !r.out && (r.t === 'bed' || r.t === 'ldk') && r.n);
+  const order = rooms.map(r => {
+    const c = [r.x + r.w / 2, r.y + r.h / 2];
+    const k = nearestFree(G, c[0], c[1]);
+    return { c, r, d: k >= 0 ? df0[k] : Infinity, done: false };
+  }).sort((a, b) => a.d - b.d);
+  const dfB = distField(G, plan.entry);
+  const kB = nearestFree(G, plan.resident[0], plan.resident[1]);
+  const startDist = kB >= 0 ? dfB[kB] : Infinity;
+  /* 逃げ先。玄関の外を必ず入れる。侵入者は玄関から入ってくるので、そこから出るには相手を回り込む必要がある */
+  const exits = [{ x: plan.entry[0], y: plan.D + .8, n: '玄関', k: 'door' }, ...(plan.EXITS || [])];
+  let caught = false, escaped = false, giveup = false, lastSeen = null, escVia = null, escKind = null;
+  let seen0 = false, tSeen = Infinity, seeNow = false;
+  A.lookT = SIM.look; A.lookDur = SIM.look; A.lookBase = hIn; A.state = S_LOOK;
+  B.state = S_SLEEP; B.h = Math.atan2(plan.D / 2 - B.pos[1], plan.W / 2 - B.pos[0]);
+
+  while (t < SIM.limit) {
+    const bl = blockers();
+    seeNow = inCone(A.h, A.pos[0], A.pos[1], B.pos[0], B.pos[1], SIM.fov) && canSee(bl, A.pos[0], A.pos[1], B.pos[0], B.pos[1]);
+    if (seeNow) { lastSeen = [B.pos[0], B.pos[1]]; A.chasing = true; A.heard = null; if (tSeen === Infinity) tSeen = t; if (t < SIM.look) seen0 = true; }
+    // 見えている部屋は「調べた」ことにする(開いた襖の向こうを覗いただけで済む)
+    for (const o of order) if (!o.done && Math.hypot(o.c[0] - A.pos[0], o.c[1] - A.pos[1]) < SIM.seeRoom &&
+        inCone(A.h, A.pos[0], A.pos[1], o.c[0], o.c[1], SIM.fov) && canSee(bl, A.pos[0], A.pos[1], o.c[0], o.c[1])) o.done = true;
+
+    // ── 侵入者 ──
+    if (A.wait > 0) { advance(A, A.pos, 0); }
+    else if (A.lookT > 0) {
+      // 立ち止まって見回す(玄関、または居室に着いたとき)
+      A.lookT -= DT; A.moving = false; A.state = S_LOOK;
+      A.h = A.lookBase + Math.sin((1 - A.lookT / A.lookDur) * Math.PI * 2) * (Math.PI / 2);
+      if (A.lookT <= 0 && A.arrived) { A.arrived.done = true; A.arrived = false; }
+      if (seeNow && t >= SIM.look * .5) A.lookT = 0;     // 見つけたら見回しを打ち切る
+    } else {
+      let target = null;
+      if (seeNow) target = B.pos;
+      else if (lastSeen && Math.hypot(lastSeen[0] - A.pos[0], lastSeen[1] - A.pos[1]) > .5) target = lastSeen;
+      else if (A.heard && Math.hypot(A.heard[0] - A.pos[0], A.heard[1] - A.pos[1]) > .6) target = A.heard;
+      else {
+        lastSeen = null; A.heard = null; A.chasing = false;
+        const next = order.find(o => !o.done);
+        if (!next) { giveup = true; break; }
+        target = next.c;
+        if (Math.hypot(target[0] - A.pos[0], target[1] - A.pos[1]) < .7) {
+          A.arrived = next; A.lookT = SIM.roomLook; A.lookDur = SIM.roomLook; A.lookBase = A.h;
+        }
+      }
+      if (target && A.lookT <= 0) advance(A, target, SIM.speedIn);
+    }
+
+    // ── 住人 ──
+    if (!B.fleeing && t >= SIM.react) {
+      B.fleeing = true; B.state = S_STAND;
+      /* 起きた部屋に鍵付きの扉があり、手の届く距離で、逃げ道がその扉を通らないなら、まず鍵を掛ける。
+         侵入者はその扉を壊すのに3秒かかる */
+      let best = Infinity, bestEx = null, bestPath = null;
+      for (const ex of exits) {
+        const pth = findPath(G, B.pos, [ex.x, ex.y], A.pos, 2.2);
+        if (!pth) continue;
+        // 侵入者の目の前を横切る道は道ではない
+        let danger = Infinity;
+        for (const q of pth) danger = Math.min(danger, Math.hypot(q[0] - A.pos[0], q[1] - A.pos[1]));
+        if (danger < 3.2) continue;
+        const c = pathLen(pth) / SIM.speedOut + EXIT[ex.k].sec;
+        if (c < best) { best = c; bestEx = ex; bestPath = pth; }
+      }
+      doors.forEach((d, i) => {
+        if (!d.lock || !d.lockRoom || ds[i] === 'locked' || !inRoom(d.lockRoom, B.pos[0], B.pos[1])) return;
+        if (Math.hypot(d.mx - B.pos[0], d.my - B.pos[1]) > 2.6) return;
+        if (bestPath && pathCrosses(bestPath, d)) return;
+        if (B.preLock == null) {
+          const r = d.lockRoom, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+          const L = Math.hypot(cx - d.mx, cy - d.my) || 1;
+          B.preLock = i; B.preLockAt = [d.mx + (cx - d.mx) / L * .3, d.my + (cy - d.my) / L * .3];
+        }
+      });
+    }
+    if (B.fleeing) {
+      if (B.wait > 0) advance(B, B.pos, 0);
+      else if (B.preLock != null) {
+        // 扉まで行って鍵を掛ける
+        const i = B.preLock, d = doors[i];
+        if (Math.hypot(B.preLockAt[0] - B.pos[0], B.preLockAt[1] - B.pos[1]) < .3) {
+          B.h = Math.atan2(d.my - B.pos[1], d.mx - B.pos[0]);
+          B.moving = false; B.state = S_LOCK; B.wait = DOOR.hinge.lock; B.doorAt = i;
+          B.after = () => { setDoor(i, 'locked'); B.locked++; noise(d.mx, d.my, SIM.hear, 'lock'); };
+          B.preLock = null; B.path = null; B.repath = 0;
+        } else advance(B, B.preLockAt, SIM.speedOut);
+      }
+      else if (B.exiting) {
+        // 出口を使い終えた
+        escaped = true; escVia = B.exiting.n; escKind = B.exiting.k;
+      } else {
+        if (B.exitCheck <= 0) {
+          B.exitCheck = 5; B.exitGoal = null;
+          let best = Infinity;
+          for (const ex of exits) {
+            // 侵入者のそばを通る道は選ばない(2.2m)。実際に走るときは 1.35m まで寄れる
+            const pth = findPath(G, B.pos, [ex.x, ex.y], A.pos, 2.2);
+            if (!pth) continue;
+            let cost = pathLen(pth) / SIM.speedOut + EXIT[ex.k].sec;
+            doors.forEach((d, i) => {
+              if (d.kind === 'open' || passable(i) || !pathCrosses(pth, d)) return;
+              cost += DOOR[d.kind].out;
+              // 自分で鍵を掛けた扉の向こうに侵入者が来ているなら、開けて出るのは自殺行為
+              if ((ds[i] === 'locked' || ds[i] === 'breaking') && Math.hypot(A.pos[0] - d.mx, A.pos[1] - d.my) < 4.5) cost += 99;
+            });
+            if (cost < best) { best = cost; B.exitGoal = ex; }
+          }
+        }
+        B.exitCheck--;
+        let goal = B.exitGoal ? [B.exitGoal.x, B.exitGoal.y] : null;
+        if (!goal) {
+          if (!B.field || B.fieldAge <= 0 || B.goalCache === null) { B.field = true; B.fieldAge = 4; B.goalCache = fleeGoal(G, B.pos, A.pos); }
+          B.fieldAge--;
+          goal = B.goalCache;
+        }
+        if (goal) advance(B, goal, SIM.speedOut, A.pos, 1.35);
+        B.repath = Math.min(B.repath, Math.hypot(A.pos[0]-B.pos[0], A.pos[1]-B.pos[1]) < 3 ? 1 : 6);
+        if (B.exitGoal && B.wait <= 0 && Math.hypot(B.pos[0] - B.exitGoal.x, B.pos[1] - B.exitGoal.y) < .45) {
+          // 出口に着いた。使うのに時間がかかる(その間は無防備)
+          const ex = B.exitGoal, spec = EXIT[ex.k];
+          B.exiting = ex; B.wait = spec.sec; B.state = S_EXIT; B.moving = false;
+          B.h = Math.atan2(ex.y - B.pos[1] + (ex.k === 'door' ? 1 : 0), ex.x - B.pos[0]);
+          if (ex.k === 'door') B.h = Math.atan2(1, 0);
+          noise(B.pos[0], B.pos[1], spec.noise, ex.k);
+          B.after = () => {};
+        }
+      }
+    }
+
+    /* 1コマ: [Ax,Ay,Bx,By, 見えている, A向き, B向き, A状態, B状態, Bの目的の出口, Aが触っている扉, Bが触っている扉, A残り待ち, B残り待ち, Aが追っている] */
+    frames.push([A.pos[0], A.pos[1], B.pos[0], B.pos[1], seeNow ? 1 : 0, A.h, B.h,
+                 A.wait > 0 || A.lookT > 0 ? A.state : (A.moving ? S_WALK : S_STAND),
+                 B.wait > 0 ? B.state : (B.fleeing ? (B.moving ? S_WALK : S_STAND) : S_SLEEP),
+                 B.exiting ? exits.indexOf(B.exiting) : (B.exitGoal ? exits.indexOf(B.exitGoal) : -1),
+                 A.wait > 0 ? A.doorAt : -1, B.wait > 0 ? B.doorAt : -1, Math.max(0, A.wait), Math.max(0, B.wait),
+                 A.chasing ? 1 : (A.heard ? 2 : 0)]);
+    const dist = Math.hypot(A.pos[0]-B.pos[0], A.pos[1]-B.pos[1]);
+    if (dist < CATCH && canSee(touchBlockers(), A.pos[0], A.pos[1], B.pos[0], B.pos[1])) { caught = true; break; }
+    if (escaped) break;
+    t += DT;
+  }
+  if (!caught && !escaped) giveup = true;
+  /* 余裕: 逃げ切った瞬間、侵入者が住人の所へ辿り着くのに何秒かかったか(歩き+途中の扉) */
+  let margin = -Infinity;
+  if (escaped) {
+    const pth = findPath(G, A.pos, B.pos);
+    if (!pth) margin = 12;
+    else {
+      margin = pathLen(pth) / SIM.speedIn;
+      doors.forEach((d, i) => {
+        if (d.kind === 'open' || passable(i) || !pathCrosses(pth, d)) return;
+        margin += (A.wait > 0 && A.state === S_BREAK && segDist(A.pos[0], A.pos[1], d.x1, d.y1, d.x2, d.y2) < .5) ? A.wait
+                : ds[i] === 'locked' || ds[i] === 'breaking' ? DOOR.hinge.brk : DOOR[d.kind].in;
+      });
+    }
+  }
+  else if (giveup) margin = 8;
+  const blocked = !caught;
+  const reason = caught ? 'caught' : escaped ? 'escaped' : 'giveup';
+  return { G, frames, events, noises, exits, seen0, tSeen, doors: A.opened + A.broke, opened: A.opened, broke: A.broke, locked: B.locked,
+           lastExit: B.exiting || B.exitGoal || null, wasExiting: !!B.exiting,
+           escVia: escVia || '', escKind, tIn: t, caught, escaped, giveup, tooLong: giveup, blocked, reason, margin, startDist,
+           roomsChecked: order.filter(o => o.done).length, roomsTotal: order.length };
+}
+/* @@PURE-END sim */
+/* @@PURE-BEGIN validate */
+/* 全件チェック。各問の正解が1つだけ計算と一致するか、行けない部屋が無いか、住人が玄関から離れているか */
+function validate() {
+  const rows = PLANS.map(p => {
+    const r = simulate(p);
+    const G = r.G;
+    const unreach = [];
+    for (const rm of p.ROOMS) {
+      if (rm.out || !rm.n) continue;
+      const path = findPath(G, p.entry, [rm.x + rm.w / 2, rm.y + rm.h / 2]);
+      if (!path) unreach.push(rm.n + `(${rm.x},${rm.y})`);
+    }
+    return { id: p.id, q: p.q, 想定: p.safe ? '失敗' : '成功', 計算: r.blocked ? '失敗' : '成功',
+      一致: (!!r.blocked === !!p.safe), 理由: r.reason, 出口: r.escVia, 余裕: +r.margin.toFixed(1),
+      発見: r.tSeen === Infinity ? '—' : +r.tSeen.toFixed(1), 玄関で: r.seen0,
+      開: r.opened, 壊: r.broke, 施錠: r.locked, 秒: +r.tIn.toFixed(1), 玄関から: +r.startDist.toFixed(1),
+      調べた: r.roomsChecked + '/' + r.roomsTotal, 行けない部屋: unreach };
+  });
+  return rows;
+}
+/* @@PURE-END validate */
+
+/* ================================================================
+   侵入の演出(3D) = シミュレーションの再生
+   抽象的な小人が2体。赤=侵入者、金=住人。
+   赤の正面から視界の扇が広がり、壁と閉まった扉で切られる。
+   扉は開閉し、鍵の掛かった扉は蹴られて揺れ、3秒で壊れる。
+   計算した位置をそのまま流すので、見えているものと結論がずれない。
+   ================================================================ */
+function makeFigure(col, emis, cap) {
+  const g = new THREE.Group();
+  const m = new THREE.MeshStandardMaterial({ color: col, roughness: .45, metalness: .05,
+    emissive: emis, emissiveIntensity: .9 });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(.19, .46, 6, 14), m);
+  body.position.y = .56;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.18, 18, 14), m);
+  head.position.y = 1.08;
+  // 顔の向きが分かるように、正面(+z)に鼻と帽子のつばを付ける
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(.05, .12, 10), m);
+  nose.rotation.x = Math.PI / 2; nose.position.set(0, 1.05, .21);
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(.30, .03, .20),
+    new THREE.MeshStandardMaterial({ color: cap, roughness: .7 }));
+  brim.position.set(0, 1.18, .15);
+  body.castShadow = head.castShadow = true;
+  const pose = new THREE.Group();          // 歩きの上下・傾き・寝姿はここに掛ける
+  pose.add(body, head, nose, brim);
+  g.add(pose);
+  g.userData.mat = m; g.userData.pose = pose;
+  return g;
+}
+/* 平面の向き(ラジアン) → 小人の回転。小人の正面は +z */
+const figRot = h => Math.atan2(Math.cos(h), -Math.sin(h));
+const figIn = makeFigure(0xff4a52, 0x8e1016, 0x2a0a0c);      // 侵入者
+const figOut = makeFigure(0x8a9a6a, 0x3f4a30, 0x3a4530);     // 住人(セージ)
+function mkRing(col, r0 = .30, r1 = .42) {
+  const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 40),
+    new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .8,
+      side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.renderOrder = 15;
+  return ring;
+}
+const ring = mkRing(0xff4a52, .36, .50), ring2 = mkRing(0x8a9a6a, .36, .50);
+/* 出口の印(金の輪)。演出のたびに位置を置き直す */
+const exitRings = [];
+for (let i = 0; i < 4; i++) { const r = mkRing(0xc48d7e, .22, .30); r.visible = false; exitRings.push(r); }
+/* 音の波紋。鍵の音・窓・蹴破りの位置に広がる */
+const pulse = mkRing(0xffffff, .05, .09); pulse.visible = false;
+
+/* 視界の扇。視線の高さに置く平面 */
+const visMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  blending: THREE.NormalBlending, fog: false,
+  uniforms: { uOp: { value: 0 }, uSrc: { value: new THREE.Vector2() } },
+  vertexShader: `varying float vR; uniform vec2 uSrc;
+    void main(){ vR = length(position.xz - uSrc);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `varying float vR; uniform float uOp;
+    void main(){
+      float f = 1. - smoothstep(0., 9., vR);
+      gl_FragColor = vec4(vec3(.95, .25, .28), (.16 + f * .34) * uOp);
+    }`,
+});
+const visMesh = new THREE.Mesh(new THREE.BufferGeometry(), visMat);
+visMesh.frustumCulled = false;
+visMesh.renderOrder = 12;
+/* 経路の帯 */
+function trailMat(col) {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.NormalBlending, side: THREE.DoubleSide, fog: false,
+    uniforms: { uCol: { value: new THREE.Color(col) }, uK: { value: 0 } },
+    vertexShader: `attribute float aT; varying float vT;
+      void main(){ vT = aT; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying float vT; uniform vec3 uCol; uniform float uK;
+      void main(){ if (vT > uK) discard;
+        float tip = 1. - smoothstep(0., .06, uK - vT);
+        gl_FragColor = vec4(uCol * (1. + tip * .6), .55 + tip * .35); }`,
+  });
+}
+const trailIn = new THREE.Mesh(new THREE.BufferGeometry(), trailMat(0xff4a52));
+const trailOut = new THREE.Mesh(new THREE.BufferGeometry(), trailMat(0x8a9a6a));
+trailIn.frustumCulled = trailOut.frustumCulled = false;
+trailIn.renderOrder = trailOut.renderOrder = 14;
+
+let stageRoot = null;
+function ensureStage() {
+  if (stageRoot) return;
+  stageRoot = new THREE.Group();
+  stageRoot.add(visMesh, trailIn, trailOut, figIn, figOut, ring, ring2, pulse, ...exitRings);
+  root.add(stageRoot);
+}
+/* 通った跡を細い帯にする。aT は「時間の割合」なので、先端が小人の足元に揃う */
+function buildTrail(mesh, pts, half = .05, h = .05) {
+  mesh.geometry.dispose();
+  if (!pts || pts.length < 2) { mesh.geometry = new THREE.BufferGeometry(); return; }
+  const pos = [], tt = [], idx = [];
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const a2 = pts[Math.max(0, i - 1)], b2 = pts[Math.min(n - 1, i + 1)];
+    let dx = b2[0] - a2[0], dy = b2[1] - a2[1];
+    const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+    const p = P(pts[i][0], pts[i][1], h);
+    const nx = -dy * half, nz = dx * half;
+    pos.push(p.x + nx, p.y, p.z + nz, p.x - nx, p.y, p.z - nz);
+    const tv = i / (n - 1);
+    tt.push(tv, tv);
+    if (i) { const k = (i - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aT', new THREE.Float32BufferAttribute(tt, 1));
+  g.setIndex(idx);
+  mesh.geometry = g;
+}
+/* 視界の扇を作り直す。確保済みのバッファに書き込んで使い回す */
+const VMAX = 2600;
+const vPos = new Float32Array(VMAX * 3);
+const vIdx = new Uint16Array(VMAX * 3);
+{
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(vPos, 3).setUsage(THREE.DynamicDrawUsage));
+  g.setIndex(new THREE.BufferAttribute(vIdx, 1));
+  visMesh.geometry = g;
+}
+/* 住戸の外周。これを足さないと玄関の外へ扇が漏れて、夜空に赤い扇形が出る */
+const visBoundsCache = new WeakMap();
+function visWalls(plan) {
+  let w = visBoundsCache.get(plan);
+  if (!w) {
+    let x0 = 0, x1 = plan.W, y0 = 0, y1 = plan.D;
+    for (const r of plan.ROOMS) { x0 = Math.min(x0, r.x); x1 = Math.max(x1, r.x + r.w); y0 = Math.min(y0, r.y); y1 = Math.max(y1, r.y + r.h); }
+    x0 -= .25; x1 += .25; y0 -= .25; y1 += .25;
+    w = plan.WALLS.concat([[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]]);
+    visBoundsCache.set(plan, w);
+  }
+  return w;
+}
+function updateVis(plan, x, y, h, fov, closedSegs) {
+  const walls = closedSegs.length ? visWalls(plan).concat(closedSegs) : visWalls(plan);
+  const poly = visPoly(walls, x, y, 72, Math.hypot(plan.W, plan.D) * 1.2, h, fov);
+  const n = Math.min(poly.length, VMAX - 1);
+  const c = P(x, y, 1.25);   // 視線の高さ。床に置くと家具の陰に隠れて見えない
+  vPos[0] = c.x; vPos[1] = c.y; vPos[2] = c.z;
+  for (let i = 0; i < n; i++) {
+    const v = P(poly[i][0], poly[i][1], 1.25);
+    vPos[(i + 1) * 3] = v.x; vPos[(i + 1) * 3 + 1] = v.y; vPos[(i + 1) * 3 + 2] = v.z;
+  }
+  let k = 0;
+  for (let i = 1; i < n; i++) { vIdx[k++] = 0; vIdx[k++] = i; vIdx[k++] = i + 1; }   // 扇なので閉じない
+  const g = visMesh.geometry;
+  g.attributes.position.needsUpdate = true;
+  g.index.needsUpdate = true;
+  g.setDrawRange(0, k);
+  visMat.uniforms.uSrc.value.set(c.x, c.z);
+}
+
+/* 効果音。ページ内に音源は置かず、その場で合成する */
+let _ax = null;
+const el2 = id => document.getElementById(id);
+function blipE(f, v = .05, d = .2, type = 'triangle', f2 = null) {
+  try {
+    _ax = _ax || new (window.AudioContext || window.webkitAudioContext)();
+    if (_ax.state === 'suspended') _ax.resume();
+    const t = _ax.currentTime, o = _ax.createOscillator(), g = _ax.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(_ax.destination);
+    o.start(t); o.stop(t + d);
+  } catch (e) {}
+}
+const SFX = {
+  open:   () => blipE(420, .03, .10, 'square', 300),
+  slide:  () => blipE(260, .03, .30, 'sine', 180),
+  window: () => blipE(320, .035, .35, 'sine', 210),
+  lock:   () => { blipE(1500, .035, .05, 'square'); setTimeout(() => blipE(1100, .03, .05, 'square'), 70); },
+  kick:   () => blipE(75, .10, .20, 'sawtooth', 40),
+  broken: () => { blipE(180, .09, .25, 'sawtooth', 50); setTimeout(() => blipE(900, .04, .12, 'square', 300), 40); },
+  hatch:  () => blipE(700, .04, .35, 'triangle', 500),
+  fence:  () => blipE(500, .04, .18, 'triangle', 380),
+  spot:   () => blipE(880, .05, .18),
+  caught: () => [220, 165, 110].forEach((f, i) => setTimeout(() => blipE(f, .07, .3, 'sawtooth'), i * 110)),
+  escaped:() => [660, 880, 1170].forEach((f, i) => setTimeout(() => blipE(f, .06, .28), i * 110)),
+  giveup: () => [440, 330].forEach((f, i) => setTimeout(() => blipE(f, .05, .3), i * 160)),
+};
+
+/* 出口などの小さな文字ラベル(演出中だけ) */
+let stageLabels = [];
+function stageLabel(text, cls, v3) {
+  const e = document.createElement('div');
+  e.className = 'xlbl ' + (cls || '');
+  e.textContent = text;
+  document.body.appendChild(e);
+  const o = { el: e, v: v3, on: true };
+  stageLabels.push(o);
+  return o;
+}
+function clearStageLabels() { for (const l of stageLabels) l.el.remove(); stageLabels = []; }
+
+/* ── 演出 = シミュレーションの再生 ── */
+let ST = null;
+const PLAY = 1.5;          // 再生速度。実時間の何倍で見せるか
+const FIG_S = 1.3;         // 小人の大きさ。広い間取りでも見失わないように少し大きめ
+const LEAD = 0.9;          // 小人が現れてから計算が動き出すまで
+const DOOR_ANIM = 9;       // 扉の開閉の速さ
+function startStage(plan) {
+  ensureStage();
+  const r = simulate(plan);
+  clearStageLabels();
+  ST = { plan, r, t0: performance.now(), done: false, visN: 0, ei: 0, ni: 0, kick: 0, sfx: {},
+         dState: plan.DOORS.map(d => d.open0 ? 'open' : 'closed'),
+         dur: LEAD + (r.frames.length * DT) / PLAY + 2.4 };
+  buildTrail(trailIn, r.frames.map(f => [f[0], f[1]]));
+  buildTrail(trailOut, r.frames.map(f => [f[2], f[3]]));
+  trailIn.material.uniforms.uK.value = 0;
+  trailOut.material.uniforms.uK.value = 0;
+  figIn.position.copy(P(plan.entry[0], plan.entry[1], 0));
+  figOut.position.copy(P(plan.resident[0], plan.resident[1], 0));
+  figIn.visible = figOut.visible = true;
+  figOut.userData.pose.rotation.set(0, 0, 0);
+  // 出口の印と名前
+  exitRings.forEach((rg, i) => {
+    const ex = r.exits[i];
+    rg.visible = !!ex;
+    if (ex) { rg.position.copy(P(ex.x, ex.y, .02)); if (ex.k !== 'door') stageLabel(ex.n, 'exit', P(ex.x, ex.y, .3)); }
+  });
+  // 鍵の掛かる扉の印
+  plan.DOORS.forEach((d, i) => { if (d.lock) { const o = stageLabel('鍵', 'key', P(d.mx, d.my, 2.3)); o.door = i; } });
+  // 扉を最初の状態に戻す
+  doorMeshes.forEach((dm, i) => { if (dm) dm.cur = dm.target = dm.kind === 'hinge' ? (ST.dState[i] === 'open' ? 1 : 0) : (ST.dState[i] === 'open' ? 1 : 0); });
+  stageRoot.visible = true;
+  pulse.visible = false;
+  return r;
+}
+function stopStage() {
+  if (stageRoot) stageRoot.visible = false;
+  const tk = el2('tick'); if (tk) tk.classList.remove('on');
+  clearStageLabels();
+  ST = null;
+}
+
+/* 扉の見た目を状態に合わせる。開き戸は回転、引き戸と窓は重ねる */
+function applyDoorState(i, st, now) {
+  const dm = doorMeshes[i]; if (!dm) return;
+  dm.state = st;
+  if (dm.kind === 'hinge') dm.target = st === 'open' ? 1 : st === 'broken' ? 1.25 : 0;
+  else dm.target = (st === 'open' || st === 'broken') ? 1 : 0;
+  if (st === 'broken') dm.brokeAt = now;
+}
+function animateDoors(now, dt) {
+  const kick = ST && ST.kickUntil > now ? Math.sin((now - ST.kickAt) / 1000 * 30) * Math.exp(-(now - ST.kickAt) / 180) : 0;
+  doorMeshes.forEach((dm, i) => {
+    if (!dm) return;
+    dm.cur += (dm.target - dm.cur) * (1 - Math.exp(-dt * DOOR_ANIM));
+    if (dm.kind === 'hinge') {
+      let a = dm.a0 + dm.sw * dm.cur;
+      if (dm.state === 'breaking' && ST && ST.kickDoor === i) a += dm.sw * .05 * kick;   // 蹴られて揺れる
+      dm.piv.rotation.y = a;
+    } else {
+      // 2枚の板。開くと片側に重なる
+      const k = dm.cur;
+      dm.p2.position.x = dm.w * .5 * (1 - k);
+      dm.p2.position.z = .028;
+    }
+  });
+}
+
+const SNAME = { hinge: '扉', slide: '引き戸', window: '窓' };
+function stepStage(now) {
+  if (!ST) return;
+  const t = (now - ST.t0) / 1000;
+  const dt = Math.min(.05, (now - (ST.last || now)) / 1000); ST.last = now;
+  const r = ST.r, plan = ST.plan, n = r.frames.length;
+  const ap = clamp(t / .6);
+  figIn.scale.setScalar(Math.max(.001, ease(ap)) * FIG_S);
+  figOut.scale.setScalar(FIG_S);
+
+  // ── 計算の時刻へ ──
+  const ts = Math.max(0, (t - LEAD) * PLAY);
+  const total = (n - 1) * DT;
+  const fiF = Math.min(n - 1, ts / DT);
+  const fi = Math.floor(fiF), frac = fiF - fi;
+  const f0 = r.frames[fi], f1 = r.frames[Math.min(n - 1, fi + 1)];
+  const L = (a, b) => a + (b - a) * frac;
+  const ax = L(f0[0], f1[0]), ay = L(f0[1], f1[1]), bx = L(f0[2], f1[2]), by = L(f0[3], f1[3]);
+  const ah = f0[5] + angDiff(f1[5], f0[5]) * frac, bh = f0[6] + angDiff(f1[6], f0[6]) * frac;
+  const aSt = f0[7], bSt = f0[8];
+  const fin = ts >= total;
+
+  // ── 扉の出来事(時刻順に消化) ──
+  while (ST.ei < r.events.length && r.events[ST.ei][0] <= ts) {
+    const [et, di, st] = r.events[ST.ei++];
+    ST.dState[di] = st;
+    applyDoorState(di, st, now);
+    const kind = plan.DOORS[di].kind;
+    if (st === 'open') (kind === 'window' ? SFX.window : kind === 'slide' ? SFX.slide : SFX.open)();
+    else if (st === 'locked') { SFX.lock(); const o = stageLabels.find(l => l.door === di); if (o) { o.el.classList.add('on'); } }
+    else if (st === 'broken') { SFX.broken(); const o = stageLabels.find(l => l.door === di); if (o) o.el.classList.add('broken'); }
+    else if (st === 'breaking') { ST.kickDoor = di; }
+  }
+  // 蹴りは0.5秒ごと
+  if (aSt === S_BREAK) {
+    if (!ST.kickAt || now - ST.kickAt > 500 / PLAY) { ST.kickAt = now; ST.kickUntil = now + 260; SFX.kick(); }
+  }
+  // 出口を使う音(隔て板は蹴り、ハッチは金属)
+  if (bSt === S_EXIT) {
+    const ex = r.exits[f0[9]];
+    if (ex && (ex.k === 'partition' || ex.k === 'fence') && (!ST.kickAtB || now - ST.kickAtB > 600 / PLAY)) { ST.kickAtB = now; SFX.kick(); pulseAt(bx, by, now); }
+    if (ex && ex.k === 'hatch' && !ST.sfx.hatch) { ST.sfx.hatch = 1; SFX.hatch(); }
+  }
+  // 物音の波紋
+  while (ST.ni < r.noises.length && r.noises[ST.ni][0] <= ts) {
+    const [nt, nx, ny, kind] = r.noises[ST.ni++];
+    if (kind === 'lock' || kind === 'window' || kind === 'close') pulseAt(nx, ny, now);
+  }
+  if (pulse.visible) {
+    const k = (now - pulse.userData.t0) / 900;
+    if (k > 1) pulse.visible = false;
+    else { pulse.scale.setScalar(1 + k * 22); pulse.material.opacity = (1 - k) * .55; }
+  }
+  animateDoors(now, dt);
+
+  // ── 小人 ──
+  figIn.position.copy(P(ax, ay, 0));
+  figOut.position.copy(P(bx, by, 0));
+  figIn.rotation.y = figRot(ah);
+  figOut.rotation.y = figRot(bh);
+  posture(figIn, aSt, now, true);
+  posture(figOut, bSt, now, false);
+  trailIn.material.uniforms.uK.value = total > 0 ? ts / total : 0;
+  trailOut.material.uniforms.uK.value = total > 0 ? ts / total : 0;
+
+  // ── 視界。閉まっている扉で切る。数フレームに1回だけ引き直す ──
+  visMat.uniforms.uOp.value = ease(clamp((t - .3) / .8)) * (fin && r.caught ? .6 : 1);
+  if ((ST.visN = (ST.visN | 0) + 1) % 2 === 0 || !ST.visBuilt) {
+    ST.visBuilt = true;
+    const closed = [];
+    plan.DOORS.forEach((d, i) => { if ((d.kind === 'hinge' || d.kind === 'slide') && ST.dState[i] !== 'open' && ST.dState[i] !== 'broken') closed.push([d.x1, d.y1, d.x2, d.y2]); });
+    updateVis(plan, ax, ay, ah, SIM.fov, closed);
+  }
+
+  // ── 足元の輪。見つかっている間は住人が赤く光る ──
+  ring.position.copy(figIn.position); ring.position.y = .02;
+  ring.scale.setScalar(1 + Math.sin(t * 5) * .12);
+  ring.material.opacity = .8 * ap;
+  ring2.position.copy(figOut.position); ring2.position.y = .02;
+  const spotted = f0[4] > .5;
+  ring2.material.color.setHex(spotted ? 0xff5a62 : 0x8a9a6a);
+  ring2.scale.setScalar(spotted ? 1.5 + Math.sin(t * 9) * .3 : 1 + Math.sin(t * 3) * .12);
+  ring2.material.opacity = (spotted ? .85 : .5) * ap;
+  figOut.userData.mat.emissiveIntensity = spotted ? 2.6 : .9;
+  exitRings.forEach((rg, i) => { if (rg.visible) { rg.material.opacity = (f0[9] === i ? .9 : .35) * ap; rg.scale.setScalar(f0[9] === i ? 1.25 + Math.sin(t * 6) * .15 : 1); } });
+  // ラベルの投影
+  for (const l of stageLabels) {
+    const v = l.v.clone().project(camera);
+    l.el.style.left = (v.x * .5 + .5) * innerWidth + 'px';
+    l.el.style.top = (-v.y * .5 + .5) * innerHeight + 'px';
+    l.el.style.opacity = v.z < 1 ? ap : 0;
+  }
+
+  // ── 実況 ──
+  const tk = el2('tick');
+  if (tk) {
+    el2('tick-t').textContent = Math.min(r.tIn, ts).toFixed(1) + '秒';
+    let ma, mb;
+    const exA = r.exits[f0[9]];
+    if (fin) {
+      ma = r.caught ? '追いついた' : r.escaped ? '逃げられた' : '諦めた';
+      mb = r.caught ? '追いつかれた' : r.escaped ? `${r.escVia}から脱出` : '見つからなかった';
+    } else {
+      const dA = plan.DOORS[f0[10]], dB = plan.DOORS[f0[11]];
+      ma = aSt === S_LOOK ? (ts < SIM.look ? '玄関で見回している' : '部屋を見回している')
+         : aSt === S_OPEN ? `${dA ? SNAME[dA.kind] : '扉'}を開けている`
+         : aSt === S_BREAK ? `鍵の掛かった扉を蹴っている  あと${f0[12].toFixed(1)}秒`
+         : f0[14] === 1 ? '住人を追っている' : f0[14] === 2 ? '物音の方へ' : '部屋を探している';
+      mb = bSt === S_SLEEP ? '寝ている'
+         : bSt === S_OPEN ? `${dB ? SNAME[dB.kind] : '扉'}を開けている`
+         : bSt === S_LOCK ? (dB && dB.lock ? '扉に鍵を掛けている' : '扉を閉めている')
+         : bSt === S_EXIT ? `${exA ? EXIT[exA.k].verb : '外へ'}  あと${f0[13].toFixed(1)}秒`
+         : exA ? `${exA.n}へ` : '逃げ場を探している';
+    }
+    el2('tick-a').textContent = ma;
+    el2('tick-b').textContent = mb;
+    tk.classList.toggle('on', t > .3);
+    tk.classList.toggle('warm', fin && !r.caught);
+    tk.classList.toggle('alert', spotted && !fin);
+    if (spotted && !ST.sfx.spot) { ST.sfx.spot = 1; SFX.spot(); }
+    if (fin && !ST.sfx.end) { ST.sfx.end = 1; (r.caught ? SFX.caught : r.escaped ? SFX.escaped : SFX.giveup)(); }
+  }
+
+  // ── 決着 ──
+  if (fin) {
+    const b = Math.exp(-(t - (LEAD + total / PLAY)) * 2.2);
+    if (r.caught) {
+      figIn.userData.mat.emissiveIntensity = .9 + b * 4;
+      ring.scale.setScalar(1 + b * 3.4);
+    } else {
+      figOut.visible = r.escaped ? b >= .5 : true;   // 逃げ切ったら消える
+      figOut.userData.mat.emissiveIntensity = .9 + b * 3;
+    }
+  }
+  if (t > ST.dur && !ST.done) { ST.done = true; if (ST.onEnd) ST.onEnd(r); }
+}
+function pulseAt(x, y, now) {
+  pulse.visible = true; pulse.position.copy(P(x, y, .05)); pulse.userData.t0 = now; pulse.scale.setScalar(1);
+}
+/* 状態ごとの姿勢。歩けば上下に揺れ、寝ていれば横になり、蹴れば体が振れる */
+function posture(fig, st, now, isIn) {
+  const p = fig.userData.pose;
+  const s = now / 1000;
+  p.position.set(0, 0, 0); p.rotation.set(0, 0, 0);
+  if (st === S_SLEEP) { p.rotation.x = -Math.PI / 2; p.position.y = -.35; p.position.z = -.35; }
+  else if (st === S_WALK) { p.position.y = Math.abs(Math.sin(s * 11)) * .045; p.rotation.x = .10; p.rotation.z = Math.sin(s * 11) * .04; }
+  else if (st === S_LOOK) { p.rotation.x = -.04; }
+  else if (st === S_OPEN || st === S_LOCK) { p.rotation.x = .16; }
+  else if (st === S_BREAK) { const k = ST && ST.kickUntil > now ? 1 : 0; p.rotation.x = -.12 + k * .35; p.position.z = k * .12; }
+  else if (st === S_EXIT) { p.rotation.x = .22 + Math.sin(s * 9) * .06; p.position.y = -.08; }
+}
+
+/* ── カメラの道筋: 真上 → 傾く → 大きく引いて夜景(山場) → 部屋へ寄り直す ── */
+const KEY = [
+  { t: 0,    p: [0, 15.5, .01],    l: [0, 0, 0] },
+  { t: 5.2,  p: [0, 15.5, .01],    l: [0, 0, 0] },
+  { t: 8.1,  p: [-5.0, 9.6, 12.2],  l: [1.9, .8, .4] },
+  { t: 11.4, p: [-13.5, 11.5, 23],  l: [2.4, -5.0, 0] },
+  { t: 14.5, p: [-6.8, 7.4, 13.2], l: [2.6, .4, .3] },
+];
+const camP = new THREE.Vector3(), camL = new THREE.Vector3(), kb = new THREE.Vector3();
+let orbit = 0, dragging = false, lastX = 0, spin = 0;
+canvas.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; });
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  spin += (e.clientX - lastX) * .0016; lastX = e.clientX;
+});
+
+/* ── 進行 ── */
+const ease = t => t * t * (3 - 2 * t);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (t, [a, b]) => clamp((t - a) / (b - a));
+const T = { grid: [.2, 1.0], draw: [.9, 4.4], bal: [3.7, 4.7], door: [4.0, 5.1], rise: [5.3, 7.7],
+            floor: [5.7, 7.4], furn: [7.0, 9.3], lamp: [8.7, 11.8], label: 8.3, spec: 12.8 };
+let t0 = 0, frozen = null;
+{ const q = new URLSearchParams(location.search).get('t'); if (q !== null) frozen = +q; }
+
+/* クイズ中のカメラ。間取りの大きさに合わせて、中が見える角度から全体を収める。
+   下にカードが並ぶので、その高さぶん上へ寄せる */
+let quizCam = false, cityMix = 1;
+/* 模型に使える領域(px)。右(縦画面は下)のパネルと、左上の題字・下の実況を避ける */
+const isNarrow = () => matchMedia('(max-width:860px), (max-aspect-ratio:1/1)').matches;
+let _regionCache = null, _regionAt = 0;
+function layoutRegion() {
+  const now = performance.now();
+  if (_regionCache && now - _regionAt < 250) return _regionCache;
+  const p = document.getElementById('panel');
+  let R;
+  if (isNarrow()) {
+    const ph = p ? p.getBoundingClientRect().height : 0;
+    const bottom = innerHeight - ph - 10 - 62;      // パネルと実況のぶん
+    R = { x0: 12, y0: 92, x1: innerWidth - 12, y1: Math.max(200, bottom) };
+  } else {
+    const pw = p ? p.getBoundingClientRect().width + 44 : 0;
+    R = { x0: 28, y0: 86, x1: innerWidth - pw, y1: innerHeight - 92 };
+  }
+  _regionCache = R; _regionAt = now;
+  // 実況は領域の下辺の中央
+  const tk = document.getElementById('tick');
+  const cx = Math.round((R.x0 + R.x1) / 2) + 'px', by = isNarrow() ? (innerHeight - R.y1 - 56) + 'px' : '';
+  if (tk && tk.style.left !== cx) tk.style.left = cx;
+  if (tk && tk.style.bottom !== by) tk.style.bottom = by;
+  return R;
+}
+/* クイズ中のカメラ。間取り全体(庭・出口を含む)を領域の中央に、上から少し傾けて収める */
+function fitQuizCam() {
+  const BB = planBounds(PLAN);
+  const depth = (BB.y1 - BB.y0) + 1.0, width = (BB.x1 - BB.x0) + 1.0;
+  const vf = camera.fov * Math.PI / 180, asp = camera.aspect, t2 = 2 * Math.tan(vf / 2);
+  const R = layoutRegion();
+  const fw = Math.max(.3, (R.x1 - R.x0) / innerWidth), fh = Math.max(.3, (R.y1 - R.y0) / innerHeight);
+  // 奥行きは壁の高さぶん画面で伸びるので少し余裕を見る
+  const d = Math.max(depth * 1.18 / (t2 * fh), width * 1.06 / (t2 * asp * fw));
+  const visH = t2 * d, visW = visH * asp;
+  // 領域の中心が画面中心からどれだけずれているか(px) → 注視点を逆方向へ動かす
+  const dxPx = (R.x0 + R.x1) / 2 - innerWidth / 2, dyPx = (R.y0 + R.y1) / 2 - innerHeight / 2;
+  const cz = -((BB.y0 + BB.y1) / 2 - CY), cx = (BB.x0 + BB.x1) / 2 - CX;
+  camL.set(cx - dxPx / innerWidth * visW, 0, cz - dyPx / innerHeight * visH / .964);
+  camP.set(camL.x, d * .95, camL.z + d * .26);
+}
+
+function camAt(t) {
+  let i = 0;
+  while (i < KEY.length - 2 && t > KEY[i + 1].t) i++;
+  const a = KEY[i], b = KEY[i + 1];
+  const k = ease(clamp((t - a.t) / (b.t - a.t)));
+  camP.set(...a.p).lerp(kb.set(...b.p), k);
+  camL.set(...a.l).lerp(kb.set(...b.l), k);
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) return;      // 裏のタブで回し続けない(発熱・電池対策)
+  if (!t0) t0 = now;
+  const t = frozen != null ? frozen : (now - t0) / 1000;
+  const rise = seg(t, T.rise);
+  stepStage(now);
+
+  grid.material.uniforms.uOp.value = ease(seg(t, T.grid)) * (1 - ease(rise));
+  lineWall.material.uniforms.uReveal.value = ease(seg(t, T.draw)) * TOTAL_LEN * 1.02;
+  lineBal.material.uniforms.uReveal.value = ease(seg(t, T.bal)) * lineBal.userData.total * 1.02;
+  lineDoor.material.uniforms.uReveal.value = ease(seg(t, T.door)) * lineDoor.userData.total * 1.02;
+  lineWin.material.uniforms.uReveal.value = ease(seg(t, T.door)) * lineWin.userData.total * 1.02;
+  lineWall.material.uniforms.uOp.value = 1 - ease(rise) * .85;
+  lineBal.material.uniforms.uOp.value = 1 - ease(rise) * .85;
+  lineDoor.material.uniforms.uOp.value = 1 - ease(rise) * .92;
+  lineWin.material.uniforms.uOp.value = 1 - ease(rise) * .92;
+
+  for (const w of walls) {
+    const k = ease(clamp((rise - w.at * .42) / .58));
+    w.m.visible = k > .002;
+    w.m.scale.y = Math.max(.0001, k);
+    if (w.cap) w.m.position.y = w.cap * k;    // 笠木は壁の頭に付いて上がる
+  }
+  const fl = ease(seg(t, T.floor));
+  for (const f of floors) f.material.opacity = fl;
+  slab.visible = fl > .02;
+
+  const fu = seg(t, T.furn);
+  furn.forEach((m, i) => {
+    const k = ease(clamp((fu - (i / furn.length) * .55) / .45));
+    m.visible = k > .01;
+    m.scale.setScalar(Math.max(.001, k));
+  });
+
+  const lp = seg(t, T.lamp);
+  lamps.forEach((o, i) => {
+    const k = clamp((lp - (i / lamps.length) * .7) / .3);
+    o.l.intensity = o.max * ease(k) * (.93 + Math.sin(now / 900 + i) * .04);
+  });
+  moon.intensity = 1.5 - ease(lp) * .5;
+
+  // 街は引きの瞬間に立ち上がる(製図中に見えていると台無しになる)
+  /* 街は冒頭の引きの画でだけ見せる。俯瞰にすると同じ大きさの箱が並んで
+     「見下ろしている」感覚が壊れるので、クイズ中は消す */
+  cityMix += ((quizCam ? 0 : 1) - cityMix) * .06;
+  const cityFade = ease(seg(t, [8.4, 11.6])) * cityMix;
+  for (const im of cityMeshes) { im.visible = cityFade > .01; im.material.opacity = cityFade; }
+  halo.material.uniforms.uOp.value = (1 - cityMix) * ease(clamp((t - 5.6) / 2.4));
+  ground.visible = cityFade > .01; ground.material.opacity = cityFade;
+
+  if (quizCam) fitQuizCam(); else camAt(t);
+  if (!dragging) spin *= .955;
+  orbit += spin * .05;
+  // 画面が縦長だと横の画角が狭まって隅しか映らない。比率に応じて引く
+  const asp = camera.aspect;
+  // 俯瞰カメラは自分で比率を考慮して距離を出しているので、ここでは引かない
+  const back = quizCam ? 1 : (asp >= 1.6 ? 1 : asp >= 1 ? 1 + (1.6 - asp) * .42 : 1.25 + (1 - asp) * 1.25);
+  const r = Math.hypot(camP.x, camP.z) * back, a = Math.atan2(camP.x, camP.z) + orbit;
+  if (!window.__camLock) camera.position.set(Math.sin(a) * r, camL.y + (camP.y - camL.y) * back, Math.cos(a) * r);
+  // 下にカードが並ぶぶん、間取りを画面の上寄りに置く。
+  // 縦画面はさらに概要パネルも出るので余分に上げる
+  const lift = quizCam ? 0 : (asp < 1 ? (1 - asp) * 3.2 : 0);
+  if (!window.__camLock) camera.lookAt(camL.x, camL.y - lift, camL.z);   // 検証用にカメラを止められるように
+
+  if (t > 1.4) document.getElementById('head').classList.add('on');
+  if (t > T.spec && !introDone) document.getElementById('intro').classList.add('on');
+  // 引きの画では部屋名が邪魔なので消す
+  const shown = t > T.label ? 1 : 0;
+  const dimFade = 1 - ease(seg(t, T.rise));      // 寸法は製図の道具なので壁が立ったら消す
+  const far = quizCam ? 0 : clamp((camera.position.distanceTo(camL) - 19) / 8);
+  for (const l of labels) {
+    const v = l.v.clone().project(camera);
+    l.el.style.left = (v.x * .5 + .5) * innerWidth + 'px';
+    l.el.style.top = (-v.y * .5 + .5) * innerHeight + 'px';
+    l.el.style.opacity = (v.z < 1 ? (1 - far) : 0) * (dimEls.includes(l) ? dimFade : shown);
+  }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(frame);
+
+addEventListener('resize', () => {
+  renderer.setPixelRatio(pixRatio());   // 窓の大きさで上限が変わるので取り直す
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+/* ================================================================
+   クイズ本体
+   5問 × 3案。「一番いいのはどれ?」とだけ聞く。基準は伏せておいて、
+   答え合わせで侵入の演出を流す。侵入が失敗した1つが正解。
+   ================================================================ */
+const GROUPS = [1, 2, 3, 4, 5].map(q => PLANS.filter(p => p.q === q));
+/* 問いの文言。テーマ(見る観点)を1つずつ足していき、最後は全部 */
+const QUIZ = [
+  { theme: '見通し', q: '夜中、玄関から侵入者が入ってきた。寝ている場所が、いちばん見つかりにくいのは？' },
+  { theme: '建具',   q: '襖か、引き戸か、鍵の掛かる扉か。侵入者の足を、いちばん止めるのは？' },
+  { theme: '逃げ道', q: '1階の庭付き。外へ、いちばん早く逃げ切れるのは？' },
+  { theme: '距離',   q: '3LDKの廊下の型。玄関から寝床が遠くて、いちばん逃げやすいのは？' },
+  { theme: '総合',   q: '見通し・建具・逃げ道・距離。全部ふまえて、いちばん安全なのは？' },
+];
+/* 採点。正解数で安全意識を評価する。笑えるくらいがちょうどいい */
+const RANK = [
+  { s: 5, title: '安全意識: FBIレベル', text: '全問正解。これからの住居選びは絶対に心配なし。というより、次の内見は黄のほうが同行をお願いしたい。' },
+  { s: 4, title: '安全意識: 警備会社の隊長レベル', text: '1問だけ油断した。侵入者は、その1問から入ってくる。でもほぼ合格。世界一安全な家、一緒に建てられる。' },
+  { s: 3, title: '安全意識: 町内会の防犯部長レベル', text: '半分は見えている。残りの半分は、内見のとき黄が横で「その扉、鍵は掛かりますか」と聞く係をやる。' },
+  { s: 2, title: '安全意識: 戸締まりは忘れない人レベル', text: '鍵は掛ける。でも間取りは見ていない。鍵より先に見るのは、扉の位置と寝床までの距離。次はそこから。' },
+  { s: 1, title: '安全意識: 南向き・駅近で決める人レベル', text: '日当たりは気持ちいい。でも日当たりは命を守らない。逃げ道は守る。まずは寝室の窓から外に出られるか、それだけ見よう。' },
+  { s: 0, title: '安全意識: 侵入者と目が合うレベル', text: '玄関を開けた瞬間に見つかる家を、5回連続で選んだ。逆にすごい。世界一安全な家は黄が作るので、あなたは鍵だけ掛けてください。' },
+];
+let results = [];          // 問ごとの ○×
+let introDone = false;
+/* 各問の正解 = 計算で一番余裕があった間取り。手で決めた正解は使わない */
+for (const g of GROUPS) {
+  const rs = g.map(p => simulate(p));
+  let bi = 0; rs.forEach((r, i) => { if (r.margin > rs[bi].margin) bi = i; });
+  g.forEach((p, i) => { p.safe = i === bi; p.margin = rs[i].margin; p.outcome = rs[i].reason; });
+}
+let qi = 0, picked = null, score = 0, revealing = false;
+
+/* カード用の小さな平面図。3Dだけだと3案の違いが一目で掴めない */
+function planThumb(plan, w = 236, h = 176) {
+  const c = document.createElement('canvas');
+  c.width = w * 2; c.height = h * 2;
+  const g = c.getContext('2d');
+  g.scale(2, 2);
+  g.fillStyle = '#f3f0e8'; g.fillRect(0, 0, w, h);
+  const pad = 13, B = planBounds(plan);
+  const bw = B.x1 - B.x0, bh = B.y1 - B.y0;
+  const sc = Math.min((w - pad * 2) / bw, (h - pad * 2) / bh);
+  const X = x => pad + (w - pad * 2 - bw * sc) / 2 + (x - B.x0) * sc;
+  const Y = y => h - pad - (y - B.y0) * sc - (h - pad * 2 - bh * sc) / 2;
+  /* 部屋を用途で塗り分ける。壁線だけだと3案の違いが判断できない */
+  const FILL = { ldk: '#efe4cf', bed: '#e6e3ee', bath: '#dfe8ec', wash: '#dfe8ec',
+                 wc: '#e9e6df', ent: '#ebdad3', hall: '#eeebe3' };
+  for (const r of plan.ROOMS) {
+    g.fillStyle = r.out ? (r.n.includes('庭') || r.n.includes('テラス') ? '#dbe6d0' : '#e3e7ea') : (FILL[r.t] || '#eae8e0');
+    g.fillRect(X(r.x), Y(r.y + r.h), r.w * sc, r.h * sc);
+  }
+  g.strokeStyle = '#5c5f52'; g.lineWidth = 2.4; g.lineCap = 'round';
+  for (const [x1, y1, x2, y2] of plan.WALLS) {
+    g.beginPath(); g.moveTo(X(x1), Y(y1)); g.lineTo(X(x2), Y(y2)); g.stroke();
+  }
+  /* 建具。開き戸は弧、引き戸は二重線、窓は水色、鍵の掛かる扉は金の点 */
+  for (const d of plan.DOORS) {
+    if (d.kind === 'open') continue;
+    const a0 = d.ang * Math.PI / 180;
+    const px = X(d.x1), py = Y(d.y1), qx = X(d.x2), qy = Y(d.y2);
+    if (d.kind === 'hinge') {
+      const sw = d.sw * Math.PI / 180;
+      g.strokeStyle = '#8a9479'; g.lineWidth = 1.1;
+      g.beginPath(); g.arc(px, py, d.w * sc, -a0, -(a0 + sw), sw > 0); g.stroke();
+      g.beginPath(); g.moveTo(px, py); g.lineTo(X(d.x1 + Math.cos(a0 + sw) * d.w), Y(d.y1 + Math.sin(a0 + sw) * d.w)); g.stroke();
+      if (d.lock) { g.fillStyle = '#c48d7e'; g.beginPath(); g.arc(X(d.mx), Y(d.my), 2.8, 0, 7); g.fill();
+        g.strokeStyle = '#000'; g.lineWidth = .8; g.stroke(); }
+    } else if (d.kind === 'slide') {
+      const dx = qx - px, dy = qy - py, L = Math.hypot(dx, dy) || 1, ox = -dy / L * 1.5, oy = dx / L * 1.5;
+      g.strokeStyle = '#8a9479'; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(px + ox, py + oy); g.lineTo(px + dx * .55 + ox, py + dy * .55 + oy); g.stroke();
+      g.beginPath(); g.moveTo(px + dx * .45 - ox, py + dy * .45 - oy); g.lineTo(qx - ox, qy - oy); g.stroke();
+    } else {
+      g.strokeStyle = '#7fb2c9'; g.lineWidth = 2.2;
+      g.beginPath(); g.moveTo(px, py); g.lineTo(qx, qy); g.stroke();
+    }
+  }
+  /* 出口(金)と名前 */
+  g.font = '700 8px "Hiragino Kaku Gothic ProN", sans-serif';
+  for (const e of plan.EXITS) {
+    const ex = X(e.x), ey = Y(e.y);
+    g.fillStyle = '#c48d7e'; g.beginPath(); g.arc(ex, ey, 3, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1; g.stroke();
+    g.textAlign = ex < 34 ? 'left' : ex > w - 34 ? 'right' : 'center';
+    g.fillStyle = '#9a6a5c'; g.fillText(e.n, ex, ey < 16 ? ey + 13 : ey - 6);
+  }
+  // 玄関と寝ている場所。この2点の関係がこのゲームの肝なので必ず見せる
+  const dot = (x, y, col, rr) => {
+    g.fillStyle = col; g.beginPath(); g.arc(X(x), Y(y), rr, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.2; g.stroke();
+  };
+  dot(plan.entry[0], plan.entry[1], '#ff5a62', 4.2);
+  dot(plan.resident[0], plan.resident[1], '#8a9a6a', 4.2);
+  return c;
+}
+/* カードに出す出口の要約 */
+function exitSummary(plan) {
+  const cnt = {};
+  for (const e of plan.EXITS) cnt[e.n] = (cnt[e.n] || 0) + 1;
+  const parts = Object.entries(cnt).map(([n, k]) => k > 1 ? `${n}×${k}` : n);
+  return '出口: 玄関' + (parts.length ? '・' + parts.join('・') : 'のみ');
+}
+
+function renderCards() {
+  const g = GROUPS[qi];
+  const box = document.getElementById('cards');
+  box.innerHTML = '';
+  g.forEach(plan => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    // 物件名や価格は出さない。案A/B/C と、間取りの種別・広さ・階、特徴、出口だけ
+    plan.label = '案' + 'ABC'[g.indexOf(plan)];
+    const fl = (plan.addr.match(/(\d+階(?:\s*角部屋)?)/) || [, ''])[1];
+    el.innerHTML = `<div class="txt"><b>${plan.label}</b><i>${plan.kind}・${plan.area}㎡${fl ? '・' + fl : ''}</i>` +
+                   `<i class="tr">${plan.shape}</i><i class="ex">${exitSummary(plan)}</i>` +
+                   `<div class="pick">この間取りで暮らす</div></div>`;
+    el.prepend(planThumb(plan));
+    el.addEventListener('click', ev => {
+      if (revealing) return;
+      // 選択中のカードの決定バーを押したら確定
+      if (ev.target.classList.contains('pick') && picked === plan) { submit(); return; }
+      picked = plan;
+      [...box.children].forEach(c => c.classList.toggle('sel', c === el));
+      showPlan(plan, true);
+    });
+    box.appendChild(el);
+  });
+  document.getElementById('qtitle').textContent = QUIZ[qi].q;
+  document.querySelector('.qhead em').textContent = `QUIZ TIME ${qi + 1} / ${GROUPS.length}  ·  ${QUIZ[qi].theme}`;
+  document.body.classList.add('quizzing');
+  const dots = document.getElementById('qdots');
+  dots.innerHTML = GROUPS.map((_, i) =>
+    `<i class="${i < qi ? 'ok' : i === qi ? 'on' : ''}"></i>`).join('');
+  document.getElementById('qhead').classList.add('on');
+  box.classList.add('on');
+  // 何も選ばれていないのに3Dが出ていると対応が分からない。最初の1件を選んだ状態から始める
+  box.children[0].click();
+}
+
+/* 間取りを差し替えて見せる。quick なら演出済みの状態から始める */
+function showPlan(plan, quick) {
+  stopStage();
+  buildPlan(plan);
+  t0 = performance.now() - (quick ? 11.2 : 0) * 1000;
+  frozen = null;
+  quizCam = true;                 // 間取り全体が見える俯瞰に切り替える
+  orbit = 0; spin = 0;            // 冒頭で回して見ていても、クイズは図面と同じ向きで見せる
+}
+
+const el = id => document.getElementById(id);
+/* 何が決め手だったかを言い切る。これが無いと「後出し」に感じる */
+function decider(r) {
+  const sec = r.tIn.toFixed(0);
+  if (r.escaped) {
+    const dest = r.escKind === 'door' ? '玄関から外へ出た' : r.escKind === 'partition' ? '隔て板を蹴破って隣の家へ転がり込んだ'
+               : r.escKind === 'hatch' ? '避難ハッチで下の階へ降りた' : r.escKind === 'fence' ? 'フェンスを越えた' : `${r.escVia}から外へ出た`;
+    return [r.escVia, `${sec}秒で${dest}。侵入者は${Math.max(1, r.margin).toFixed(0)}秒後ろ。`];
+  }
+  if (r.giveup) return ['死角', `${sec}秒。全部の部屋を回っても見つけられず、帰った。`];
+  if (r.locked && r.broke) return ['鍵の先に出口がない', `${sec}秒。鍵で3秒稼いだけど、扉を壊されて捕まった。`];
+  if (r.seen0) return ['玄関から見えていた', `玄関に立った時点で、寝ているあなたが見えていた。`];
+  if (r.tSeen < 4.5) return ['すぐ見つかった', `${r.tSeen.toFixed(0)}秒で見つかって、${sec}秒で捕まった。`];
+  if (r.lastExit && r.wasExiting) return ['出口に時間がかかる', `${EXIT[r.lastExit.k].verb}途中で、背中を掴まれた。`];
+  return ['寝室が近い', `${sec}秒。出口に着く前に捕まった。`];
+}
+function facts(r) {
+  const [name] = decider(r);
+  const chip = (ok, txt) => `<span class="${ok ? 'cool' : 'hot'}">${txt}</span>`;
+  const seen = r.tSeen === Infinity ? '最後まで見つからず' : `${r.tSeen.toFixed(0)}秒で見つかった`;
+  const doors = r.locked ? `鍵で3秒稼いだ` : r.broke ? `扉を${r.broke}枚壊された` : `扉${r.opened}枚を開けられた`;
+  const exit = r.escaped ? `${r.escVia}から脱出` : r.lastExit && r.wasExiting ? `${r.lastExit.n}を使う途中で` : r.lastExit ? `${r.lastExit.n}へ向かう途中で` : '逃げ道なし';
+  return `<span style="border-color:rgba(196,141,126,.55);color:#c48d7e">決め手: ${name}</span>` +
+    chip(r.tSeen === Infinity || r.tSeen > 4.5, seen) +
+    chip(r.locked || r.opened + r.broke >= 2, doors) +
+    chip(r.escaped, exit) +
+    (r.escaped ? `<span>余裕 ${Math.max(1, r.margin).toFixed(0)}秒</span>` : `<span>${r.tIn.toFixed(0)}秒</span>`);
+}
+
+/* 演出を流して、終わったら結果を出す */
+function playAndJudge(plan, after) {
+  revealing = true;
+  document.body.classList.add('staging');
+  el('cards').classList.remove('on');
+  el('qgo').classList.remove('on');
+  el('vbox').classList.remove('on');
+  showPlan(plan, true);
+  // 真上から見せる。扇が壁で切られる様子は俯瞰でないと分からない
+  setTimeout(() => {
+    const r = startStage(plan);
+    ST.onEnd = () => { after(r); };
+  }, 420);
+}
+
+function showVerdict(plan, r, opts) {
+  document.body.classList.remove('staging');
+  el('tick').classList.remove('on');
+  document.body.classList.add('verdicting');
+  const best = (GROUPS[plan.q - 1] || []).find(p => p.safe) || plan;
+  const isBest = plan.safe;
+  el('vmark').textContent = r.caught ? '✕' : isBest ? '✓' : '△';
+  el('vmark').className = 'mark ' + (r.caught ? 'ng' : isBest ? 'ok' : 'mid');
+  el('vtitle').innerHTML = `${plan.label || plan.name}<span class="tr">${plan.shape}</span>` +
+    (r.caught ? '<span style="color:#d0525a">残念。追いつかれた</span>'
+     : isBest ? '<span style="color:#4f8a5c">正解。侵入は失敗した</span>'
+     : r.giveup ? '<span style="color:#c48d7e">侵入者は諦めた。でも、いちばん安全な案ではない</span>'
+     : `<span style="color:#c48d7e">惜しい。逃げ切れたけど余裕は${Math.max(1, r.margin).toFixed(0)}秒。いちばん安全な案は${Math.max(1, best.margin).toFixed(0)}秒</span>`);
+  el('vwhy').innerHTML = plan.why + `<br><span style="color:#7f8a6b">${decider(r)[1]}</span>` +
+    (isBest ? '' : `<br><span style="color:#c48d7e">いちばん安全だったのは${best.label || best.name}。${best.shape}。余裕${Math.max(1, best.margin).toFixed(0)}秒。</span>`);
+  el('vfacts').innerHTML = facts(r);
+  const b = el('vbtns');
+  b.innerHTML = '';
+  for (const [label, main, fn] of opts) {
+    const btn = document.createElement('button');
+    btn.className = 'vbtn' + (main ? ' main' : '');
+    btn.textContent = label;
+    btn.addEventListener('click', fn);
+    b.appendChild(btn);
+  }
+  el('vbox').classList.add('on');
+}
+
+function submit() {
+  if (!picked || revealing) return;
+  const chosen = picked;
+  const answer = GROUPS[qi].find(p => p.safe);
+  playAndJudge(chosen, r => {
+    const right = chosen.safe;
+    if (right) score++;
+    results.push({ q: qi, theme: QUIZ[qi].theme, right, pick: chosen.label });
+    const next = () => { el('vbox').classList.remove('on');
+      document.body.classList.remove('verdicting'); nextQuestion(); };
+    // 演出は選んだ案だけ。正解でも不正解でも、そのまま次の問題へ
+    showVerdict(chosen, r, [[qi + 1 < GROUPS.length ? '次の問題へ' : '採点を見る', true, next]]);
+  });
+}
+
+function nextQuestion() {
+  revealing = false;
+  qi++;
+  if (qi >= GROUPS.length) { finish(); return; }
+  picked = null;
+  stopStage();
+  showPlan(GROUPS[qi][0], true);
+  renderCards();
+}
+
+function finish() {
+  stopStage();                     // 終わったら演出の扇や小人を片付ける
+  document.body.classList.remove('staging', 'verdicting');
+  el('qhead').classList.remove('on');
+  el('cards').classList.remove('on');
+  const n = GROUPS.length, wrong = n - score;
+  const rank = RANK.find(r => score >= r.s) || RANK[RANK.length - 1];
+  el('vmark').textContent = `${score}/${n}`;
+  el('vmark').className = 'mark ' + (score >= 4 ? 'ok' : score >= 2 ? 'mid' : 'ng');
+  el('vtitle').innerHTML = `正解 ${score}・不正解 ${wrong}<br><span style="color:${score >= 4 ? '#7be8a4' : score >= 2 ? '#f0cf7e' : '#ff6b73'}">${rank.title}</span>`;
+  el('vwhy').innerHTML = rank.text + '<br><span style="color:#7f8a6b">玄関から寝床までの距離、建具と鍵、出口の種類。図面を見れば全部わかる。世界一安全な家は、ここから始まる。</span>';
+  el('vfacts').innerHTML = results.map(x =>
+    `<span class="${x.right ? 'cool' : 'hot'}">第${x.q + 1}問 ${x.theme} ${x.right ? '○' : '×'}</span>`).join('');
+  const b = el('vbtns'); b.innerHTML = '';
+  const again = document.createElement('button');
+  again.className = 'vbtn main'; again.textContent = 'もう一度';
+  again.addEventListener('click', () => {
+    // 2周目は冒頭の製図アニメを飛ばす。毎回15秒待たされると冗長
+    qi = 0; score = 0; picked = null; revealing = false; results = [];
+    el('vbox').classList.remove('on');
+    showPlan(GROUPS[0][0], true); renderCards();
+  });
+  const home = document.createElement('button');
+  home.className = 'vbtn'; home.textContent = 'ホームへ戻る';
+  home.addEventListener('click', () => { location.href = '../index.html'; });
+  b.appendChild(again); b.appendChild(home);
+  el('vbox').classList.add('on');
+}
+
+el('qgo').addEventListener('click', submit);
+// 冒頭は製図からの演出を最後まで見せ、導入パネルのボタンでクイズを始める
+function startQuiz() {
+  if (document.body.classList.contains('quizzing')) return;
+  introDone = true;
+  el('intro').classList.remove('on');
+  quizCam = true; renderCards();
+}
+el('qstart').addEventListener('click', startQuiz);
+
+window.__estate = { T, KEY, camera, cityMeshes, renderer, scene, moon,
+  // 物件を差し替えると配列ごと入れ替わるので、参照ではなくゲッタで公開する
+  get walls(){ return walls; }, get furn(){ return furn; }, get labels(){ return labels; },
+  get t(){ return frozen != null ? frozen : (performance.now() - t0) / 1000; },
+  PLANS, DEFS, buildPlan, get PLAN(){ return PLAN; }, P, simulate, visPoly, canSee, SIM, validate, findPath,
+  startStage, stopStage, get ST(){ return ST; }, figIn, figOut,
+  showPlan, submit, renderCards, GROUPS, get qi(){ return qi; }, get score(){ return score; },
+  set quizCam(v){ quizCam = v; }, fitQuizCam,
+  pick: p => { picked = p; },
+  startQuiz,
+  goto: q => { qi = q - 1; picked = null; revealing = false; results = []; introDone = true; el('intro').classList.remove('on'); stopStage(); el('vbox').classList.remove('on');
+    document.body.classList.remove('verdicting', 'staging'); showPlan(GROUPS[qi][0], true); renderCards(); },
+  seek: s => { t0 = performance.now() - s * 1000; frozen = null; },
+  freeze: s => { frozen = s; }, run: () => { frozen = null; } };
+</script>
+</body>
+</html>

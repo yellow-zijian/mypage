@@ -1,0 +1,3186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" href="data:,">
+<title>割って入る — mypage prototype</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  /* 配色(2026-09-10 淡色版): 紙・セージ・くすみ桃・くすみ空・砂・墨。黄色は使わない。
+     構造の線と眉はセージ、触れるもの(ボタン)はくすみ桃、文字は墨 */
+  :root { --paper:#f6f3ec; --paper2:#ece8dd; --paper3:#e2ded2;
+    --sage:#cfd4c3; --sage2:#a9b394; --sage3:#7f8a6b;
+    --rose:#eacfc5; --rose2:#d7aa9c; --rose3:#c48d7e;
+    --sky:#c8d5db; --sky2:#9db3bf; --sand:#e1d6bf; --sand2:#c9b995;
+    --ink:#4a4a43; --ink2:#7a786e; --ink3:#a5a398; }
+  html, body { width:100%; height:100%; overflow:hidden; touch-action:none;
+    -webkit-user-select:none; user-select:none; background:#0b0b12; }
+
+  /* ============ 新サイト(破壊後に現れる層) ============ */
+  #new-site { position:fixed; inset:0; z-index:0; overflow:hidden;
+    background: radial-gradient(120% 90% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%); }
+  #new-site::before { content:""; position:absolute; inset:0;
+    background-image: linear-gradient(rgba(96,102,88,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(96,102,88,.07) 1px, transparent 1px);
+    background-size: 48px 48px; }
+  .ns-watermark { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font: 900 min(38vw, 340px)/1 "Helvetica Neue", Arial, sans-serif;
+    color:transparent; -webkit-text-stroke: 2px rgba(96,102,88,.14); letter-spacing:-.04em; }
+  /* 天気連動の背景: まず静止画(ポスター)が即表示され、動画が準備できたら上に重なって動き出す */
+  .ns-still, .ns-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:0; transition: opacity 1.6s ease; }
+  #new-site.has-video .ns-still { opacity:1; }
+  #new-site.video-ready .ns-video { opacity:1; }
+  #new-site.has-video::before, #new-site.has-video .ns-watermark { opacity:0; transition: opacity 1s ease; }
+  /* テキストの可読性を守る左下のうっすら暗がり */
+  .ns-shade { position:absolute; inset:0; pointer-events:none; opacity:0; transition: opacity 1.6s ease;
+    background: linear-gradient(15deg, rgba(5,5,10,.55) 0%, rgba(5,5,10,.25) 30%, rgba(5,5,10,0) 55%); }
+  #new-site.has-video .ns-shade { opacity:1; }
+  .ns-inner { position:relative; text-align:center; color:#eee; padding:0 24px;
+    opacity:0; transform:translateY(24px); transition: opacity .9s ease .2s, transform .9s ease .2s; }
+  #new-site.revealed .ns-inner { opacity:1; transform:none; }
+  .ns-eyebrow { font: 600 clamp(11px, 1.05vw, 16px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.4em;
+    color:#dfe6d0; margin-bottom:2em; white-space:nowrap; text-shadow: 0 1px 10px rgba(5,5,10,.6); }
+  /* タイトルは17文字。フォントサイズ=(画面幅-余白)÷17.5 で常に1行に収まる */
+  #ns-title { font: 800 clamp(28px, calc((100vw - 80px)/17.5), 96px)/1.25 "Hiragino Kaku Gothic ProN", "Helvetica Neue", sans-serif;
+    color:#fff; margin-bottom:20px; white-space:nowrap;
+    text-shadow: 0 2px 24px rgba(5,5,10,.45); }
+  .ns-sub { font: 400 15px/1.9 "Hiragino Kaku Gothic ProN", sans-serif; color:#a8a4bf; margin-bottom:36px; }
+  /* 天気スタンプ: 左下に大きく(場所/天気+気温/一言) */
+  .ns-weather { position:absolute; left:clamp(24px, 4vw, 60px); bottom:clamp(24px, 5vh, 56px);
+    text-align:left; max-width:calc(100vw - 48px); opacity:0; z-index:2;
+    transform: translateY(14px);
+    transition: opacity 1.1s ease .9s, transform 1.1s ease .9s; }
+  #new-site.revealed .ns-weather.on { opacity:1; transform:none; }
+  .w-place { display:block; font:600 clamp(13px, 1.4vw, 21px)/1 "Helvetica Neue", "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.3em; color:#dfe6d0; margin-bottom:.8em; white-space:nowrap;
+    text-shadow: 0 1px 10px rgba(5,5,10,.6); }
+  .w-main { display:block; font:800 clamp(30px, 5.3vw, 76px)/1.1 "Hiragino Kaku Gothic ProN", "Helvetica Neue", sans-serif;
+    color:#fff; margin-bottom:.24em; letter-spacing:.02em; white-space:nowrap;
+    text-shadow: 0 2px 20px rgba(5,5,10,.45); }
+  .w-main small { font-size:.55em; font-weight:700; color:#eef0e6; margin-left:.1em; }
+  /* 一言は最長35文字(雷雨)。フォントサイズ=(画面幅-余白)÷36 で常に1行 */
+  .w-quote { display:block; font:500 clamp(13px, calc((100vw - 130px)/36), 28px)/1.8 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#f4ebdf; white-space:nowrap; text-shadow: 0 1px 14px rgba(5,5,10,.55); }
+  /* 天気切替ボタン(温度の隣・ガラス風) */
+  /* ボタンは親(.w-main)の文字サイズ比で伸縮。記号は内側spanで縮小 */
+  #w-switch { margin-left:.28em; width:.74em; height:.74em; border-radius:50%; vertical-align:middle;
+    border:1px solid rgba(255,255,255,.22); background:rgba(10,10,18,.55); color:#b9b3d8;
+    font-size:inherit; line-height:1; cursor:pointer; backdrop-filter: blur(6px);
+    display:inline-flex; align-items:center; justify-content:center;
+    transition: all .2s ease; }
+  #w-switch span { font-size:.4em; pointer-events:none; }
+  #w-switch:hover { border-color:#e6c3b6; color:#fff; transform: scale(1.08); }
+  /* 天気メニュー(上方向にせり出す) */
+  .w-menu { position:absolute; left:0; bottom:calc(100% + 14px);
+    display:flex; flex-direction:column; gap:2px;
+    background:rgba(10,10,18,.88); border:1px solid rgba(255,255,255,.16);
+    border-radius:14px; padding:8px; backdrop-filter: blur(10px);
+    opacity:0; pointer-events:none; transform: translateY(10px); transition: all .25s ease; }
+  .w-menu.open { opacity:1; pointer-events:auto; transform:none; }
+  .w-menu button { border:none; background:transparent; color:#cfcfe2; text-align:left;
+    font:600 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; padding:.8em 1.7em;
+    border-radius:9px; cursor:pointer; white-space:nowrap; transition: background .15s ease; }
+  .w-menu button:hover { background:rgba(215,170,156,.3); color:#fff; }
+  .w-menu button.active { background:#d7aa9c; color:#fff; }
+
+  /* ============ 古いホームページ(破壊対象) ============ */
+  /* 2005年定番の「紺色星空タイル壁紙」: 暗背景でガラスのヒビ・きらめきが映える */
+  #old-site { position:fixed; inset:0; z-index:5; overflow:hidden;
+    font-family:"Comic Sans MS", "Hiragino Maru Gothic ProN", cursive;
+    background-color:#0a1033;
+    background-image:
+      radial-gradient(circle at 22% 31%, rgba(255,255,255,.95) 1.1px, transparent 1.8px),
+      radial-gradient(circle at 71% 62%, rgba(255,255,255,.7) 1px, transparent 1.6px),
+      radial-gradient(circle at 46% 82%, rgba(190,210,255,.6) .9px, transparent 1.4px),
+      radial-gradient(circle at 86% 14%, rgba(255,224,130,.9) 1.3px, transparent 2px),
+      radial-gradient(circle at 8% 74%, rgba(255,255,255,.5) .8px, transparent 1.3px),
+      radial-gradient(ellipse 60% 40% at 70% 20%, rgba(90,70,180,.28), transparent),
+      radial-gradient(ellipse 50% 45% at 25% 75%, rgba(40,120,190,.22), transparent);
+    background-size: 210px 210px, 250px 250px, 170px 170px, 300px 300px, 190px 190px, 100% 100%, 100% 100%;
+    display:flex; align-items:center; justify-content:center; }
+  /* カード全体はJSのzoomで画面サイズに一括拡縮するため、内部は固定pxでOK */
+  .old-table { position:relative; width:1060px; max-height:94vh; overflow:hidden;
+    background:#fffef4; border:4px outset #9aa6ff; padding: 18px 24px;
+    text-align:center;
+    box-shadow: 0 0 30px rgba(130,145,255,.4), 8px 8px 0 rgba(0,0,0,.5); }
+  .old-gallery { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .old-gallery .ph { width:132px; height:92px; border:3px inset #c0c0c0;
+    display:flex; align-items:flex-end; justify-content:center;
+    font-size:10px; color:#fff; text-shadow: 1px 1px 0 #000; padding-bottom:4px; }
+  .ph.g1 { background:linear-gradient(160deg,#ff9d5c,#ff5c8a 55%,#7a2b8f); }
+  .ph.g2 { background:linear-gradient(200deg,#67e8f9,#2f6fd8 60%,#1a2f80); }
+  .ph.g3 { background:linear-gradient(170deg,#b6f36e,#2fae52 60%,#0c5f38); }
+  .ph.g4 { background:linear-gradient(190deg,#c99cff,#7048c8 55%,#2a1c66); }
+  .ph.g5 { background:linear-gradient(150deg,#ffe95c,#ff9433 55%,#c8331f); }
+  .ph.g6 { background:linear-gradient(210deg,#5cf2c8,#1eae9c 60%,#0c4f66); }
+  .nw { color:#ff2a2a; font-size:10px; font-weight:bold; vertical-align:super;
+    animation: blink .8s steps(1) infinite; }
+  .old-title { font-size: 34px; font-weight:bold; white-space:nowrap;
+    background: linear-gradient(90deg, #ff2a2a, #ff9d00, #ffd500, #2ecc40, #0074d9, #b10dc9);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: blink 1.1s steps(1) infinite; margin-bottom:6px; }
+  @keyframes blink { 50% { opacity:.25; } }
+  .old-sub { font-size:12px; color:#e91e63; margin-bottom:10px; }
+  .mq { overflow:hidden; background:#000080; color:#00ff66; font-size:13px; padding:4px 0; margin-bottom:12px; }
+  .mq-track { display:inline-block; white-space:nowrap; animation: mq 16s linear infinite; }
+  @keyframes mq { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+  .old-counter { display:inline-block; background:#000; color:#39ff14;
+    font-family:"Courier New", monospace; font-size:15px; letter-spacing:3px;
+    padding:4px 10px; border:2px inset #808080; margin-bottom:12px; }
+  .old-counter small { color:#ccc; letter-spacing:0; font-size:10px; }
+  .old-menu { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 14px;
+    font-size:14px; margin-bottom:12px; }
+  .old-menu a { color:#0000ee; text-decoration:underline; }
+  .old-menu a:nth-child(2n) { color:#551a8b; }
+  .uc-bar { position:relative; height:24px; margin: 0 auto 12px;
+    background: repeating-linear-gradient(45deg, #f7d117 0 14px, #222 14px 28px); }
+  .uc-bar span { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.72); color:#ffd500; font-size:11px; padding:2px 10px; white-space:nowrap; }
+  .old-news { font-size:12px; color:#333; text-align:left; width:fit-content; margin:0 auto 12px; line-height:1.8; }
+  .old-news b { color:#d00; }
+  .badges { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .badge { font-size:10px; padding:2px 8px; border:1px solid #999; background:#e8e8e8; color:#444; }
+  .old-footer { font-size:10px; color:#888; }
+
+  /* ============ 新サイトのスクロール構造 ============ */
+  #ns-scroll { position:absolute; inset:0; overflow:hidden; scrollbar-width:none; }
+  #ns-scroll::-webkit-scrollbar { display:none; }
+  #new-site.revealed #ns-scroll { overflow-y:auto; }
+  .ns-sec { position:relative; width:100%; height:100vh; overflow:hidden; }
+  /* ============ 幕間(セクションの橋渡し) ============
+     テーマの違うセクションを、色の橋と一言でつなぐ。上の色→下の色へ溶け、
+     ゆっくり漂う色の玉は CSS だけで動く(GPUを使わない) */
+  .ns-bridge { position:relative; width:100%; height:52vh; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.1em; }
+  .ns-bridge .br-num { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none;
+    font:900 clamp(96px, 17vw, 240px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:-.04em;
+    color:transparent; -webkit-text-stroke:1.5px rgba(96,102,88,.16); }
+  .ns-bridge .br-rule { position:relative; width:1px; height:clamp(28px, 6vh, 56px);
+    background:linear-gradient(180deg, transparent, var(--sage2), transparent); }
+  .ns-bridge p { position:relative; margin:0; text-align:center; color:var(--ink2); letter-spacing:.16em;
+    font:600 clamp(13px, 1.2vw, 17px)/1.9 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .ns-bridge p b { display:block; color:var(--ink); font-weight:800; font-size:1.3em; letter-spacing:.12em; margin-bottom:.35em; }
+  .ns-bridge .br-orb { position:absolute; border-radius:50%; filter:blur(42px); opacity:.6; pointer-events:none;
+    animation: orbDrift 18s ease-in-out infinite alternate; }
+  .ns-bridge .br-orb.b { animation-duration:23s; animation-direction:alternate-reverse; }
+  @keyframes orbDrift { from { transform:translate(-6%, -4%) scale(1); } to { transform:translate(6%, 5%) scale(1.15); } }
+  #br-room  { background:linear-gradient(180deg, #cfd4c3 0%, #e6e7dc 45%, #f6f3ec 100%); }
+  #br-gate  { background:linear-gradient(180deg, #f6f3ec 0%, #ece9df 30%, #9aa0a4 66%, #444a55 100%); }   /* 紙 → 動画の上端 */
+  #br-dig   { background:linear-gradient(180deg, #757f8b 0%, #a9aeb0 34%, #d9d6cb 68%, #e6e0d2 100%); }   /* 動画の下端 → 紙 */
+  #br-job   { background:linear-gradient(180deg, #e6e0d2 0%, #e9e9de 50%, #f1f0e8 100%); }
+  #br-hobby { background:linear-gradient(180deg, #d7dccb 0%, #e6e4d8 42%, #8b9182 74%, #2c3129 100%); }
+  /* 天気の動画は下端で橋の色へ溶ける */
+  #ns-sec1::after { content:""; position:absolute; left:0; right:0; bottom:0; height:22vh; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, rgba(207,212,195,0) 0%, rgba(207,212,195,.75) 70%, #cfd4c3 100%); }
+  #ns-sec1 { display:flex; align-items:center; justify-content:center; }
+  /* 部屋(3D箱庭)。iframe は見えている間だけ描画する */
+  #ns-room { background: radial-gradient(120% 110% at 50% 0%, #f7f4ed 0%, #efece3 55%, #e6e4d8 100%); }
+  #room-frame { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; background:transparent; }
+  /* 部屋の左の文章。模型は右側に全景で収まり、こちらは癒しの言葉と「いまの用事」 */
+  .room-copy { position:absolute; z-index:3; left:clamp(28px, 6vw, 96px); top:50%; transform:translateY(-50%);
+    width:min(34vw, 440px); pointer-events:none; color:var(--ink); }
+  .rc-eyebrow { font:600 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.34em; color:var(--ink3); }
+  .rc-title { margin-top:1.3em; font:500 clamp(28px, 3.3vw, 52px)/1.32 "Hiragino Mincho ProN", "Hiragino Kaku Gothic ProN", serif;
+    color:var(--ink); letter-spacing:.06em; }
+  .rc-lead { margin-top:1.3em; font:500 clamp(12px, 1.02vw, 15px)/2 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink2); }
+  .rc-who { margin-top:1.8em; display:flex; align-items:center; gap:.9em; }
+  .rc-avatar { flex:none; width:clamp(34px, 3vw, 44px); height:clamp(34px, 3vw, 44px); border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #f6ebdd, #d9c6a5); border:2px solid #fff;
+    box-shadow:0 4px 12px rgba(80,80,60,.15); display:flex; align-items:center; justify-content:center;
+    font:800 clamp(12px, 1.05vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:#6b5a4c; }
+  .rc-who b { font:800 clamp(12px, 1.05vw, 15px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink); }
+  .rc-who small { margin-left:.5em; font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink3); letter-spacing:.1em; }
+  .rc-who i { display:block; margin-top:.4em; font-style:normal; font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink3); letter-spacing:.12em; }
+  .rc-stats { margin-top:1.3em; font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink3); letter-spacing:.12em; }
+  .rc-live { margin-top:2.2em; padding:clamp(12px, 1.2vw, 18px) clamp(14px, 1.4vw, 20px); border-radius:14px;
+    background:rgba(255,255,255,.55); border:1px solid rgba(96,102,88,.14); backdrop-filter:blur(8px);
+    box-shadow:0 10px 30px rgba(80,80,60,.08); pointer-events:auto; }
+  .rc-live-label { display:flex; justify-content:space-between; font:600 clamp(9px, .78vw, 11px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink3); letter-spacing:.2em; }
+  .rc-live-label i { font-style:normal; color:var(--rose3); }
+  .rc-live b { display:block; margin-top:.9em; font:800 clamp(13px, 1.15vw, 17px)/1.4 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink); }
+  .rc-live small { display:block; margin-top:.4em; min-height:1.7em; font:500 clamp(10px, .85vw, 12.5px)/1.7 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink2); }
+  .rc-meter { margin-top:.9em; height:3px; border-radius:2px; background:rgba(96,102,88,.14); overflow:hidden; }
+  .rc-meter i { display:block; height:100%; width:0; background:linear-gradient(90deg, var(--sage2), var(--rose2)); transition:width .3s linear; }
+  .rc-live em { display:block; margin-top:.7em; font-style:normal; font:600 clamp(9px, .78vw, 11px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink3); letter-spacing:.14em; text-align:right; }
+  @media (max-width:860px), (max-aspect-ratio:1/1) {
+    .room-copy { left:16px; right:16px; top:auto; bottom:14px; transform:none; width:auto; }
+    .rc-title { font-size:22px; margin-top:.6em; } .rc-lead, .rc-who, .rc-stats { display:none; }
+    .rc-live { margin-top:1em; }
+  }
+  .ns-scrollhint { position:absolute; left:50%; bottom:18px; z-index:3;
+    font:600 clamp(11px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#f1e6d6; letter-spacing:.2em; white-space:nowrap; pointer-events:none;
+    text-shadow: 0 1px 10px rgba(5,5,10,.7);
+    opacity:0; transition: opacity 1.2s ease 3s;
+    animation: hintbob 2.1s ease-in-out infinite; }
+  #new-site.revealed .ns-scrollhint { opacity:.85; }
+  .ns-scrollhint.gone { opacity:0 !important; transition: opacity .4s ease; }
+  @keyframes hintbob { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,-7px); } }
+
+  /* ============ 入口の門(導入・3層視差) ============ */
+  /* ============ 入口: 黄(改造人)の組み立て。コマ画像(193枚)をスクロール量で描く ============ */
+  .ns-gate { position:relative; width:100%; height:320vh; background:#444a55; }   /* 動画の上端の色(灰青) */
+  .gate-view { position:sticky; top:0; height:100vh; overflow:hidden; background:#444a55; }
+  .gate-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%;
+    background:#444a55 url("assets/videos/gate-poster.jpg?v=2") center/cover no-repeat; pointer-events:none; }
+  /* 文字の足元だけ少し沈める */
+  .gate-scrim { position:absolute; inset:0; pointer-events:none;
+    background: linear-gradient(180deg, rgba(30,33,40,0) 50%, rgba(30,33,40,.5) 82%, rgba(30,33,40,.78) 100%); }
+  /* 導入文(左下。スクロールで1行ずつ浮かぶ) */
+  .gate-text { position:absolute; left:clamp(24px, 6vw, 96px); right:clamp(24px, 6vw, 96px); bottom:clamp(40px, 9vh, 110px);
+    display:flex; flex-direction:column; align-items:flex-start; gap:1.1em; text-align:left; pointer-events:none; }
+  .gt-line { font:700 clamp(15px, 1.7vw, 26px)/1.9 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#f2efe6; letter-spacing:.08em; opacity:0;
+    text-shadow: 0 2px 18px rgba(0,0,0,.7), 0 0 6px rgba(0,0,0,.6); }
+  /* 組み立ての進み(右端の細い目盛り) */
+  .gate-meter { position:absolute; right:clamp(18px, 3vw, 44px); top:50%; transform:translateY(-50%); width:1px; height:26vh;
+    background:rgba(242,239,230,.18); pointer-events:none; }
+  .gate-meter i { position:absolute; left:-1px; top:0; width:3px; height:0; background:var(--rose2); border-radius:2px; }
+  .gate-meter em { position:absolute; left:-4.2em; bottom:-2.2em; font-style:normal; white-space:nowrap;
+    font:600 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.2em; color:rgba(242,239,230,.55); }
+
+  /* ============ セクション2: 考古発掘(履歴書) ============ */
+  /* 机の写真: 中央のランタン暖色は残し、周辺を紫の闇へ沈める(案B: 紫×金の統一) */
+  /* ============ セクション2: 自己紹介(画質の低い履歴書) ============
+     机の写真の上に履歴書。最初は 144p のモザイクで読めない。右下の画質メニューで
+     360p → 720p と上げ、1080p でだけ本物(画像そのもの)になる。土を掘る仕掛けは廃止 */
+  #ns-sec2 { background:#e7dfd2; display:block; overflow:hidden; }
+  .desk-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%; -webkit-user-drag:none; }
+  .resume-real { position:absolute; border-radius:4px; -webkit-user-drag:none;
+    box-shadow: 0 3px 10px rgba(60,50,30,.25), 0 16px 50px rgba(60,50,30,.28); }
+  #px-canvas { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; cursor:pointer;
+    transition: opacity .45s ease; }
+  #ns-sec2.real #px-canvas { opacity:0; pointer-events:none; }
+  .dig-head { position:absolute; left:0; right:0; top:clamp(28px, 6vh, 64px); text-align:center; z-index:3; pointer-events:none; }
+  .dig-title { font:800 clamp(20px, 2.8vw, 38px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:var(--ink); white-space:nowrap; }
+  /* 画質メニュー(動画プレーヤーの作法) */
+  .qbar { position:absolute; z-index:6; right:clamp(20px, 3vw, 48px); bottom:clamp(20px, 4vh, 44px); }
+  .qbtn { display:flex; align-items:center; gap:.7em; padding:.75em 1.1em; border-radius:8px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.12); background:rgba(20,20,18,.8); color:#f2efe6;
+    font:700 clamp(12px, 1vw, 15px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.08em; backdrop-filter:blur(6px); }
+  .qbtn i { font-style:normal; font-size:.75em; opacity:.8; transition: transform .25s ease; }
+  .qbar.open .qbtn i { transform:rotate(180deg); }
+  .qmenu { position:absolute; right:0; bottom:calc(100% + 8px); min-width:10em; display:none; padding:.4em 0;
+    background:rgba(20,20,18,.94); border-radius:8px; box-shadow:0 12px 30px rgba(0,0,0,.3); }
+  .qbar.open .qmenu { display:block; }
+  .qmenu button { display:flex; width:100%; justify-content:space-between; align-items:baseline; gap:1.4em; padding:.65em 1.1em;
+    border:0; background:none; color:#f2efe6; cursor:pointer; text-align:left;
+    font:600 clamp(12px, 1vw, 15px)/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.06em; }
+  .qmenu button:hover { background:rgba(255,255,255,.1); }
+  .qmenu button.on { color:var(--rose2); }
+  .qmenu button.off { color:rgba(242,239,230,.4); }
+  .qmenu button small { font:600 .72em/1 "Hiragino Kaku Gothic ProN", sans-serif; opacity:.75; letter-spacing:.1em; }
+  /* 読み込み中の輪 */
+  .qspin { position:absolute; z-index:5; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%;
+    border:3px solid rgba(255,255,255,.35); border-top-color:#fff; animation: qspin .8s linear infinite;
+    opacity:0; pointer-events:none; transition: opacity .2s; filter: drop-shadow(0 2px 8px rgba(0,0,0,.4)); }
+  .qspin.on { opacity:1; }
+  @keyframes qspin { to { transform:rotate(360deg); } }
+  .qtoast { position:absolute; z-index:6; right:clamp(20px, 3vw, 48px); bottom:calc(clamp(20px, 4vh, 44px) + 3.8em);
+    background:rgba(20,20,18,.88); color:#f2efe6; padding:.7em 1em; border-radius:8px; max-width:min(320px, 80vw);
+    font:600 clamp(12px, 1vw, 14px)/1.6 "Hiragino Kaku Gothic ProN", sans-serif; opacity:0; transition:opacity .3s; pointer-events:none; }
+  .qtoast.on { opacity:1; }
+  /* 隅の記録: 今の画質(天気スタンプと同じ文法) */
+  .qnow { position:absolute; z-index:3; left:clamp(24px, 4vw, 60px); bottom:clamp(20px, 4vh, 44px);
+    font:600 clamp(11px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:var(--ink2); letter-spacing:.16em;
+    display:flex; align-items:center; gap:1.1em; pointer-events:none; }
+  .qnow b { font:800 clamp(22px, 2vw, 30px)/1 "Helvetica Neue", Arial, sans-serif; color:var(--ink); }
+
+  /* ============ セクション3/4: ハブ(粒子モーフ/星座) ============ */
+  #ns-sec3 { background: radial-gradient(120% 100% at 50% 100%, #d7dccb 0%, #e6e8dd 55%, #f1f0e8 100%); }
+  /* 趣味だけは元の「夜」。絵の具は暗い上でしか鮮やかに出ない(ユーザー確認済み 2026-09-10) */
+  #ns-sec5 { background: radial-gradient(120% 120% at 50% 0%, #2c3129 0%, #1a1d17 55%, #0f110c 100%); }
+  #ns-sec5 .dig-title { color:#f2efe6; } #ns-sec5 .dig-eyebrow { color:var(--sage2); }
+  #ns-sec5 .hub-item { color:#f2efe6; border-bottom-color:rgba(242,239,230,.28); }
+  #ns-sec5 .hub-item::before { color:rgba(242,239,230,.55); }
+  #ns-sec5 .hub-item:hover, #ns-sec5 .hub-item.active { color:var(--rose2); }
+  #ns-sec5 .hub-item:hover::before, #ns-sec5 .hub-item.active::before { color:var(--rose2); }
+  #ns-sec5 .hub-item::after { background:var(--rose2); }
+  /* 流体セクションの誘導ボタンは絵の具の形の下に出す */
+  #hub5-go { left:45%; top:82%; }
+  .hub-canvas { position:absolute; inset:0; width:100%; height:100%; }
+  .hub-head { position:absolute; top:clamp(28px, 6vh, 64px); left:0; right:0; pointer-events:none; }
+  /* 展示のキャプション風: 楕円と枠をやめ、番号+名前+細い下線だけ。触れると桃色の線が左から伸びる */
+  .hub-menu { position:absolute; right:clamp(24px, 5vw, 80px); top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:clamp(4px, .9vh, 10px); counter-reset: hub; }
+  .hub-item { position:relative; border:0; border-bottom:1px solid rgba(127,138,107,.32); background:transparent;
+    color:var(--ink); font:700 clamp(15px, 1.4vw, 21px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em;
+    padding:.85em 0 .9em 2.3em; border-radius:0; cursor:pointer; min-width:11.5em;
+    transition: color .25s ease, transform .25s ease; text-align:left; }
+  .hub-item::before { counter-increment: hub; content: counter(hub, decimal-leading-zero);
+    position:absolute; left:0; top:1.05em; font:600 .6em/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing:.14em; color:var(--ink3); transition: color .25s ease; }
+  .hub-item::after { content:""; position:absolute; left:0; bottom:-1px; height:1px; width:0;
+    background:var(--rose3); transition: width .4s cubic-bezier(.2,.8,.2,1); }
+  .hub-item:hover, .hub-item.active { color:var(--rose3); transform: translateX(-6px); }
+  .hub-item:hover::before, .hub-item.active::before { color:var(--rose3); }
+  .hub-item:hover::after, .hub-item.active::after { width:100%; }
+  .hub-item small { font-size:.66em; font-weight:600; color:var(--ink3); margin-left:.6em; letter-spacing:.12em; }
+  .hub-item:hover small, .hub-item.active small { color:var(--rose2); }
+  /* クリック後にブラウザが描く青い枠は出さない(キーボード操作のときだけ桃色の線) */
+  .hub-item:focus { outline:none; }
+  .hub-item:focus-visible { outline:2px solid var(--rose2); outline-offset:6px; }
+  /* エンジニア説: 説明拒否のイヤイヤ */
+  .hub-item.refuse { animation: refuseShake .45s ease; }
+  @keyframes refuseShake {
+    0%, 100% { transform:translateX(-6px); }
+    20% { transform:translateX(-14px); }
+    40% { transform:translateX(2px); }
+    60% { transform:translateX(-12px); }
+    80% { transform:translateX(-2px); } }
+  /* 中央の誘導: 選んだ職業の詳細ページへ。楕円ではなく、文字+細い線+小さな矢印の先だけ(キャプションと同じ作法) */
+  .hub-go { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) translateY(10px);
+    display:flex; align-items:center; gap:1em; z-index:5;
+    font:700 clamp(17px, 1.7vw, 26px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.16em;
+    color:var(--ink); background:none; border:none; border-radius:0; padding:.5em 0; cursor:pointer;
+    opacity:0; pointer-events:none; transition: opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1), color .25s ease; }
+  .hub-go::after { content:""; order:2; width:clamp(48px, 6vw, 96px); height:1px; background:var(--rose3);
+    transition: width .4s cubic-bezier(.2,.8,.2,1); }
+  .hub-go::before { content:""; order:3; width:.5em; height:.5em; margin-left:calc(-1em - .36em);
+    border-top:1px solid var(--rose3); border-right:1px solid var(--rose3); transform:rotate(45deg); }
+  .hub-go.on { opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
+  .hub-go:hover { color:var(--rose3); }
+  .hub-go:hover::after { width:clamp(72px, 9vw, 140px); }
+  .hub-go:focus { outline:none; }
+  .hub-go:focus-visible { outline:2px solid var(--rose2); outline-offset:6px; }
+  #ns-sec5 .hub-go { color:#f2efe6; }
+  #ns-sec5 .hub-go::after { background:var(--rose2); }
+  #ns-sec5 .hub-go::before { border-color:var(--rose2); }
+  #ns-sec5 .hub-go:hover { color:var(--rose2); }
+  /* 一番下の一覧: 夜の続きに、子ページへの入口を展示のキャプション風に並べる */
+  .ns-foot { position:relative; width:100%; min-height:64vh; overflow:hidden; background:#0f110c;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    padding: clamp(48px, 9vh, 110px) clamp(24px, 6vw, 96px) clamp(36px, 6vh, 70px); }
+  .ns-foot::before { content:""; position:absolute; left:8%; right:8%; top:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(242,239,230,.22), transparent); }
+  .foot-title { font:800 clamp(18px, 2.2vw, 30px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; color:#f2efe6;
+    letter-spacing:.08em; margin-bottom: clamp(28px, 5vh, 56px); }
+  .foot-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 5vw, 90px);
+    width:min(1040px, 100%); }
+  .foot-col em { font-style:normal; display:block; font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.3em; color:rgba(242,239,230,.5); margin-bottom:.9em; padding-bottom:.9em;
+    border-bottom:1px solid rgba(242,239,230,.14); }
+  .foot-col { counter-reset: foot; }
+  .foot-col a { position:relative; display:block; text-decoration:none; color:#f2efe6;
+    font:700 clamp(15px, 1.35vw, 20px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em;
+    padding:.85em 0 .9em 2.3em; border-bottom:1px solid rgba(242,239,230,.14); transition: color .25s ease, transform .25s ease; }
+  .foot-col a::before { counter-increment: foot; content: counter(foot, decimal-leading-zero);
+    position:absolute; left:0; top:1.05em; font:600 .6em/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.14em;
+    color:rgba(242,239,230,.5); transition: color .25s ease; }
+  .foot-col a::after { content:""; position:absolute; left:0; bottom:-1px; height:1px; width:0; background:var(--rose2);
+    transition: width .4s cubic-bezier(.2,.8,.2,1); }
+  .foot-col a:hover { color:var(--rose2); transform:translateX(6px); }
+  .foot-col a:hover::before { color:var(--rose2); }
+  .foot-col a:hover::after { width:100%; }
+  .foot-col a small { font-size:.62em; font-weight:600; color:rgba(242,239,230,.5); margin-left:.6em; letter-spacing:.12em; }
+  .foot-sign { margin-top: clamp(40px, 8vh, 90px); font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.3em; color:rgba(242,239,230,.42); }
+  @media (max-width:860px), (max-aspect-ratio:1/1) {
+    .foot-grid { grid-template-columns: 1fr; gap: 26px; }
+    .ns-foot { min-height:auto; }
+  }
+  /* ゲーム: ページへ飛ばず、その場に古いテレビ(pages/game.html?embed=1)を重ねて遊ぶ */
+  .tv-pop { position:fixed; inset:0; z-index:80; background:rgba(15,17,12,.74); backdrop-filter:blur(10px);
+    opacity:0; transition: opacity .45s ease; }
+  .tv-pop.on { opacity:1; }
+  .tv-pop iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:transparent;
+    transform:scale(.96) translateY(14px); opacity:0; transition: transform .6s cubic-bezier(.2,.8,.2,1) .1s, opacity .5s ease .1s; }
+  .tv-pop.on iframe { transform:none; opacity:1; }
+
+  /* ============ 3Dシーン+エフェクト ============ */
+  #glass-sheen { position:fixed; inset:0; z-index:9; pointer-events:none; transition: opacity .3s ease;
+    background: linear-gradient(115deg, rgba(255,255,255,0) 42%, rgba(255,255,255,.10) 47%,
+      rgba(255,255,255,.02) 52%, rgba(255,255,255,0) 55%); }
+  #three { position:fixed; inset:0; z-index:10; width:100%; height:100%; }
+  #fx { position:fixed; inset:0; z-index:20; width:100%; height:100%; pointer-events:none; }
+
+  /* ============ UI ============ */
+  #integrity { position:fixed; z-index:30; top:14px; left:14px;
+    font:600 clamp(9px, 0.8vw, 12px)/1 "Helvetica Neue", sans-serif; letter-spacing:.14em; color:#fff;
+    background:rgba(10,10,18,.72); border:1px solid rgba(255,255,255,.14);
+    border-radius:999px; padding:.9em 1.5em; backdrop-filter: blur(6px);
+    display:flex; align-items:center; gap:.9em; transition: opacity .4s ease; }
+  #integrity .bar { width:clamp(64px, 6.5vw, 104px); height:4px; border-radius:2px; background:rgba(255,255,255,.15); overflow:hidden; }
+  #integrity .bar i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#8f7dff,#5ee6c8);
+    transition: width .25s ease; }
+  #mute { position:fixed; z-index:30; top:14px; right:14px;
+    width:clamp(32px, 2.8vw, 44px); height:clamp(32px, 2.8vw, 44px); font-size:clamp(14px, 1.25vw, 19px);
+    background:rgba(10,10,18,.72); border:1px solid rgba(255,255,255,.14); border-radius:50%;
+    cursor:pointer; backdrop-filter: blur(6px); transition: opacity .4s ease; }
+  /* 破壊を飛ばす。戻ってくるたびに壊すのは大変なので、入口に置く */
+  #skip { position:fixed; z-index:30; top:14px; right:calc(14px + clamp(32px, 2.8vw, 44px) + 10px);
+    height:clamp(32px, 2.8vw, 44px); padding:0 1.2em; border-radius:999px; color:#fff;
+    background:rgba(10,10,18,.72); border:1px solid rgba(255,255,255,.14); cursor:pointer; backdrop-filter: blur(6px);
+    font:700 clamp(11px, .95vw, 13px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.18em;
+    transition: opacity .4s ease, background .25s ease; }
+  #skip:hover { background:rgba(196,141,126,.85); }
+  .fade-out { opacity:0 !important; pointer-events:none !important; }
+  @media (pointer:fine) { body.armed { cursor:none; } }
+  body.over-tool { cursor:pointer !important; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./assets/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+
+  <div id="new-site">
+    <div id="ns-scroll">
+    <div id="ns-content">
+      <!-- ══ セクション1: ようこそ+天気 ══ -->
+      <section class="ns-sec" id="ns-sec1">
+        <img id="wx-still" class="ns-still" alt="">
+        <video id="wx-video" class="ns-video" autoplay muted loop playsinline></video>
+        <div class="ns-shade"></div>
+        <div class="ns-watermark">2026</div>
+        <div class="ns-inner">
+          <h1 id="ns-title">ようこそ、黄梓健のホームページへ。</h1>
+        </div>
+        <div class="ns-weather" id="ns-weather">
+          <span class="w-place" id="w-place"></span>
+          <span class="w-main"><span id="w-label"></span> <span id="w-temp"></span><small>度</small><button id="w-switch" title="他の天気ものぞいてみる"><span>⇄</span></button></span>
+          <span class="w-quote" id="w-quote"></span>
+          <div class="w-menu" id="w-menu"></div>
+        </div>
+        <div class="ns-scrollhint" id="ns-scrollhint">▼ 下に暮らしがあります</div>
+      </section>
+      <!-- ══ セクション1.5: 部屋(3D箱庭。pages/room.html を埋め込み。画面外では描画を止めGPUを使わない) ══ -->
+      <div class="ns-bridge" id="br-room"><span class="br-num">01</span>
+        <span class="br-orb" style="left:10%; top:12%; width:34vw; height:34vw; background:#cfd4c3"></span>
+        <span class="br-orb b" style="right:8%; top:26%; width:26vw; height:26vw; background:#eacfc5"></span>
+        <span class="br-rule"></span><p><b>黄の家</b>陽の当たる二部屋で、今日ものんびり。</p></div>
+      <section class="ns-sec" id="ns-room">
+        <iframe id="room-frame" title="部屋"></iframe>
+        <div class="room-copy">
+          <h2 class="rc-title">黄の家、<br>今日ものんびり。</h2>
+          <p class="rc-lead">陽の当たる部屋で、<br>一日を、好きなかたちに。</p>
+          <div class="rc-who"><span class="rc-avatar">黄</span><div><b>黄</b><small>と、5歳の息子</small><i>2部屋 · 昼下がり</i></div></div>
+          <p class="rc-stats">およそ50㎡の暮らし ｜ 17の小さな用事</p>
+          <div class="rc-live">
+            <span class="rc-live-label">いまの小さな楽しみ<i>● LIVE</i></span>
+            <b id="rc-now">帰ってきたところ</b><small id="rc-now-sub"></small>
+            <div class="rc-meter"><i id="rc-meter"></i></div>
+            <em id="rc-count">0 / 17 の用事</em>
+          </div>
+        </div>
+      </section>
+      <div class="ns-bridge" id="br-gate"><span class="br-num">02</span>
+        <span class="br-orb" style="left:14%; top:20%; width:28vw; height:28vw; background:#e1d6bf"></span>
+        <span class="br-orb b" style="right:10%; top:10%; width:30vw; height:30vw; background:#c8d5db"></span>
+        <span class="br-rule"></span><p><b>入口</b>ここから先は、黄という人間の記録。</p></div>
+      <!-- ══ 入口: 黄(改造人)の組み立て動画。スクロールで前後に再生 ══ -->
+      <section class="ns-gate" id="ns-gate">
+        <div class="gate-view">
+          <canvas class="gate-video" id="gate-canvas"></canvas>
+          <div class="gate-scrim"></div>
+          <div class="gate-meter" id="gate-meter"><i></i><em>組み立て</em></div>
+          <div class="gate-text">
+            <p class="gt-line">ここは、黄が遊んだり、自分を実験台にして試したりする場所です。</p>
+            <p class="gt-line">職業も、趣味も、住まいも。気になるところから、好きなだけ触ってください。</p>
+            <p class="gt-line">取扱説明書はありません。壊しても、ちゃんと直ります。</p>
+          </div>
+        </div>
+      </section>
+      <div class="ns-bridge" id="br-dig"><span class="br-num">03</span>
+        <span class="br-orb" style="left:8%; top:18%; width:30vw; height:30vw; background:#e1d6bf"></span>
+        <span class="br-orb b" style="right:12%; top:22%; width:24vw; height:24vw; background:#cfd4c3"></span>
+        <span class="br-rule"></span><p><b>自己紹介</b>履歴書は、土の下に埋まっている。</p></div>
+      <!-- ══ セクション2: 自己紹介(画質の低い履歴書) ══ -->
+      <section class="ns-sec" id="ns-sec2">
+        <img class="desk-bg" id="desk-bg" alt="" draggable="false">
+        <img class="resume-real" id="resume-real" alt="履歴書" draggable="false">
+        <canvas id="px-canvas"></canvas>
+        <div class="dig-head">
+          <h2 class="dig-title">自己紹介</h2>
+        </div>
+        <div class="qnow"><span>画質</span><b id="qnow-val">144p</b></div>
+        <div class="qspin" id="qspin"></div>
+        <div class="qtoast" id="qtoast"></div>
+        <div class="qbar" id="qbar">
+          <button class="qbtn" id="qbtn" type="button"><span id="qcur">144p</span><i>▾</i></button>
+          <div class="qmenu" id="qmenu">
+            <button type="button" data-q="4k" class="off">4K <small>有料</small></button>
+            <button type="button" data-q="1080">1080p <small>本物</small></button>
+            <button type="button" data-q="720">720p</button>
+            <button type="button" data-q="360">360p</button>
+            <button type="button" data-q="144" class="on">144p</button>
+          </div>
+        </div>
+      </section>
+      <div class="ns-bridge" id="br-job"><span class="br-num">04</span>
+        <span class="br-orb" style="left:12%; top:10%; width:32vw; height:32vw; background:#cfd4c3"></span>
+        <span class="br-orb b" style="right:6%; top:30%; width:22vw; height:22vw; background:#c8d5db"></span>
+        <span class="br-rule"></span><p><b>職業</b>三つの説がある。本当のは、一つ。</p></div>
+      <!-- ══ セクション3: 出土品の復元(粒子モーフ) ══ -->
+      <section class="ns-sec" id="ns-sec3">
+        <canvas id="morph-canvas" class="hub-canvas"></canvas>
+        <div class="dig-head hub-head">
+          <h2 class="dig-title">職業</h2>
+        </div>
+        <div class="hub-menu" id="hub3">
+          <button class="hub-item" data-k="body" data-e="💪" data-name="ボディビルダー">ボディビルダー説<small>(嘘)</small></button>
+          <button class="hub-item" data-k="actor" data-e="🎭" data-name="俳優">俳優説<small>(嘘)</small></button>
+          <button class="hub-item" data-k="eng" data-e="⌨️" data-name="エンジニア">エンジニア説<small>(本当)</small></button>
+        </div>
+        <button class="hub-go" id="hub3-go"><span id="hub3-go-label"></span></button>
+      </section>
+      <div class="ns-bridge" id="br-hobby"><span class="br-num">05</span>
+        <span class="br-orb" style="left:10%; top:24%; width:28vw; height:28vw; background:#eacfc5"></span>
+        <span class="br-orb b" style="right:10%; top:8%; width:30vw; height:30vw; background:#cfd4c3"></span>
+        <span class="br-rule"></span><p><b>趣味</b>混ぜると、色になる。</p></div>
+      <!-- ══ セクション4: 趣味(流体) ══ -->
+      <section class="ns-sec" id="ns-sec5">
+        <canvas id="fstar-canvas" class="hub-canvas"></canvas>
+        <canvas id="fluid-canvas" class="hub-canvas"></canvas>
+        <div class="dig-head hub-head">
+          <h2 class="dig-title">趣味</h2>
+        </div>
+        <div class="hub-menu" id="hub5">
+          <button class="hub-item" data-k="travel" data-e="✈️" data-name="旅行">旅行</button>
+          <button class="hub-item" data-k="estate" data-e="🏠" data-name="不動産">不動産</button>
+          <button class="hub-item" data-k="game" data-e="🎮" data-name="ゲーム">ゲーム</button>
+        </div>
+        <button class="hub-go" id="hub5-go"><span id="hub5-go-label"></span></button>
+      </section>
+      <section class="ns-foot" id="ns-foot">
+        <h2 class="foot-title">部屋の一覧</h2>
+        <div class="foot-grid">
+          <div class="foot-col"><em>趣味</em>
+            <a href="pages/travel.html?v=12">旅行</a>
+            <a href="pages/estate.html?v=12">不動産</a>
+            <a href="pages/game.html?v=12" id="foot-game">ゲーム</a>
+          </div>
+          <div class="foot-col"><em>職業</em>
+            <a href="pages/body.html?v=12">ボディビルダー<small>(嘘)</small></a>
+            <a href="pages/actor.html?v=12">俳優<small>(嘘)</small></a>
+          </div>
+          <div class="foot-col"><em>連絡</em>
+            <a href="pages/contact.html?v=12">Contact me</a>
+          </div>
+        </div>
+        <p class="foot-sign">黄梓健 · 2026</p>
+      </section>
+    </div>
+    </div>
+    <div style="display:none">
+      <!-- 公開時はクレジット表記の復活が必要(ライセンス条件):
+           "Hammer" by Typhen (CC BY-NC 4.0) https://sketchfab.com/3d-models/hammer-9f5c4bcb43ab44ecbec7827aa404043f
+           "Hammer drill" by Jinhong Jeong (CC BY-NC 4.0) https://sketchfab.com/3d-models/hammer-drill-215ea20f47b5497498ef7246d836cf7e
+           "Game Ready Samurai Katana" by roma1n (CC BY 4.0) https://sketchfab.com/3d-models/game-ready-samurai-katana-29428a577d094c40a47651b7f5e6dafd -->
+    </div>
+  </div>
+
+  <div id="old-site">
+    <div class="old-table">
+      <div class="old-title">★☆黄さんのホームページへようこそ☆★</div>
+      <div class="old-sub">〜Sorry, This page is Japanese only.〜</div>
+      <div class="mq"><span class="mq-track">♪♪ 祝・ホームページ開設!! キリ番踏み逃げ厳禁!当サイトはリンクフリーです!相互リンク募集中!! BBSに足あと残してね!! ♪♪&nbsp;&nbsp;&nbsp;♪♪ 祝・ホームページ開設!! キリ番踏み逃げ厳禁!当サイトはリンクフリーです!相互リンク募集中!! BBSに足あと残してね!! ♪♪&nbsp;&nbsp;&nbsp;</span></div>
+      <div class="old-counter">あなたは <b>000257</b> 人目のお客様です<br><small>1日1回カウントされます</small></div>
+      <div class="old-menu">
+        <a href="#">☆プロフィール☆</a><a href="#">日記(毎日更新!)<span class="nw">NEW!</span></a><a href="#">趣味のお部屋</a>
+        <a href="#">リンク集</a><a href="#">掲示板BBS</a><a href="#">お絵かきコーナー<span class="nw">NEW!</span></a>
+      </div>
+      <div class="old-gallery">
+        <div class="ph g1">夕焼け(自宅ベランダ)</div>
+        <div class="ph g2">海に行きました</div>
+        <div class="ph g3">近所の公園</div>
+        <div class="ph g4">夜のドライブ</div>
+        <div class="ph g5">文化祭の思い出</div>
+        <div class="ph g6">初代デジカメで撮影</div>
+      </div>
+      <div class="uc-bar"><span>🚧 このページは永遠に工事中です 🚧</span></div>
+      <div class="old-news">
+        <b>【お知らせ】</b><br>
+        2005.07.14 ホームページを開設しました!<br>
+        2005.07.15 日記を更新しました!<br>
+        2005.07.20 更新が止まりました。
+      </div>
+      <div class="badges">
+        <span class="badge">Best viewed with IE6</span>
+        <span class="badge">800×600</span>
+        <span class="badge">MIDI: ON ♪</span>
+        <span class="badge">Yahoo!ジオシティーズ</span>
+      </div>
+      <div class="old-footer">Since 2005.07.14 — Copyright(C) 黄さんのホームページ All Rights Reserved.</div>
+    </div>
+  </div>
+
+  <div id="glass-sheen"></div>
+  <canvas id="three"></canvas>
+  <canvas id="fx"></canvas>
+
+  <div id="integrity">GLASS INTEGRITY <span id="int-num">100%</span><span class="bar"><i id="int-bar"></i></span></div>
+  <button id="mute" title="サウンド">🔊</button>
+  <button id="skip" title="破壊を飛ばして中へ">スキップ</button>
+
+<script src="assets/vendor/lenis.min.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './assets/vendor/loaders/GLTFLoader.js';
+import { RoomEnvironment } from './assets/vendor/environments/RoomEnvironment.js';
+import { DestructibleMesh, FractureOptions } from './assets/vendor/three-pinata.es.js';
+
+// Rapier物理(WASM同梱版)は重いので裏で先読み
+let RAPIER = null;
+const rapierReady = import('./assets/vendor/rapier.mjs')
+  .then(m => { RAPIER = m.default; return RAPIER.init(); })
+  .then(() => true)
+  .catch(e => { console.warn('Rapier unavailable, fallback physics', e); return false; });
+
+const $ = s => document.querySelector(s);
+const oldSite = $('#old-site');
+/* 操作ヒントは全廃(ユーザー方針: 触ればわかる・高級感優先)。既存コードは無害なダミーへ */
+const hintEl = { textContent: '', classList: { add() {}, remove() {} } };
+const isCoarse = matchMedia('(pointer:coarse)').matches;
+let W = innerWidth, H = innerHeight;
+const S = Math.min(devicePixelRatio || 1, 1.5);
+
+/* 画面サイズ連動の倍率(基準: 1440x900)。道具など3D要素のサイズに使う */
+const RESP = Math.max(0.55, Math.min(1.25, Math.min(W / 1440, H / 900)));
+const TOOL_SCALE = 2 * (2 / 3) * RESP;             // 「2倍サイズ」→ユーザー指示で2/3に縮小 × 画面倍率
+const TOOL_F = TOOL_SCALE / 2;                     // 影・置き位置オフセットに使う縮尺
+
+/* 旧ページのカードも画面サイズで一括拡縮(zoomはスナップショットにもそのまま写る) */
+{
+  const oldTable = document.querySelector('.old-table');
+  if (oldTable) oldTable.style.zoom = Math.min(W / 1160, H / 1000, 1.4);
+}
+
+
+/* ================================================================
+   1. three.js 基盤(1 world unit = 1 CSS px になるようカメラ設定)
+   ================================================================ */
+let renderer, scene, camera, camZ;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: $('#three'), alpha: true, antialias: true });
+} catch (e) { console.error('WebGL unavailable', e); }
+if (renderer) {
+  renderer.setPixelRatio(S);
+  renderer.setSize(W, H);
+  scene = new THREE.Scene();
+  const fov = 35;
+  camZ = H / (2 * Math.tan(THREE.MathUtils.degToRad(fov / 2)));
+  camera = new THREE.PerspectiveCamera(fov, W / H, camZ * 0.05, camZ * 4);
+  camera.position.set(0, 0, camZ);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const key = new THREE.DirectionalLight(0xffffff, 0.85);
+  key.position.set(-0.4 * W, 0.5 * H, camZ * 0.9);
+  scene.add(key, new THREE.AmbientLight(0xffffff, 0.3));
+}
+const toWorld = (x, y) => [x - W / 2, H / 2 - y];
+
+/* ================================================================
+   2. ページのスナップショット (SVG foreignObject → texture)
+      ※HTML-in-Canvas正式化後はこの関数だけ差し替え
+   ================================================================ */
+let snap = null, snapTex = null, snapPromise = null;
+function takeSnapshot() {
+  return new Promise(resolve => {
+    try {
+      const styleText = document.querySelector('style').textContent;
+      const clone = oldSite.cloneNode(true);
+      clone.style.position = 'absolute';
+      clone.style.inset = '0';
+      const ser = new XMLSerializer().serializeToString(clone);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">` +
+        `<foreignObject width="100%" height="100%">` +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${W}px;height:${H}px;">` +
+        `<style>${styleText}</style>${ser}</div></foreignObject></svg>`;
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = W * S; c.height = H * S;
+        c.getContext('2d').drawImage(img, 0, 0, W * S, H * S);
+        snap = c;
+        snapTex = new THREE.CanvasTexture(c);
+        resolve(true);
+      };
+      img.onerror = () => resolve(false);
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    } catch (e) { resolve(false); }
+  });
+}
+
+/* ================================================================
+   3. ダメージ・ジオメトリ(ハンマー痕・ドリル穴)
+   ================================================================ */
+const damageOps = [];
+function genCrackGeo(x, y, pow) {
+  const lines = [], taperLines = [], dots = [];
+  const nS = 5 + Math.round(pow * 4) + (Math.random() * 3 | 0);   // 蓄力が強いほど放射が増える
+  const spokes = [];
+  for (let s = 0; s < nS; s++) {
+    let ang = (s / nS) * Math.PI * 2 + (Math.random() - .5) * .7;
+    const len = (90 + Math.random() * 210) * pow;      // 長い主亀裂
+    let px = x, py = y;
+    const pts = [[px, py]];
+    const segs = 6;
+    for (let i = 0; i < segs; i++) {
+      ang += (Math.random() - .5) * .38;
+      const l = len / segs * (.6 + Math.random() * .8);
+      px += Math.cos(ang) * l; py += Math.sin(ang) * l;
+      pts.push([px, py]);
+      if (Math.random() < .3 && i > 0 && i < segs - 1) {
+        const bA = ang + (Math.random() < .5 ? 1 : -1) * (.5 + Math.random() * .6);
+        const bl = len * .22;
+        taperLines.push({ pts: [[px, py],
+          [px + Math.cos(bA) * bl * .6, py + Math.sin(bA) * bl * .6],
+          [px + Math.cos(bA) * bl, py + Math.sin(bA) * bl]], w: .8, a: .55 });
+      }
+    }
+    spokes.push(pts);
+    taperLines.push({ pts, w: 2.1 * pow, a: .95 });     // 根元太→先端毛髪状
+  }
+  // 蜘蛛の巣状の連結ヒビ(放射線同士をつなぐ)
+  const at = (pts, f) => {
+    const t = f * (pts.length - 1), i = Math.min(pts.length - 2, t | 0), k = t - i;
+    return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k];
+  };
+  const webN = 2 + (Math.random() * 3 | 0);
+  for (let w = 0; w < webN; w++) {
+    const f = .14 + w * .2 + Math.random() * .1;
+    for (let j = 0; j < nS; j++) {
+      if (Math.random() < .25) continue;               // ところどころ欠けて不規則に
+      const p1 = at(spokes[j], f * (.85 + Math.random() * .3));
+      const p2 = at(spokes[(j + 1) % nS], f * (.85 + Math.random() * .3));
+      const mid = [(p1[0] + p2[0]) / 2 + (Math.random() - .5) * 6,
+                   (p1[1] + p2[1]) / 2 + (Math.random() - .5) * 6];
+      lines.push({ pts: [p1, mid, p2], w: Math.max(.4, 1.1 - w * .25), a: .6 - w * .09 });
+    }
+  }
+  // 中心付近の微細ヒビ
+  for (let m = 0, n = 8 + (Math.random() * 8 | 0); m < n; m++) {
+    const a = Math.random() * Math.PI * 2, r0 = 3 + Math.random() * 22, l = 5 + Math.random() * 16;
+    lines.push({ pts: [[x + Math.cos(a) * r0, y + Math.sin(a) * r0],
+      [x + Math.cos(a) * (r0 + l), y + Math.sin(a) * (r0 + l)]], w: .5, a: .45 });
+  }
+  // 粉砕コア: 白濁の粒(スペックル)
+  const core = 13 + 9 * pow;
+  for (let i = 0; i < 90; i++) {
+    const a = Math.random() * Math.PI * 2, rr = core * 1.6 * Math.sqrt(Math.random());
+    dots.push({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr,
+      s: .6 + Math.random() * 1.8, al: .25 + Math.random() * .6 });
+  }
+  return { x, y, core, lines, taperLines, dots, spokes };
+}
+/* 斬撃の划痕: 両端が細い鋭い一本線+平行ヘアライン+刃筋の微細白濁 */
+function genSlashGeo(cx, cy, dx, dy, len) {
+  const nx = -dy, ny = dx;
+  const sag = (Math.random() - .5) * len * 0.07;   // わずかな弧
+  const N = 8, pts = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N - 0.5;
+    const arc = Math.sin((i / N) * Math.PI) * sag;
+    pts.push([cx + dx * len * t + nx * arc, cy + dy * len * t + ny * arc]);
+  }
+  const taperLines = [
+    { pts: pts.slice(N / 2), w: 3.0, a: .95 },                 // 中央→端(テーパー)
+    { pts: pts.slice(0, N / 2 + 1).reverse(), w: 3.0, a: .95 }
+  ];
+  const frostLines = [{ pts, w: 7, a: .33 }];                  // 切り口に沿う白濁の帯
+  const lines = [];
+  for (let i = 0, n = 2 + (Math.random() * 3 | 0); i < n; i++) {
+    const off = (Math.random() - .5) * 11;
+    const t0 = Math.random() * .55 - .27, t1 = t0 + .12 + Math.random() * .25;
+    lines.push({ pts: [
+      [cx + dx * len * t0 + nx * off, cy + dy * len * t0 + ny * off],
+      [cx + dx * len * t1 + nx * off, cy + dy * len * t1 + ny * off]], w: .5, a: .5 });
+  }
+  const dots = [];
+  for (let i = 0; i < 24; i++) {
+    const t = Math.random() - .5;
+    dots.push({ x: cx + dx * len * t + nx * (Math.random() - .5) * 5,
+      y: cy + dy * len * t + ny * (Math.random() - .5) * 5,
+      s: .5 + Math.random() * 1.1, al: .18 + Math.random() * .32 });
+  }
+  return { x: cx, y: cy, core: 0, lines, taperLines, dots, frostLines };
+}
+function regenHolePoly(g) {
+  g.poly = [];
+  const nV = 24;
+  const bites = new Set();
+  while (bites.size < 4) bites.add((Math.random() * nV) | 0);
+  for (let i = 0; i < nV; i++) {
+    const a = i / nV * Math.PI * 2;
+    let rr = g.r * (.78 + Math.random() * .4);
+    if (bites.has(i)) rr = g.r * (1.25 + Math.random() * .45);  // 深い欠け込み
+    g.poly.push([g.x + Math.cos(a) * rr, g.y + Math.sin(a) * rr]);
+  }
+  // 縁の貝殻状フレーク(表面の欠け)と粉砕リングの粒
+  g.chips = [];
+  for (let i = 0, n = 5 + (Math.random() * 3 | 0); i < n; i++)
+    g.chips.push({ a: Math.random() * Math.PI * 2,
+      span: .4 + Math.random() * .8, rOut: g.r + 2 + Math.random() * 7 });
+  g.dots = [];
+  for (let i = 0; i < 46; i++) {
+    const a = Math.random() * Math.PI * 2, rr = g.r + Math.random() * 8;
+    g.dots.push({ x: g.x + Math.cos(a) * rr, y: g.y + Math.sin(a) * rr,
+      s: .6 + Math.random() * 1.6, al: .3 + Math.random() * .5 });
+  }
+  return g;
+}
+function genHoleGeo(x, y, r) { return regenHolePoly({ x, y, r, hairs: [] }); }
+function addHoleHairs(g) {
+  for (let i = 0, n = 2 + (Math.random() * 3 | 0); i < n; i++) {
+    const a = Math.random() * Math.PI * 2, l = 10 + Math.random() * 28;
+    g.hairs.push({ pts: [[g.x + Math.cos(a) * g.r, g.y + Math.sin(a) * g.r],
+      [g.x + Math.cos(a) * (g.r + l), g.y + Math.sin(a) * (g.r + l)]], w: .7, a: .6 });
+  }
+  if (Math.random() < .3) {                            // まれに暴走亀裂が1本走る
+    const a = Math.random() * Math.PI * 2, l = 40 + Math.random() * 110;
+    const pts = [[g.x + Math.cos(a) * g.r, g.y + Math.sin(a) * g.r]];
+    let ang = a, px = pts[0][0], py = pts[0][1];
+    for (let i = 0; i < 4; i++) {
+      ang += (Math.random() - .5) * .4;
+      px += Math.cos(ang) * l / 4; py += Math.sin(ang) * l / 4;
+      pts.push([px, py]);
+    }
+    g.hairs.push({ pts, w: 1.1, a: .8 });
+  }
+}
+
+/* ダメージマップ (R=ひび, G=粉砕白濁, B=貫通穴) */
+const dmgC = document.createElement('canvas');
+dmgC.width = W; dmgC.height = H;
+const dctx = dmgC.getContext('2d');
+dctx.fillStyle = '#000'; dctx.fillRect(0, 0, W, H);
+dctx.globalCompositeOperation = 'lighter';
+dctx.lineCap = 'round';
+const dmgTex = new THREE.CanvasTexture(dmgC);
+
+/* セルマップ: 亀裂で区切られた「かけら」ごとの屈折方向(RG=方向ベクトル) */
+const cellC = document.createElement('canvas');
+cellC.width = W; cellC.height = H;
+const cctx = cellC.getContext('2d');
+cctx.fillStyle = 'rgb(128,128,0)'; cctx.fillRect(0, 0, W, H);
+const cellTex = new THREE.CanvasTexture(cellC);
+
+/* 斬撃の切断シアー: 切り口の両側でガラスが互い違いに滑る(=本当に切れた感) */
+function paintSlashShear(cx, cy, dx, dy, len) {
+  const nx = -dy, ny = dx;
+  const band = 46;
+  for (const s of [1, -1]) {
+    const sx = (dx * 62 + nx * 38) * s;      // 線に平行な滑り+わずかな開き
+    const sy = (dy * 62 + ny * 38) * s;
+    cctx.fillStyle = `rgb(${Math.round(128 + Math.max(-100, Math.min(100, sx)))},${Math.round(128 + Math.max(-100, Math.min(100, sy)))},0)`;
+    cctx.beginPath();
+    cctx.moveTo(cx - dx * len / 2 + nx * s, cy - dy * len / 2 + ny * s);
+    cctx.lineTo(cx + dx * len / 2 + nx * s, cy + dy * len / 2 + ny * s);
+    cctx.lineTo(cx + dx * len / 2 + nx * s * band, cy + dy * len / 2 + ny * s * band);
+    cctx.lineTo(cx - dx * len / 2 + nx * s * band, cy - dy * len / 2 + ny * s * band);
+    cctx.closePath(); cctx.fill();
+  }
+  cellTex.needsUpdate = true;
+}
+function paintCellSectors(g) {
+  const K = g.spokes.length;
+  for (let j = 0; j < K; j++) {
+    const s1 = g.spokes[j], s2 = g.spokes[(j + 1) % K];
+    const a = Math.random() * Math.PI * 2;
+    cctx.fillStyle = `rgb(${Math.round(128 + Math.cos(a) * 100)},${Math.round(128 + Math.sin(a) * 100)},0)`;
+    cctx.beginPath();
+    cctx.moveTo(g.x, g.y);
+    for (const p of s1) cctx.lineTo(p[0], p[1]);
+    for (let i = s2.length - 1; i >= 0; i--) cctx.lineTo(s2[i][0], s2[i][1]);
+    cctx.closePath();
+    cctx.fill();
+  }
+  cellTex.needsUpdate = true;
+}
+
+function strokeLines(ctx, lines, color, wMul, aMul) {
+  for (const ln of lines) {
+    ctx.strokeStyle = color(ln.a * aMul);
+    ctx.lineWidth = ln.w * wMul;
+    ctx.beginPath();
+    ln.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.stroke();
+  }
+}
+/* 根元→先端で細くなるヒビ描画(本物の亀裂のテーパー) */
+function drawTapered(ctx, pts, w0, a0, color) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const t = i / (pts.length - 1);
+    ctx.strokeStyle = color(a0 * (1 - t * .7));
+    ctx.lineWidth = Math.max(.3, w0 * (1 - t * .8));
+    ctx.beginPath();
+    ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+    ctx.stroke();
+  }
+}
+function paintDots(ctx, dots, color) {
+  for (const p of dots) {
+    ctx.fillStyle = color(p.al);
+    ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+  }
+}
+function paintCrackDamage(g) {
+  if (g.frostLines) strokeLines(dctx, g.frostLines, a => `rgba(0,255,0,${a})`, 1, 1);
+  for (const ln of g.taperLines) drawTapered(dctx, ln.pts, ln.w, ln.a, a => `rgba(255,0,0,${a})`);
+  for (const ln of g.taperLines) drawTapered(dctx, ln.pts, ln.w * 2.6, ln.a * .22, a => `rgba(255,0,0,${a})`);
+  strokeLines(dctx, g.lines, a => `rgba(255,0,0,${a})`, 1, 1);
+  paintDots(dctx, g.dots, a => `rgba(0,255,0,${a})`);
+  if (g.core > 0) {
+    const gr = dctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.core);
+    gr.addColorStop(0, 'rgba(0,255,0,.8)');
+    gr.addColorStop(1, 'rgba(0,255,0,0)');
+    dctx.fillStyle = gr;
+    dctx.beginPath(); dctx.arc(g.x, g.y, g.core, 0, Math.PI * 2); dctx.fill();
+  }
+  dmgTex.needsUpdate = true;
+}
+function paintHoleDamage(g) {
+  for (const c of g.chips) {                            // 貝殻状フレーク(白濁)
+    dctx.fillStyle = 'rgba(0,255,0,.55)';
+    dctx.beginPath();
+    dctx.moveTo(g.x, g.y);
+    dctx.arc(g.x, g.y, c.rOut, c.a - c.span / 2, c.a + c.span / 2);
+    dctx.closePath(); dctx.fill();
+  }
+  paintDots(dctx, g.dots, a => `rgba(0,255,0,${a})`);
+  dctx.fillStyle = 'rgb(0,0,255)';                      // 貫通部
+  dctx.beginPath();
+  g.poly.forEach((p, i) => i ? dctx.lineTo(p[0], p[1]) : dctx.moveTo(p[0], p[1]));
+  dctx.closePath(); dctx.fill();
+  strokeLines(dctx, g.hairs, a => `rgba(255,0,0,${a})`, 1, 1);
+  dmgTex.needsUpdate = true;
+}
+function bakeComposite() {
+  const c = document.createElement('canvas');
+  c.width = W * S; c.height = H * S;
+  const ctx = c.getContext('2d');
+  if (snap) ctx.drawImage(snap, 0, 0);
+  else { ctx.fillStyle = '#ffe9f7'; ctx.fillRect(0, 0, c.width, c.height); }
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.lineCap = 'round';
+  for (const op of damageOps) {
+    const g = op.geo;
+    if (op.type === 'crack') {
+      if (g.frostLines) strokeLines(ctx, g.frostLines, a => `rgba(255,255,255,${a * .3})`, 1, 1);
+      for (const ln of g.taperLines) drawTapered(ctx, ln.pts, ln.w, ln.a * .35, a => `rgba(40,40,55,${a})`);
+      for (const ln of g.taperLines) drawTapered(ctx, ln.pts, ln.w * .7, ln.a * .55, a => `rgba(255,255,255,${a})`);
+      strokeLines(ctx, g.lines, a => `rgba(255,255,255,${a * .4})`, .7, 1);
+      paintDots(ctx, g.dots, a => `rgba(255,255,255,${a * .5})`);
+    } else {
+      paintDots(ctx, g.dots, a => `rgba(255,255,255,${a * .45})`);
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      g.poly.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.arc(g.x, g.y, g.r + 1, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  return c;
+}
+
+/* ================================================================
+   4. ガラス板(ダメージシェーダー材質の3Dメッシュ)
+   ================================================================ */
+const PANE_FRAG = `
+  varying vec2 vUv;
+  uniform sampler2D uTex, uDmg, uCell;
+  uniform vec2 uRes, uHit, uPointer;
+  uniform float uFlash;
+  float height(vec2 uv) {
+    vec4 d = texture2D(uDmg, uv);
+    return d.r * 0.55 + d.g * 1.3 - d.b * 2.4;
+  }
+  void main() {
+    vec2 px = 1.0 / uRes;
+    vec4 d = texture2D(uDmg, vUv);
+    float e = 1.6;
+    vec2 grad = vec2(
+      height(vUv + vec2(px.x * e, 0.0)) - height(vUv - vec2(px.x * e, 0.0)),
+      height(vUv + vec2(0.0, px.y * e)) - height(vUv - vec2(0.0, px.y * e)));
+    // 屈折 = ひび勾配 + かけらセル単位のズレ + 素のガラスの微小ゆらぎ
+    vec4 cell = texture2D(uCell, vUv);
+    vec2 cellOff = (cell.rg - 0.5) / 0.4;
+    float cellStr = clamp(d.r * 1.2 + d.g * 0.8, 0.0, 1.0);
+    vec2 off = grad * (7.0 + 9.0 * d.g) * px
+             + cellOff * cellStr * 2.8 * px
+             + vec2(sin(vUv.y * 43.0 + vUv.x * 17.0), cos(vUv.x * 39.0)) * 0.35 * px;
+    vec3 col;
+    col.r = texture2D(uTex, vUv + off * 0.65).r;
+    col.g = texture2D(uTex, vUv + off).g;
+    col.b = texture2D(uTex, vUv + off * 1.45).b;
+    // ひび近傍の適応ブラー(すりガラス化)
+    float blurAmt = clamp(d.r + d.g, 0.0, 1.0) * 0.55;
+    if (blurAmt > 0.02) {
+      vec3 c2 = texture2D(uTex, vUv + off + vec2(px.x * 1.8, 0.0)).rgb
+              + texture2D(uTex, vUv + off - vec2(px.x * 1.8, 0.0)).rgb
+              + texture2D(uTex, vUv + off + vec2(0.0, px.y * 1.8)).rgb
+              + texture2D(uTex, vUv + off - vec2(0.0, px.y * 1.8)).rgb;
+      col = mix(col, c2 * 0.25, blurAmt);
+    }
+    float n = fract(sin(dot(floor(vUv * uRes * 0.9), vec2(12.9898, 78.233))) * 43758.5453);
+    col = mix(col, vec3(0.90 + n * 0.10), clamp(d.g * 0.5, 0.0, 0.75));
+    col *= vec3(0.988, 1.0, 0.996);   // ガラスのごく薄い色味
+    // ヒビは「暗い亀裂芯+白いきらめき」の2トーン(明るい背景でも暗い背景でも読める)
+    col += vec3(d.r * 0.30);
+    col -= vec3(texture2D(uDmg, vUv + px * 1.3).r * 0.30);
+    col -= vec3(d.r * 0.08);
+    vec3 nrm = normalize(vec3(-grad * 11.0, 1.0));
+    // カーソル位置の点光源: マウスを動かすとヒビがきらめく(立体感の核)
+    vec3 L = normalize(vec3(uPointer - vUv * uRes, 420.0));
+    float spec = pow(max(dot(reflect(-L, nrm), vec3(0.0, 0.0, 1.0)), 0.0), 26.0);
+    col += vec3(spec * clamp(d.r + d.g, 0.0, 1.0) * 1.15);
+    // 固定の環境光沢も薄く残す
+    vec3 L2 = normalize(vec3(-0.35, 0.45, 0.8));
+    float spec2 = pow(max(dot(reflect(-L2, nrm), vec3(0.0, 0.0, 1.0)), 0.0), 26.0);
+    col += vec3(spec2 * clamp(d.r + d.g, 0.0, 1.0) * 0.4);
+    col += vec3(uFlash * smoothstep(150.0, 0.0, distance(vUv * uRes, uHit)));
+    // 貫通穴: Bの勾配=破断面の法線。カーソル光源との向きで受光面は白く光り影面は沈む
+    float hole = smoothstep(0.55, 0.75, d.b);
+    float rimAll = smoothstep(0.10, 0.55, d.b) - hole;
+    vec2 gradB = vec2(
+      texture2D(uDmg, vUv + vec2(px.x * 2.0, 0.0)).b - texture2D(uDmg, vUv - vec2(px.x * 2.0, 0.0)).b,
+      texture2D(uDmg, vUv + vec2(0.0, px.y * 2.0)).b - texture2D(uDmg, vUv - vec2(0.0, px.y * 2.0)).b);
+    vec2 outward = normalize(-gradB + vec2(0.0001));
+    vec2 toLight = normalize(uPointer - vUv * uRes + vec2(0.0001));
+    float facing = dot(outward, toLight);
+    col = mix(col, vec3(0.05, 0.05, 0.09), rimAll * (0.55 - 0.35 * facing));
+    col += vec3(rimAll * max(facing, 0.0) * (0.5 + spec * 1.4));
+    col += vec3(rimAll * 0.10);
+    float alpha = 1.0 - hole;
+    gl_FragColor = vec4(col * alpha, alpha);
+  }`;
+let pane = null, paneMat = null, paneJolt = 0;
+function buildPane() {
+  paneMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTex: { value: snapTex }, uDmg: { value: dmgTex }, uCell: { value: cellTex },
+      uRes: { value: new THREE.Vector2(W, H) },
+      uHit: { value: new THREE.Vector2() }, uFlash: { value: 0 },
+      uPointer: { value: new THREE.Vector2(W / 2, H / 2) }
+    },
+    vertexShader: `varying vec2 vUv;
+      void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: PANE_FRAG,
+    transparent: true,
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor
+  });
+  pane = new THREE.Mesh(new THREE.PlaneGeometry(W, H), paneMat);
+  scene.add(pane);
+}
+
+let armedGlass = false, arming = false;
+function armGlass() {
+  if (armedGlass || arming || !renderer) return Promise.resolve(false);
+  arming = true;
+  return snapPromise.then(ok => {
+    if (ok) {
+      buildPane();
+      oldSite.style.visibility = 'hidden';
+      $('#glass-sheen').classList.add('fade-out');
+      armedGlass = true;
+    }
+    arming = false;
+    return armedGlass;
+  });
+}
+
+/* ================================================================
+   5. 破壊アクション+強度
+   ================================================================ */
+let integrity = 100, shattering = false, revealed = false, hint2 = false;
+let lastHit = [W / 2, H / 2], flashUntil = 0;
+const intNum = $('#int-num'), intBar = $('#int-bar');
+
+function addIntegrityDamage(amount) {
+  integrity = Math.max(0, integrity - amount);
+  intNum.textContent = Math.round(integrity) + '%';
+  intBar.style.width = integrity + '%';
+  if (integrity <= 40 && !hint2) { hint2 = true; hintEl.textContent = 'ガラスが悲鳴を上げている。とどめだ'; hintEl.classList.remove('fade-out'); }
+  if (integrity <= 0) setTimeout(shatter, 130);
+}
+
+/* 打撃の実行。c = 蓄力量 0〜1(ヒビの規模・ダメージ・音・揺れ全部に効く) */
+function doStrike(x, y, c) {
+  lastHit = [x, y]; flashUntil = performance.now() + 200 + c * 220;
+  if (paneMat) paneMat.uniforms.uHit.value.set(x, H - y);
+  const pow_ = 0.55 + c * 1.35;
+  const geo = genCrackGeo(x, y, pow_);
+  damageOps.push({ type: 'crack', geo });
+  paintCrackDamage(geo);
+  paintCellSectors(geo);
+  if (c > 0.85 || (pow_ > 1.05 && Math.random() < .3)) {   // MAX蓄力は貫通欠け確定
+    const pit = genHoleGeo(x + (Math.random() - .5) * 6, y + (Math.random() - .5) * 6,
+      2.5 + c * 3.5);
+    damageOps.push({ type: 'hole', geo: pit });
+    paintHoleDamage(pit);
+  }
+  armGlass();
+  paneJolt = 0.5 + c;
+  shakeT = Math.max(shakeT, c * 0.5);
+  hammerSound(0.35 + c * 0.75);
+  spawnDust(x, y, 10 + Math.round(c * 26), 'dust');
+  hideHint();
+  addIntegrityDamage((5 + c * 20 + Math.random() * 3) / 2);   // ハンマーは1/2
+}
+
+/* 斬撃の実行: 振った方向・速さがそのまま傷の方向・長さになる。
+   静止クリックの場合は袈裟斬り(斜め)を左右交互に */
+let kAltSlash = false;
+function doSlash() {
+  let sp = Math.hypot(pvX, pvY), dxs, dys;
+  if (sp > 8) {
+    dxs = pvX / sp; dys = pvY / sp;                // 振った方向
+  } else {
+    kAltSlash = !kAltSlash;                        // 交互の袈裟斬り
+    const a = (kAltSlash ? Math.PI * .75 : Math.PI * .25) + (Math.random() - .5) * .22;
+    dxs = Math.cos(a); dys = Math.sin(a);
+    sp = 20;
+  }
+  const len = Math.max(300, Math.min(780, sp * 17));   // 大胆に長く
+  const cxs = pointerPos.x, cys = pointerPos.y;
+  const geo = genSlashGeo(cxs, cys, dxs, dys, len);
+  damageOps.push({ type: 'crack', geo });
+  paintCrackDamage(geo);
+  paintSlashShear(cxs, cys, dxs, dys, len);            // 切断面のずれ
+  armGlass();
+  lastHit = [cxs, cys];
+  flashUntil = performance.now() + 170;
+  if (paneMat) paneMat.uniforms.uHit.value.set(cxs, H - cys);
+  paneJolt = .7;
+  shakeT = Math.max(shakeT, .32);                      // 斬撃方向に直交するシェイク
+  sdx = -dys; sdy = -dxs;
+  addIntegrityDamage((7 + Math.min(10, sp * .18)) / 4);   // 刀は1/4
+  swishSound();
+  hideHint();
+  // 切断線に沿ってスパークが散る
+  for (let i = 0; i < 14; i++) {
+    const t = Math.random() - .5;
+    dustParts.push({ x: cxs + dxs * len * t, y: cys + dys * len * t,
+      vx: -dys * (Math.random() - .5) * 9 + dxs * (Math.random() - .5) * 3,
+      vy: dxs * (Math.random() - .5) * 9 - 2,
+      len: 3 + Math.random() * 8, life: 1, type: 'glint' });
+  }
+  const [wcx, wcy] = toWorld(cxs, cys);
+  slashState = { t0: performance.now(), cx: wcx, cy: wcy, dx: dxs, dy: -dys, len };
+  kCooldownUntil = performance.now() + 160;
+  trails.push({ ax: cxs - dxs * len / 2, ay: cys - dys * len / 2,
+    bx: cxs + dxs * len / 2, by: cys + dys * len / 2,
+    sagx: -dys * len * .07, sagy: dxs * len * .07, life: 1 });   // 弧を描く軌跡
+  animUntil = performance.now() + 500;
+}
+
+let drillTimer = null, drillPt = null, curHole = null;
+function startDrill(x, y) {
+  if (drillTimer || shattering) return;
+  drillPt = [x, y];
+  drilling = true;
+  startDrillSound();
+  hideHint();
+  armGlass();
+  drillTimer = setInterval(() => {
+    const [dx, dy] = drillPt;
+    lastHit = [dx, dy];
+    if (paneMat) paneMat.uniforms.uHit.value.set(dx, H - dy);
+    if (!curHole || Math.hypot(curHole.x - dx, curHole.y - dy) > 14) {
+      curHole = genHoleGeo(dx, dy, 4);
+      addHoleHairs(curHole);
+      damageOps.push({ type: 'hole', geo: curHole });
+    } else if (curHole.r < 22) {
+      curHole.r += 1.6;
+      regenHolePoly(curHole);
+      if (Math.random() < .3) addHoleHairs(curHole);
+      if (curHole.r >= 22) addIntegrityDamage(9);
+    }
+    paintHoleDamage(curHole);
+    spawnDust(dx, dy + 4, 4, 'bore');
+    if (Math.random() < .12) addIntegrityDamage(1.5);
+  }, 80);
+}
+function stopDrill() {
+  clearInterval(drillTimer); drillTimer = null;
+  curHole = null;
+  drilling = false;
+  // 音は即停止しない: モーター慣性(updateDrillSound)が減速しながら消す
+}
+
+/* ================================================================
+   6. 全面崩壊: 厚み付き3D破片が奥行き回転しながら落ちる
+   ================================================================ */
+let shardMeshes = [], shakeT = 0;
+let phys = null, shardBodies = [], floorBody = null, shardMode = null, shatterAt = 0;
+let timeScale = 1, dollyT = 0;   // 崩壊直後のスローモーション+カメラ押し込み
+
+/* --- 2026年式: three-pinataボロノイ破砕 + Rapier剛体物理 --- */
+function buildShardsPinata(px, py) {
+  const [wpx, wpy] = toWorld(px, py);
+  phys = new RAPIER.World({ x: 0, y: -2600, z: 0 });
+  phys.timestep = 1 / 60;
+  floorBody = phys.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -H / 2 - 240, 0));
+  // 床は厚く取る。薄いと高速の破片がすり抜けて落ち続ける
+  phys.createCollider(RAPIER.ColliderDesc.cuboid(W * 1.5, 240, 1400).setFriction(.8).setRestitution(.15), floorBody);
+
+  const compositeTex = new THREE.CanvasTexture(bakeComposite());
+  compositeTex.colorSpace = THREE.SRGBColorSpace;
+  // クリアコート=印刷面の上のガラス艶。破片が回転するたび表面に光が走る
+  const capMat = new THREE.MeshPhysicalMaterial({ map: compositeTex,
+    roughness: .42, metalness: 0, clearcoat: 1, clearcoatRoughness: .14, envMapIntensity: .5 });
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: 0xeef4fb, metalness: .15, roughness: .06, envMapIntensity: 1.8 });
+  const dm = new DestructibleMesh(new THREE.BoxGeometry(W, H, 7), capMat, sideMat);
+  const frags = dm.fracture(new FractureOptions({
+    fractureMethod: 'voronoi',
+    fragmentCount: isCoarse ? 55 : 95,
+    voronoiOptions: { mode: '2.5D', projectionAxis: 'z',
+      impactPoint: new THREE.Vector3(wpx, wpy, 0), impactRadius: 230 },
+    seed: (Math.random() * 1e6) | 0
+  }));
+  const now = performance.now();
+  for (const f of frags) {
+    scene.add(f);
+    const p = f.position;
+    const d = Math.hypot(p.x - wpx, p.y - wpy);
+    const near = Math.max(0, 1 - d / 600);
+    const rb = phys.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic().setTranslation(p.x, p.y, p.z).setGravityScale(0));
+    // 当たり判定は箱で作る。破片ごとに convexHull を作らせると
+    // 頂点数の多い破片でRapier(WASM)側が落ち、タブごとクラッシュしていた。
+    // 破片は薄い板なので、箱で十分それらしく転がる。
+    f.geometry.computeBoundingBox();
+    const sz = f.geometry.boundingBox.getSize(new THREE.Vector3());
+    const coll = RAPIER.ColliderDesc.cuboid(
+      Math.max(sz.x / 2, 1.5), Math.max(sz.y / 2, 1.5), Math.max(sz.z / 2, 1.5));
+    coll.setRestitution(.22).setFriction(.5).setDensity(2.4);
+    phys.createCollider(coll, rb);
+    shardBodies.push({ mesh: f, rb, near,
+      ang: Math.atan2(p.y - wpy, p.x - wpx) + (Math.random() - .5) * .4,
+      t0: now + d * .4 + Math.random() * 80, launched: false, gone: false });
+  }
+}
+
+/* --- フォールバック用: 自前の放射状破断 --- */
+function makeFractureShards(px, py) {
+  const maxR = Math.max(Math.hypot(px, py), Math.hypot(W - px, py),
+    Math.hypot(px, H - py), Math.hypot(W - px, H - py)) + 60;
+  const K = isCoarse ? 10 : 14;
+  const angles = [];
+  for (let j = 0; j < K; j++)
+    angles.push((j / K) * Math.PI * 2 + (Math.random() - .5) * (Math.PI / K) * 1.2);
+  angles.sort((a, b) => a - b);
+  const radii = [0];
+  let r = 30 + Math.random() * 16;
+  while (r < maxR) { radii.push(r); r *= 1.5 + Math.random() * .4; }
+  radii.push(maxR * 1.35);              // 外周は画面の角より確実に外へ
+  const grid = [];
+  for (let i = 0; i < radii.length; i++) {
+    const last = i === radii.length - 1;
+    const row = [];
+    for (let j = 0; j < K; j++) {
+      const jr = (i === 0 || last) ? radii[i] : radii[i] * (1 + (Math.random() - .5) * .2);
+      const ja = angles[j] + (i === 0 || last ? 0 : (Math.random() - .5) * .12);
+      row.push([px + Math.cos(ja) * jr, py + Math.sin(ja) * jr]);
+    }
+    grid.push(row);
+  }
+  const polys = [];
+  for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < K; j++) {
+    const j2 = (j + 1) % K;
+    const pts = i === 0
+      ? [[px, py], grid[i + 1][j], grid[i + 1][j2]]
+      : [grid[i][j], grid[i + 1][j], grid[i + 1][j2], grid[i][j2]];
+    polys.push(pts);
+  }
+  return polys;
+}
+
+function buildShards3D(px, py) {
+  const compositeTex = new THREE.CanvasTexture(bakeComposite());
+  compositeTex.colorSpace = THREE.SRGBColorSpace;
+  // 表面はパネルと同じ発色を保つため無照明。3D感は厚み・断面・回転で出す
+  const capMat = new THREE.MeshBasicMaterial({ map: compositeTex, side: THREE.DoubleSide });
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: 0xdfe9f5, metalness: .15, roughness: .07,
+    envMapIntensity: 1.8, side: THREE.DoubleSide });
+  const now = performance.now();
+  for (const pts of makeFractureShards(px, py)) {
+    let cx = 0, cy = 0;
+    pts.forEach(p => { cx += p[0]; cy += p[1]; });
+    cx /= pts.length; cy /= pts.length;
+    const [wcx, wcy] = toWorld(cx, cy);
+    const shape = new THREE.Shape();
+    pts.forEach((p, i) => {
+      const rx = (p[0] - W / 2) - wcx;
+      const ry = (H / 2 - p[1]) - wcy;
+      i ? shape.lineTo(rx, ry) : shape.moveTo(rx, ry);
+    });
+    const uvGen = {
+      generateTopUV(g, verts, a, b, c) {
+        const uv = i => new THREE.Vector2(
+          (verts[i * 3] + wcx + W / 2) / W,
+          (verts[i * 3 + 1] + wcy + H / 2) / H);
+        return [uv(a), uv(b), uv(c)];
+      },
+      generateSideWallUV() {
+        const z = new THREE.Vector2();
+        return [z, z, z, z];
+      }
+    };
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 7, bevelEnabled: false, UVGenerator: uvGen });
+    geo.translate(0, 0, -3.5);
+    const mesh = new THREE.Mesh(geo, [capMat, sideMat]);
+    mesh.position.set(wcx, wcy, 0);
+    const d = Math.hypot(cx - px, cy - py);
+    const near = Math.max(0, 1 - d / 600);
+    const ang = Math.atan2(-(cy - py), cx - px) + (Math.random() - .5) * .4;
+    mesh.userData = {
+      t0: now + d * .45 + Math.random() * 90,
+      vx: Math.cos(ang) * (1.5 + near * 8) * (0.5 + Math.random() * .8),
+      vy: Math.sin(ang) * (1.5 + near * 8) * .5 + near * 3 + Math.random() * 2,
+      vz: near * (3 + Math.random() * 5) + (Math.random() - .5) * 2,
+      ax: (Math.random() - .5) * .09,
+      ay: (Math.random() - .5) * .09,
+      az: (Math.random() - .5) * .06,
+      alive: true
+    };
+    scene.add(mesh);
+    shardMeshes.push(mesh);
+  }
+}
+
+/* 破片の後片付け。materialは全破片で共有しているので触らず、
+   ジオメトリだけ解放してシーンから外す */
+function disposeShards() {
+  for (const m of shardMeshes) { scene.remove(m); m.geometry.dispose(); }
+  shardMeshes.length = 0;
+  for (const s of shardBodies) { scene.remove(s.mesh); s.mesh.geometry.dispose(); }
+  shardBodies.length = 0;
+  shattering = false;
+}
+
+function shatter() {
+  if (shattering || !renderer) return;
+  shattering = true;
+  stopDrill();
+  const [px, py] = lastHit;
+  Promise.all([snapPromise, rapierReady]).then(([, rapierOk]) => {
+    shatterAt = performance.now();
+    timeScale = 0.2; dollyT = 1;
+    let done = false;
+    /* three-pinata(ボロノイ)+Rapier の経路は、崩壊の瞬間にGPUプロセスごと落ちる。
+       破砕・物理・描画のどれも単体では正常(95片63ms / 95体 / 95片描画OK)なのに
+       組み合わせると落ちるところまでは切り分け済み。原因が取れるまでは、
+       自前の放射状破断(こちらは安定・破片140)を既定にする。?pinata=1 で旧経路。 */
+    const usePinata = new URLSearchParams(location.search).has('pinata');
+    if (rapierOk && usePinata) {
+      try { buildShardsPinata(px, py); shardMode = 'rapier'; done = true; }
+      catch (e) { console.warn('pinata/rapier failed, using fallback shards', e); }
+    }
+    if (!done) { buildShards3D(px, py); shardMode = 'manual'; }
+    if (pane) { scene.remove(pane); pane = null; }
+    oldSite.style.visibility = 'hidden';
+    $('#glass-sheen').classList.add('fade-out');
+    shakeT = 1;
+    for (let i = 0; i < 44; i++) dustParts.push({
+      x: px + (Math.random() - .5) * 320, y: py + (Math.random() - .5) * 320,
+      vx: (Math.random() - .5) * 9, vy: -Math.random() * 7,
+      len: 3 + Math.random() * 9, life: 1, type: 'glint' });
+    shatterSound();
+    setTimeout(() => {
+      revealed = true;
+      $('#new-site').classList.add('revealed');
+      $('#three').style.pointerEvents = 'none';   // 天気切替ボタン等を押せるように
+      ['#integrity', '#mute', '#skip'].forEach(s => $(s).classList.add('fade-out'));
+      document.body.classList.remove('armed', 'over-tool');
+      [hammerRoot, katanaRoot, drillRoot, shadowH, shadowK, shadowD].forEach(o => { if (o) o.visible = false; });
+      scramble($('#ns-title'), 'ようこそ、黄梓健のホームページへ。');
+    }, 1400);
+    setTimeout(() => {                       // 床を外して破片を退場させる
+      if (phys && floorBody) { phys.removeRigidBody(floorBody); floorBody = null; }
+    }, 4600);
+  });
+}
+
+/* ================================================================
+   7. 3Dツール(仮モデル。assets/models/{hammer,drill}.glb があれば差替)
+   ================================================================ */
+let hammerObj = null, drillObj = null, drillBit = null, drillBitAxis = 'y';
+let katanaObj = null, katanaRoot = null, shadowK = null;
+let slashState = null, kArm = false, kCooldownUntil = 0;
+let hitStopUntil = 0, sdx = 0, sdy = 0;   // ヒットストップ / 方向性シェイク
+let trails = [];                   // 斬撃の白い軌跡
+let bitSpeed = 0;                  // モーター慣性(rad/frame)
+const BIT_MAX = 1.3;
+let hammerRoot = null, drillRoot = null, shadowH = null, shadowD = null;
+let held = null, hover = null, prevHover = null;
+let charging = false, charge = 0, chargeStart = 0, maxDinged = false;
+let swingPhase = 'idle', strikeStart = 0, strikeCharge = 0, struckDone = false;
+let drilling = false, animUntil = 0;
+const REST = { hammer: { x: 0, y: 0 }, katana: { x: 0, y: 0 }, drill: { x: 0, y: 0 } };
+const RESTROT = {                            // 床に置いた時の姿勢(落下後は着地姿勢のまま)
+  hammer: { rx: 0.5, ry: 0.25, rz: 1.45 },
+  katana: { rx: 0.5, ry: 0, rz: 1.52 },
+  drill: { rx: 0.35, ry: 0.2, rz: -1.35 }
+};
+const pointerPos = { x: W / 2, y: H * .6 };
+let pointerMovedAt = 0;
+let fallState = null;                       // 落下中の道具の弾道状態
+let pvX = 0, pvY = 0, lastPX = 0, lastPY = 0, lastPT = 0;   // マウス速度(投げの初速用)
+
+function metalMat(color, rough) {
+  return new THREE.MeshStandardMaterial({ color, metalness: .92, roughness: rough, envMapIntensity: 2.0 });
+}
+function buildHammer() {
+  const g = new THREE.Group();
+  const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.4, 4.2, 92, 14),
+    new THREE.MeshStandardMaterial({ color: 0x7a5535, roughness: .65, metalness: .05 }));
+  handle.position.y = -46;
+  const head = new THREE.Mesh(new THREE.BoxGeometry(48, 17, 17), metalMat(0xb9c1cf, .3));
+  head.position.y = 5;
+  const cap1 = new THREE.Mesh(new THREE.CylinderGeometry(9.5, 9.5, 7, 20), metalMat(0xd6dce7, .22));
+  cap1.rotation.z = Math.PI / 2; cap1.position.set(-26, 5, 0);
+  const cap2 = cap1.clone(); cap2.position.x = 26;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(5, 6, 12, 12), metalMat(0x9aa3b2, .4));
+  neck.position.y = -6;
+  g.add(handle, head, cap1, cap2, neck);
+  g.rotation.set(0.18, 0, -0.5);
+  return g;
+}
+function buildDrill() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(56, 27, 22),
+    new THREE.MeshStandardMaterial({ color: 0x2f4f7a, roughness: .45, metalness: .3 }));
+  const chuck = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 6, 18, 16), metalMat(0x9aa3b2, .3));
+  chuck.rotation.z = -Math.PI / 2; chuck.position.x = 36;
+  const bitHold = new THREE.Group(); bitHold.position.x = 45; bitHold.rotation.z = -Math.PI / 2;
+  drillBit = new THREE.Mesh(new THREE.CylinderGeometry(1.9, .4, 40, 10), metalMat(0xd6dce7, .18));
+  drillBit.position.y = 20;
+  const flute = new THREE.Mesh(new THREE.TorusGeometry(2.1, .5, 6, 24), metalMat(0xb9c1cf, .25));
+  flute.rotation.x = Math.PI / 2; flute.position.y = 8; flute.scale.y = 4;
+  bitHold.add(drillBit, flute);
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(14, 38, 18),
+    new THREE.MeshStandardMaterial({ color: 0x23272f, roughness: .7 }));
+  grip.position.set(-14, -30, 0);
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(6, 10, 8),
+    new THREE.MeshStandardMaterial({ color: 0xf5a623, roughness: .5 }));
+  trigger.position.set(-2, -18, 0);
+  g.add(body, chuck, bitHold, grip, trigger);
+  g.rotation.set(0.1, -0.5, -0.25);
+  return g;
+}
+function buildKatana() {
+  const g = new THREE.Group();
+  const bladeMat = metalMat(0xdde3ec, .12);
+  // 刀身: 3セグメントでわずかな反りをつける
+  for (let i = 0; i < 3; i++) {
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(2.6, 41, 8.4), bladeMat);
+    seg.position.set(-i * 2.0, 20 + i * 39.5, 0);
+    seg.rotation.z = i * 0.055;
+    g.add(seg);
+  }
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(3.6, 16, 4), bladeMat);
+  tip.position.set(-5.8, 143, 0); tip.rotation.z = 0.16; tip.scale.z = 2.1;
+  const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 8.5, 2.2, 20),
+    metalMat(0x3a3f2a, .5));
+  tsuba.position.y = -1;
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.6, 30, 10),
+    new THREE.MeshStandardMaterial({ color: 0x1c1c24, roughness: .8 }));
+  grip.position.y = -17;
+  for (let i = 0; i < 4; i++) {                    // 柄巻き風の赤いリング
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 2.2, 10),
+      new THREE.MeshStandardMaterial({ color: 0x8f2230, roughness: .6 }));
+    ring.position.y = -7 - i * 7;
+    g.add(ring);
+  }
+  const kashira = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 2.4, 3.4, 10),
+    metalMat(0x3a3f2a, .5));
+  kashira.position.y = -33.5;
+  g.add(tip, tsuba, grip, kashira);
+  return g;
+}
+function normalizeModel(obj, name, targetSize, fatUp = true) {
+  // カメラ・ライトのノードはサイズ計算を壊すので除去し、メッシュだけで測る
+  const junk = [];
+  obj.traverse(n => { if (n.isLight || n.isCamera) junk.push(n); });
+  junk.forEach(n => n.parent && n.parent.remove(n));
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3();
+  obj.traverse(n => { if (n.isMesh) box0.expandByObject(n); });
+  if (box0.isEmpty()) return obj;
+  const s0 = box0.getSize(new THREE.Vector3());
+  // 最長軸をY(縦)に立てる: 道具の柄が画面奥や横に寝ているモデル対策
+  if (s0.z >= s0.x && s0.z >= s0.y) obj.rotation.x = -Math.PI / 2;
+  else if (s0.x >= s0.y && s0.x >= s0.z) obj.rotation.z = -Math.PI / 2;
+  obj.updateWorldMatrix(true, true);
+  const box = new THREE.Box3();
+  obj.traverse(n => { if (n.isMesh) box.expandByObject(n); });
+  const size = box.getSize(new THREE.Vector3());
+  const scale = targetSize / Math.max(size.x, size.y, size.z);
+  obj.scale.setScalar(scale);
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3();
+  obj.traverse(n => { if (n.isMesh) box2.expandByObject(n); });
+  const c = box2.getCenter(new THREE.Vector3());
+  obj.position.sub(c);
+  // 太い(重い)方の端=頭を上に向ける。柄が上・頭が下の逆さ持ち対策
+  obj.updateWorldMatrix(true, true);
+  let topFat = 0, botFat = 0;
+  const v = new THREE.Vector3();
+  obj.traverse(n => {
+    if (!n.isMesh) return;
+    const p = n.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i).applyMatrix4(n.matrixWorld);
+      const r = Math.hypot(v.x, v.z);
+      if (v.y > 0) topFat = Math.max(topFat, r);
+      else botFat = Math.max(botFat, r);
+    }
+  });
+  let flipped = false;
+  // fatUp=true: 太い端を上へ(ハンマーの頭/ドリルのモーター)
+  // fatUp=false: 細い端を上へ(刀の切っ先)
+  const wrongSide = fatUp ? (botFat > topFat * 1.15) : (topFat > botFat * 1.15);
+  if (wrongSide) {                        // ワールド軸で反転(ローカル軸は既に回転済みのため)
+    obj.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), Math.PI);
+    flipped = true;
+  }
+  console.log(`[glb:${name}] raw size`, size.toArray().map(v2 => +v2.toFixed(2)),
+    'scale', +scale.toFixed(4), 'fat(top/bot)', +topFat.toFixed(1), +botFat.toFixed(1),
+    flipped ? '→ flipped' : '');
+  return obj;
+}
+const GLB_ALIASES = { drill: ['hammer_drill'], katana: ['game_ready_samurai_katana'] };
+function tryLoadGLB(name, apply) {
+  const paths = [name, ...(GLB_ALIASES[name] || [])].map(n => `assets/models/${n}.glb`)
+    .concat([`assets/models/${name}/scene.gltf`]);
+  const tryOne = i => {
+    if (i >= paths.length) return;
+    fetch(paths[i], { method: 'HEAD' }).then(r => {
+      if (!r.ok) return tryOne(i + 1);
+      new GLTFLoader().load(paths[i], gltf => {
+        // 刀は実物比で長く(他の道具の約1.7倍)
+        apply(normalizeModel(gltf.scene, name, name === 'katana' ? 270 : 160, name !== 'katana'));
+      }, undefined, () => tryOne(i + 1));
+    }).catch(() => tryOne(i + 1));
+  };
+  tryOne(0);
+}
+if (renderer) {
+  hammerObj = buildHammer();
+  drillObj = buildDrill();
+  katanaObj = buildKatana();
+  hammerRoot = new THREE.Group(); drillRoot = new THREE.Group(); katanaRoot = new THREE.Group();
+  hammerRoot.add(hammerObj); drillRoot.add(drillObj); katanaRoot.add(katanaObj);
+  hammerRoot.scale.setScalar(TOOL_SCALE);        // 要件: 2倍サイズ(画面サイズ連動)
+  drillRoot.scale.setScalar(TOOL_SCALE);
+  katanaRoot.scale.setScalar(TOOL_SCALE);
+  REST.hammer = { x: -W * 0.22, y: -H / 2 + 100 * TOOL_F };
+  REST.katana = { x: 0, y: -H / 2 + 92 * TOOL_F };
+  REST.drill = { x: W * 0.22, y: -H / 2 + 95 * TOOL_F };
+  hammerRoot.position.set(REST.hammer.x, REST.hammer.y, 60);
+  katanaRoot.position.set(REST.katana.x, REST.katana.y, 60);
+  drillRoot.position.set(REST.drill.x, REST.drill.y, 60);
+  scene.add(hammerRoot, drillRoot, katanaRoot);
+  // GLB読み込み完了までは非表示(仮モデルのチラ見え防止)
+  hammerRoot.visible = false;
+  drillRoot.visible = false;
+  katanaRoot.visible = false;
+  const mkShadow = r => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(85 * TOOL_F, 26),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .32, depthWrite: false }));
+    m.position.set(r.x, r.y - 80 * TOOL_F, 20);
+    m.scale.y = .26;
+    m.visible = false;
+    scene.add(m);
+    return m;
+  };
+  shadowH = mkShadow(REST.hammer);
+  shadowD = mkShadow(REST.drill);
+  shadowK = mkShadow(REST.katana);
+  tryLoadGLB('katana', obj => {
+    // 反り(刃の向き)を180°反転: ユーザー確認で確定した正しい持ち姿
+    obj.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI);
+    katanaObj.clear(); katanaObj.add(obj);
+    revealTool('katana');
+  });
+  tryLoadGLB('hammer', obj => {
+    obj.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI);   // 左右反転(頭を左向きに)
+    hammerObj.clear(); hammerObj.add(obj);
+    revealTool('hammer');
+  });
+  tryLoadGLB('drill', obj => {
+    // 頂点解析より: ビット軸まわりに90°捻れているため、トップハンドルが奥(=構えた時に上)を向くよう補正
+    obj.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    drillBit = null;               // 仮モデルのビット参照をクリアしてから分離する
+    // ビット分離: メッシュローカル x>=13.5 の三角形(=刃のロッド部)を独立メッシュ化して回転可能に
+    // 回転軸中心(y,z)=(0.014,10.428)は頂点解析で確定した値
+    try {
+      obj.traverse(n => {
+        if (!n.isMesh || drillBit) return;
+        const g = n.geometry, pos = g.getAttribute('position');
+        if (!g.getIndex() || pos.isInterleavedBufferAttribute) return;
+        const idx = g.getIndex().array;
+        const bitIdx = [], bodyIdx = [];
+        for (let i = 0; i < idx.length; i += 3) {
+          const a = idx[i], b = idx[i + 1], c = idx[i + 2];
+          if (pos.getX(a) >= 13.5 && pos.getX(b) >= 13.5 && pos.getX(c) >= 13.5)
+            bitIdx.push(a, b, c);
+          else bodyIdx.push(a, b, c);
+        }
+        if (!bitIdx.length) return;
+        const bodyGeo = new THREE.BufferGeometry();
+        for (const name in g.attributes) bodyGeo.setAttribute(name, g.attributes[name]);
+        bodyGeo.setIndex(bodyIdx);
+        const parr = new Float32Array(pos.array);
+        for (let i = 0; i < parr.length; i += 3) { parr[i + 1] -= 0.014; parr[i + 2] -= 10.428; }
+        const bitGeo = new THREE.BufferGeometry();
+        bitGeo.setAttribute('position', new THREE.BufferAttribute(parr, 3));
+        for (const name in g.attributes)
+          if (name !== 'position') bitGeo.setAttribute(name, g.attributes[name]);
+        bitGeo.setIndex(bitIdx);
+        n.geometry = bodyGeo;
+        const bit = new THREE.Mesh(bitGeo, n.material);
+        bit.position.set(0, 0.014, 10.428);
+        n.add(bit);
+        drillBit = bit;
+        drillBitAxis = 'x';        // ロッドの軸はメッシュローカルX
+        console.log('[glb:drill] bit separated:', bitIdx.length / 3, 'triangles');
+      });
+    } catch (e) { console.warn('bit separation failed, vibration only', e); drillBit = null; }
+    drillObj.clear(); drillObj.add(obj);
+    revealTool('drill');
+  });
+}
+
+const rootFor = name => name === 'hammer' ? hammerRoot : name === 'katana' ? katanaRoot : drillRoot;
+const shadowFor = name => name === 'hammer' ? shadowH : name === 'katana' ? shadowK : shadowD;
+
+/* 道具の登場: 読み込み完了時にポップインで出現 */
+function revealTool(name) {
+  const root = rootFor(name);
+  const sh = shadowFor(name);
+  if (!root || root.visible) return;
+  root.visible = true;
+  if (sh) sh.visible = true;
+  root.scale.setScalar(TOOL_SCALE / 8);
+  animUntil = performance.now() + 900;
+}
+setTimeout(() => { revealTool('hammer'); revealTool('katana'); revealTool('drill'); }, 1600);  // GLBが来ない時は仮モデルで登場
+
+function pickUp(name) {
+  if (fallState && fallState.name === name) fallState = null;   // 落下中でもキャッチできる
+  held = name;
+  animUntil = performance.now() + 900;
+  hintEl.textContent = name === 'hammer'
+    ? '押しっぱなしで蓄力、離して一撃(右クリックで置く)'
+    : name === 'katana'
+      ? '押しながらマウスを振ると斬撃(右クリックで置く)'
+      : '長押しでガラスを貫通する(右クリックで置く)';
+  hintEl.classList.remove('fade-out');
+  hintHidden = false;
+  if (!isCoarse) document.body.classList.add('armed');
+  pickSound();
+}
+/* 右クリック: 持っている道具を落とす(マウスの勢いを引き継いで放り投げられる) */
+function dropTool() {
+  if (!held) return;
+  const name = held;
+  if (charging) { charging = false; stopChargeSound(); }
+  stopDrill();
+  const root = rootFor(name);
+  fallState = {
+    name,
+    x: root.position.x, y: root.position.y,
+    vx: Math.max(-30, Math.min(30, pvX)),
+    vy: Math.max(-8, Math.min(22, -pvY * .6)),
+    rv: (Math.random() - .5) * .2 - pvX * .004,   // 投げの勢いでタンブル回転
+    bounces: 0
+  };
+  held = null;
+  animUntil = performance.now() + 2500;
+  document.body.classList.remove('armed');
+  hintEl.textContent = '床の道具をクリックで拾う';
+}
+function startCharge() {
+  if (charging || swingPhase === 'strike') return;
+  charging = true; charge = 0; chargeStart = performance.now(); maxDinged = false;
+  startChargeSound();
+}
+const _qv = new THREE.Vector3();
+const ANCHOR_GRIP = [0, -45, 0], ANCHOR_FACE = [-32, 60, 0];  // ハンマー: 握り / 頭の打撃面
+const ANCHOR_TIP = [0, -78, -31];   // ドリル: ビット先端(ビット軸は本体中心からZに-31オフセット)
+const ANCHOR_KGRIP = [0, -100, 0], ANCHOR_KMID = [0, 55, 0];  // 刀: 柄 / 刀身の中程(270正規化)
+let strikeFrom = { x: 0, y: 0, z: 0 };
+
+/* 道具ローカルのアンカー位置の、root原点からのワールドオフセット */
+function anchorOffset(obj, a) {
+  return _qv.set(a[0], a[1], a[2] || 0).applyQuaternion(obj.quaternion).multiplyScalar(2);
+}
+function releaseCharge() {
+  if (!charging) return;
+  charging = false;
+  stopChargeSound();
+  strikeCharge = charge;
+  // 振り始めの「頭」の現在位置を記録 → ここから着弾点へ弧を描く
+  const off = anchorOffset(hammerObj, ANCHOR_FACE);
+  strikeFrom = {
+    x: hammerRoot.position.x + off.x,
+    y: hammerRoot.position.y + off.y,
+    z: hammerRoot.position.z + off.z
+  };
+  swingPhase = 'strike';
+  strikeStart = performance.now();
+  struckDone = false;
+  animUntil = performance.now() + 700;
+}
+
+/* 道具のポーズ・動き(毎フレーム)。振りは奥行き方向の弧=3Dのスイング */
+function toolFrame(now) {
+  const [wx, wy] = toWorld(pointerPos.x, pointerPos.y);
+  hover = null;
+  if (!revealed && !shattering) {
+    for (const [name, root] of [['hammer', hammerRoot], ['katana', katanaRoot], ['drill', drillRoot]]) {
+      if (held === name || !root.visible) continue;
+      if (Math.hypot(root.position.x - wx, root.position.y - wy) < 150) hover = name;
+    }
+  }
+  if (hover !== prevHover) { prevHover = hover; animUntil = now + 500; }
+  document.body.classList.toggle('over-tool', !!hover);
+
+  if (charging) {
+    charge = Math.min(1, (now - chargeStart) / 1050);
+    updateChargeSound(charge);
+    if (charge >= 1 && !maxDinged) { maxDinged = true; dingSound(); }
+  }
+
+  for (const [name, root, obj] of [['hammer', hammerRoot, hammerObj],
+      ['katana', katanaRoot, katanaObj], ['drill', drillRoot, drillObj]]) {
+    if (!root.visible) continue;
+    // 登場ポップイン(TOOL_SCALE/8 → TOOL_SCALEへ)
+    if (root.scale.x < TOOL_SCALE * .9975)
+      root.scale.setScalar(root.scale.x + (TOOL_SCALE - root.scale.x) * .16);
+    let rx, ry, rz, k = .3, rk = .22;
+    let mode = 'center';        // 'grip'=握りが狙い点 / 'head'=頭が狙い点 / 'center' / 'rest'
+    let px, py, pz;
+    if (held === name) {
+      if (name === 'hammer') {
+        if (charging) {
+          // 蓄力: 手はカーソルのまま、頭が「右側」へ大きく傾いて振りかぶる(横振りの構え)
+          mode = 'grip';
+          px = wx + charge * 45; py = wy + charge * 25; pz = 60 + charge * 160;
+          const tr = charge * charge * 3.4;
+          px += (Math.random() - .5) * tr; py += (Math.random() - .5) * tr;
+          rx = 0.2 - charge * 0.25;
+          ry = 0.15 + charge * 0.15;
+          rz = 0.4 - charge * 1.5;          // 右へ振りかぶる(蓄力の核)
+        } else if (swingPhase === 'strike') {
+          // 解放: 頭が右上→左下へ横斬りの弧。移動方向の先頭に打撃面が来る
+          mode = 'head'; k = 1; rk = 1;
+          const t = Math.min(1, (now - strikeStart) / 120);
+          const e = t * t, sc = strikeCharge;
+          px = strikeFrom.x + (wx - strikeFrom.x) * e;
+          py = strikeFrom.y + (wy - strikeFrom.y) * e + Math.sin(e * Math.PI) * 30;
+          pz = strikeFrom.z + (14 - strikeFrom.z) * e;
+          const rx0 = 0.2 - sc * 0.25, ry0 = 0.15 + sc * 0.15, rz0 = 0.4 - sc * 1.5;
+          rx = rx0 + e * (0.5 - rx0);       // 前傾を足して奥へ突っ込む
+          ry = ry0 + e * (-1.15 - ry0);     // 最後に打撃面がガラス面を向く
+          rz = rz0 + e * (0.55 - rz0);      // 右→左へ振り抜く(フォロースルー付き)
+          if (!struckDone && t >= 0.985) {
+            struckDone = true;
+            doStrike(pointerPos.x, pointerPos.y, 0.15 + sc * 0.85);
+          }
+          if (t >= 1) { swingPhase = 'recover'; strikeStart = now; }
+        } else {
+          mode = 'grip';
+          px = wx; py = wy; pz = 60;
+          rx = 0.2; ry = 0.15; rz = 0.4;
+          if (swingPhase === 'recover' && now - strikeStart > 260) swingPhase = 'idle';
+        }
+      } else if (name === 'katana') {
+        // 刀: 斬撃中は刃が振った方向に沿って走り抜ける。それ以外は柄をカーソルに構え
+        if (slashState) {
+          mode = 'kmid'; k = 1; rk = 1;
+          const s = slashState;
+          const t = Math.min(1, (now - s.t0) / 110);
+          px = s.cx + s.dx * s.len * (t - .5);
+          py = s.cy + s.dy * s.len * (t - .5);
+          pz = 26;
+          rz = Math.atan2(s.dy, s.dx) - Math.PI / 2;   // 刃を振り方向に揃える
+          rx = 0.35; ry = 0;
+          if (t >= 1) { slashState = null; hitStopUntil = now + 55; }   // 振り切りでヒットストップ
+        } else {
+          mode = 'kgrip';
+          px = wx; py = wy; pz = 55;
+          rx = 0.15; ry = 0.2; rz = 0.55;              // 右利きの構え(刃が左上)
+        }
+      } else {
+        // ドリル: ビット先端をカーソルに合わせ、押している間はガラスに押し付けて打撃振動
+        // 右利きの構え=本体が左傾斜
+        mode = 'tip';
+        px = wx; py = wy; pz = drilling ? 12 : 42;
+        rx = 1.15; ry = 0.35; rz = -0.1;
+        const spinR = bitSpeed / BIT_MAX;
+        if (drilling || spinR > 0.02) {
+          // 振動・打撃パルスは回転数に比例(起動直後は弱い)
+          px += (Math.random() - .5) * 3.5 * spinR;
+          py += (Math.random() - .5) * 3.5 * spinR;
+          pz += Math.sin(now * 0.09) * 5 * spinR;
+        }
+      }
+    } else if (fallState && fallState.name === name) {
+      // 落下中: 弾道+バウンド+タンブル(簡易剛体物理)
+      const f = fallState;
+      f.vy -= 1.35;
+      f.x += f.vx; f.y += f.vy;
+      const wall = W / 2 - 130;
+      if (f.x < -wall) { f.x = -wall; f.vx = Math.abs(f.vx) * .5; }
+      if (f.x > wall) { f.x = wall; f.vx = -Math.abs(f.vx) * .5; }
+      const floorY = REST[name].y;
+      if (f.y <= floorY && f.vy < 0) {
+        f.y = floorY;
+        if (Math.abs(f.vy) < 6 || f.bounces >= 3) {
+          REST[name].x = f.x;                       // 着地点が新しい置き場所になる
+          RESTROT[name] = { rx: obj.rotation.x, ry: obj.rotation.y, rz: obj.rotation.z };  // 着地姿勢のまま置く
+          shadowFor(name).position.x = f.x;
+          fallState = null;
+        } else {
+          f.vy = -f.vy * .38; f.vx *= .7; f.rv *= .55; f.bounces++;
+          dropSound();
+        }
+      }
+      root.position.set(f.x, f.y, 60);
+      obj.rotation.z += f.rv;
+      obj.rotation.x += ((name === 'drill' ? 0.35 : 0.5) - obj.rotation.x) * .05;
+      shadowFor(name).position.x = f.x;
+      continue;
+    } else {
+      // 床に置いてある(ホバーで浮く)。姿勢は最後に着地した時のまま
+      mode = 'rest';
+      px = REST[name].x; py = REST[name].y; pz = 60;
+      if (hover === name) { py += 30; pz = 90; }
+      const rr = RESTROT[name];
+      rx = rr.rx; ry = rr.ry; rz = rr.rz;
+    }
+    // 回転を先に適用し、その姿勢でのアンカー位置からroot位置を逆算する
+    obj.rotation.x += (rx - obj.rotation.x) * rk;
+    obj.rotation.y += (ry - obj.rotation.y) * rk;
+    obj.rotation.z += (rz - obj.rotation.z) * rk;
+    let tx = px, ty = py, tz = pz;
+    const ANCHORS = { grip: ANCHOR_GRIP, head: ANCHOR_FACE, tip: ANCHOR_TIP,
+      kgrip: ANCHOR_KGRIP, kmid: ANCHOR_KMID };
+    if (ANCHORS[mode]) {
+      const off = anchorOffset(obj, ANCHORS[mode]);
+      tx = px - off.x; ty = py - off.y; tz = pz - off.z;
+    }
+    root.position.x += (tx - root.position.x) * k;
+    root.position.y += (ty - root.position.y) * k;
+    root.position.z += (tz - root.position.z) * k;
+  }
+  if (shadowH) shadowH.material.opacity = held === 'hammer' ? 0 : (hover === 'hammer' ? .16 : .32);
+  if (shadowK) shadowK.material.opacity = held === 'katana' ? 0 : (hover === 'katana' ? .16 : .32);
+  if (shadowD) shadowD.material.opacity = held === 'drill' ? 0 : (hover === 'drill' ? .16 : .32);
+
+  // モーター慣性: 押すと徐々に加速、離すと惰性でゆっくり止まる。音のピッチも連動
+  bitSpeed += ((drilling ? BIT_MAX : 0) - bitSpeed) * (drilling ? .10 : .05);
+  if (!drilling && bitSpeed < .006) bitSpeed = 0;
+  if (drillBit) drillBit.rotation[drillBitAxis] += bitSpeed;
+  updateDrillSound(bitSpeed / BIT_MAX);
+}
+
+/* ================================================================
+   8. 2Dエフェクト(粉塵・きらめき)
+   ================================================================ */
+const fxC = $('#fx');
+fxC.width = W * S; fxC.height = H * S;
+const fxCtx = fxC.getContext('2d');
+let dustParts = [];
+function spawnDust(x, y, n, type) {
+  for (let i = 0; i < n; i++) {
+    const a = type === 'bore' ? Math.PI / 2 + (Math.random() - .5) * 1.2 : Math.random() * Math.PI * 2;
+    const sp = type === 'bore' ? 1 + Math.random() * 2 : 1 + Math.random() * 6;
+    dustParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (type === 'bore' ? 0 : 3),
+      len: 1.5 + Math.random() * 3, life: 1, type });
+  }
+}
+function fxFrame() {
+  fxCtx.setTransform(S, 0, 0, S, 0, 0);
+  fxCtx.clearRect(0, 0, W, H);
+  dustParts = dustParts.filter(p => p.life > 0);
+  for (const p of dustParts) {
+    p.vy += p.type === 'bore' ? .18 : .3;
+    p.x += p.vx; p.y += p.vy; p.life -= .022;
+    fxCtx.globalAlpha = Math.max(p.life, 0) * .9;
+    if (p.type === 'glint') {
+      fxCtx.strokeStyle = '#fff'; fxCtx.lineWidth = 1;
+      fxCtx.beginPath(); fxCtx.moveTo(p.x, p.y); fxCtx.lineTo(p.x + p.len * .4, p.y + p.len); fxCtx.stroke();
+    } else {
+      fxCtx.fillStyle = 'rgba(235,238,245,.9)';
+      fxCtx.fillRect(p.x, p.y, p.len, p.len);
+    }
+  }
+  // 斬撃トレイル(弧を描く太い軌跡。当たった直後に一瞬で消える)
+  trails = trails.filter(t => t.life > 0);
+  for (const t of trails) {
+    t.life -= .11;
+    const a = Math.max(0, t.life);
+    const mx = (t.ax + t.bx) / 2 + (t.sagx || 0);
+    const my = (t.ay + t.by) / 2 + (t.sagy || 0);
+    fxCtx.lineCap = 'round';
+    fxCtx.globalAlpha = a * .9;
+    fxCtx.strokeStyle = '#fff';
+    fxCtx.lineWidth = 5.5 * a;
+    fxCtx.beginPath(); fxCtx.moveTo(t.ax, t.ay); fxCtx.quadraticCurveTo(mx, my, t.bx, t.by); fxCtx.stroke();
+    fxCtx.globalAlpha = a * .28;
+    fxCtx.lineWidth = 19 * a;
+    fxCtx.beginPath(); fxCtx.moveTo(t.ax, t.ay); fxCtx.quadraticCurveTo(mx, my, t.bx, t.by); fxCtx.stroke();
+  }
+  fxCtx.globalAlpha = 1;
+}
+
+/* ================================================================
+   9. メインループ(必要な時だけ描画 → 省電力&テスト安定)
+   ================================================================ */
+window.__pause = false;
+function needsRender(now) {
+  if (document.hidden) return false;      // 裏のタブで回し続けない(発熱・電池対策)
+  return !window.__pause && (
+    charging || swingPhase !== 'idle' || drilling || bitSpeed > 0 || fallState || slashState ||
+    shattering || shakeT > .01 || paneJolt > .01 || now < flashUntil || now < animUntil ||
+    now - pointerMovedAt < 700 || dustParts.length > 0 || trails.length > 0);
+}
+let lastLoop = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!renderer || !needsRender(now)) return;
+  if (now < hitStopUntil) { renderer.render(scene, camera); return; }   // ヒットストップ
+  stepWorld(now);
+}
+function stepWorld(now) {
+  toolFrame(now);
+  // 板の傾き(カーソル視差)+揺れ+フラッシュ+光位置
+  if (pane) {
+    paneJolt *= .86;
+    const nx = pointerPos.x / W - .5, ny = pointerPos.y / H - .5;
+    const tx = -ny * .045 + paneJolt * .012 * Math.sin(now * .09);
+    const ty = nx * .06 + paneJolt * .010 * Math.sin(now * .07 + 2);
+    pane.rotation.x += (tx - pane.rotation.x) * .12;
+    pane.rotation.y += (ty - pane.rotation.y) * .12;
+    // 傾きで奥側の端が遠近法で縮み、画面縁との間に隙間ができる。
+    // 縮む分だけ板を拡大して、後ろの新ページがのぞかないようにする
+    const edgeDepth = Math.max(W / 2 * Math.abs(pane.rotation.y), H / 2 * Math.abs(pane.rotation.x));
+    pane.scale.setScalar(1.002 + edgeDepth / camZ * 1.15);
+    paneMat.uniforms.uFlash.value = Math.max(0, (flashUntil - now) / 260) * .9;
+    paneMat.uniforms.uPointer.value.set(pointerPos.x, H - pointerPos.y);
+  }
+  // 破片物理
+  if (shattering) {
+    if (shardMode === 'rapier' && phys) {
+      for (const s of shardBodies) {
+        if (!s.launched && now >= s.t0) {
+          s.launched = true;
+          s.rb.setGravityScale(1, true);
+          const sp = (60 + s.near * 520) * (0.6 + Math.random() * .8);
+          s.rb.setLinvel({ x: Math.cos(s.ang) * sp,
+            y: Math.sin(s.ang) * sp * .4 + s.near * 150,
+            z: s.near * (170 + Math.random() * 150) + (Math.random() - .5) * 60 }, true);
+          s.rb.setAngvel({ x: (Math.random() - .5) * 6, y: (Math.random() - .5) * 6,
+            z: (Math.random() - .5) * 4 }, true);
+        }
+      }
+      timeScale += (1 - timeScale) * .04;    // スローモーションから徐々に等速へ
+      phys.timestep = Math.min(1 / 45, Math.max(1 / 600, timeScale / 60));
+      phys.step();
+      let alive = 0;
+      for (const s of shardBodies) {
+        if (s.gone) continue;
+        const t = s.rb.translation(), q = s.rb.rotation();
+        // 画面から遠く離れた破片は物理世界から抜く。残しておくと座標が発散して
+        // Rapierの内部構造が破裂し、タブ(GPUプロセス)ごと落ちる。
+        if (!isFinite(t.x) || !isFinite(t.y) || !isFinite(t.z) ||
+            Math.abs(t.x) > W * 4 || Math.abs(t.z) > 4000 || t.y < -(H / 2 + 900) || t.y > H * 4) {
+          s.gone = true; s.mesh.visible = false;
+          try { phys.removeRigidBody(s.rb); } catch (e) {}
+          continue;
+        }
+        alive++;
+        s.mesh.position.set(t.x, t.y, t.z);
+        s.mesh.quaternion.set(q.x, q.y, q.z, q.w);
+      }
+      // 全部退場したか、時間切れになったら物理世界ごと破棄する
+      if (alive === 0 || now - shatterAt > 11000) {
+        try { phys.free(); } catch (e) {}
+        phys = null;
+        disposeShards();
+      }
+    } else {
+      let alive = 0;
+      for (const m of shardMeshes) {
+        const u = m.userData;
+        if (!u.alive) continue;
+        alive++;
+        if (now < u.t0) continue;
+        u.vy -= .5;
+        m.position.x += u.vx; m.position.y += u.vy; m.position.z += u.vz;
+        m.rotation.x += u.ax; m.rotation.y += u.ay; m.rotation.z += u.az;
+        if (m.position.y < -(H / 2 + 320)) { u.alive = false; m.visible = false; alive--; }
+      }
+      // 落ちきったら破片を捨てる。visibleを落とすだけだと140個のジオメトリが
+      // GPUに残り、shatteringも下りないのでメインループが永久に60fpsで回り続ける
+      if (alive === 0 || now - shatterAt > 11000) disposeShards();
+    }
+  }
+  // カメラシェイク
+  if (shakeT > .01) {
+    shakeT *= .9;
+    camera.position.x = (Math.sin(now * .06) * 10 + sdx * Math.sin(now * .13) * 24) * shakeT;
+    camera.position.y = (Math.cos(now * .08) * 8 + sdy * Math.sin(now * .13) * 24) * shakeT;
+  } else { camera.position.x = 0; camera.position.y = 0; sdx = 0; sdy = 0; }
+  if (dollyT > .001) {                       // 崩壊時にカメラがぐっと寄る
+    dollyT *= .975;
+    camera.position.z = camZ * (0.955 + 0.045 * dollyT);
+  }
+  renderer.render(scene, camera);
+  fxFrame();
+  lastLoop = now;
+}
+requestAnimationFrame(loop);
+
+/* ================================================================
+   10. サウンド(WebAudio合成)
+   ================================================================ */
+let actx = null, muted = false, drillNodes = null;
+const audio = () => {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+};
+function noiseBuf(a, dur) {
+  const b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate);
+  const ch = b.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  return b;
+}
+function hammerSound(vol = 1) {
+  if (muted) return;
+  const a = audio(), t = a.currentTime;
+  const n = a.createBufferSource(); n.buffer = noiseBuf(a, .1);
+  const hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2400;
+  const g = a.createGain();
+  g.gain.setValueAtTime(.5 * vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .11);
+  n.connect(hp).connect(g).connect(a.destination); n.start(t);
+  const o = a.createOscillator(), og = a.createGain();
+  o.frequency.setValueAtTime(120, t);
+  o.frequency.exponentialRampToValueAtTime(45, t + .13);
+  og.gain.setValueAtTime(.45 * vol, t); og.gain.exponentialRampToValueAtTime(.001, t + .15);
+  o.connect(og).connect(a.destination); o.start(t); o.stop(t + .16);
+}
+/* 蓄力サウンド(押している間、唸りが高まっていく) */
+let chargeNodes = null;
+function startChargeSound() {
+  if (muted || chargeNodes) return;
+  const a = audio();
+  const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 55;
+  const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400;
+  const g = a.createGain(); g.gain.value = .015;
+  o.connect(f).connect(g).connect(a.destination); o.start();
+  chargeNodes = { o, f, g };
+}
+function updateChargeSound(c) {
+  if (!chargeNodes) return;
+  chargeNodes.o.frequency.value = 55 + c * 170;
+  chargeNodes.f.frequency.value = 400 + c * 1700;
+  chargeNodes.g.gain.value = .015 + c * .06;
+}
+function stopChargeSound() {
+  if (!chargeNodes) return;
+  const { o, g } = chargeNodes;
+  g.gain.setTargetAtTime(0, audio().currentTime, .03);
+  setTimeout(() => o.stop(), 130);
+  chargeNodes = null;
+}
+function dingSound() {
+  if (muted) return;
+  tink(audio(), audio().currentTime, 2300, .12);
+}
+function pickSound() {
+  if (muted) return;
+  const a = audio(), t = a.currentTime;
+  const o = a.createOscillator(); o.type = 'triangle';
+  o.frequency.setValueAtTime(300, t);
+  o.frequency.exponentialRampToValueAtTime(520, t + .09);
+  const g = a.createGain();
+  g.gain.setValueAtTime(.15, t); g.gain.exponentialRampToValueAtTime(.001, t + .12);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + .13);
+}
+function swishSound() {
+  if (muted) return;
+  const a = audio(), t = a.currentTime;
+  const n = a.createBufferSource(); n.buffer = noiseBuf(a, .16);
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.2;
+  bp.frequency.setValueAtTime(700, t);
+  bp.frequency.exponentialRampToValueAtTime(5200, t + .12);
+  const g = a.createGain();
+  g.gain.setValueAtTime(.001, t);
+  g.gain.exponentialRampToValueAtTime(.6, t + .05);
+  g.gain.exponentialRampToValueAtTime(.001, t + .16);
+  n.connect(bp).connect(g).connect(a.destination); n.start(t);
+  const o = a.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(2800, t + .04);
+  o.frequency.exponentialRampToValueAtTime(4600, t + .12);
+  const og = a.createGain();
+  og.gain.setValueAtTime(.07, t + .04); og.gain.exponentialRampToValueAtTime(.001, t + .15);
+  o.connect(og).connect(a.destination); o.start(t + .04); o.stop(t + .16);
+  // 斬った後のガラスの「キィン」という鳴き
+  tink(a, t + .07, 5200 + Math.random() * 800, .06);
+  tink(a, t + .12, 6300 + Math.random() * 900, .04);
+}
+function dropSound() {
+  if (muted) return;
+  const a = audio(), t = a.currentTime;
+  const o = a.createOscillator(); o.type = 'triangle';
+  o.frequency.setValueAtTime(420, t);
+  o.frequency.exponentialRampToValueAtTime(160, t + .13);
+  const g = a.createGain();
+  g.gain.setValueAtTime(.14, t); g.gain.exponentialRampToValueAtTime(.001, t + .16);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + .17);
+  const n = a.createBufferSource(); n.buffer = noiseBuf(a, .06);
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+  const ng = a.createGain();
+  ng.gain.setValueAtTime(.18, t + .12); ng.gain.exponentialRampToValueAtTime(.001, t + .2);
+  n.connect(lp).connect(ng).connect(a.destination); n.start(t + .12);
+}
+function startDrillSound() {
+  if (muted || drillNodes) return;
+  const a = audio();
+  const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 30;
+  const lfo = a.createOscillator(); lfo.frequency.value = 8;
+  const lfoG = a.createGain(); lfoG.gain.value = 22;
+  lfo.connect(lfoG).connect(o.frequency);
+  const n = a.createBufferSource(); n.buffer = noiseBuf(a, 1); n.loop = true;
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 1.2;
+  const g = a.createGain(); g.gain.value = 0;      // 音量・ピッチは回転数連動で上げる
+  o.connect(g); n.connect(bp).connect(g); g.connect(a.destination);
+  o.start(); lfo.start(); n.start();
+  drillNodes = { o, lfo, n, bp, g };
+}
+/* 回転数(0〜1)に応じてモーター音のピッチ・音量を更新。止まりきったらノード解放 */
+function updateDrillSound(r) {
+  if (muted) return;
+  if (r > 0.01 && !drillNodes && actx) startDrillSound();
+  if (!drillNodes) return;
+  drillNodes.o.frequency.value = 28 + r * 62;
+  drillNodes.lfo.frequency.value = 8 + r * 20;
+  drillNodes.bp.frequency.value = 900 + r * 1800;
+  drillNodes.g.gain.value = r * .1;
+  if (r <= 0.01 && !drilling) {
+    const nd = drillNodes; drillNodes = null;
+    nd.g.gain.value = 0;
+    setTimeout(() => { nd.o.stop(); nd.lfo.stop(); nd.n.stop(); }, 60);
+  }
+}
+function stopDrillSound() {
+  if (!drillNodes) return;
+  const { o, lfo, n, g } = drillNodes;
+  g.gain.setTargetAtTime(0, audio().currentTime, .04);
+  setTimeout(() => { o.stop(); lfo.stop(); n.stop(); }, 150);
+  drillNodes = null;
+}
+function tink(a, t, freq, vol) {
+  const o = a.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+  const g = a.createGain();
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .16);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + .18);
+}
+function shatterSound() {
+  if (muted) return;
+  const a = audio(), t = a.currentTime;
+  const n = a.createBufferSource(); n.buffer = noiseBuf(a, .5);
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2100; bp.Q.value = .8;
+  const g = a.createGain();
+  g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .5);
+  n.connect(bp).connect(g).connect(a.destination); n.start(t);
+  for (let i = 0; i < 14; i++)
+    tink(a, t + .04 + Math.random() * .55, 1900 + Math.random() * 3600, .05 + Math.random() * .09);
+}
+function scramble(el, text) {
+  const CH = 'アイウエオカキクケコサシスセソタチツテト▓▒░<>/*+#';
+  let frame = 0;
+  const timer = setInterval(() => {
+    frame++;
+    const fixed = Math.floor(frame / 2.5);
+    el.textContent = [...text].map((ch, i) =>
+      i < fixed ? ch : CH[Math.random() * CH.length | 0]).join('');
+    if (fixed >= text.length) { el.textContent = text; clearInterval(timer); }
+  }, 40);
+}
+
+/* ================================================================
+   11. 入力・UI
+   ================================================================ */
+let hintHidden = false;
+function hideHint() {
+  if (hintHidden || hint2) return;
+  hintHidden = true;
+  setTimeout(() => { if (!hint2) hintEl.classList.add('fade-out'); }, 2500);
+}
+window.addEventListener('pointerdown', e => {
+  if (e.target instanceof Element && e.target.closest('#mute, #skip')) return;
+  if (revealed || shattering) return;
+  audio();
+  pointerPos.x = e.clientX; pointerPos.y = e.clientY;
+  pointerMovedAt = performance.now();
+  if (e.button === 2) { dropTool(); return; }               // 右クリック: 床に置く
+  if (e.button !== 0) return;
+  if (hover && hover !== held) { pickUp(hover); return; }   // 床の道具を手に取る/持ち替え
+  if (held === 'hammer') startCharge();
+  else if (held === 'katana') {                             // クリックで即斬り、押したまま振れば連続斬り
+    kArm = true;
+    if (!slashState && performance.now() > kCooldownUntil) doSlash();
+  }
+  else if (held === 'drill') startDrill(e.clientX, e.clientY);
+  else hintEl.classList.remove('fade-out');                 // 素手ならヒントを出す
+});
+window.addEventListener('pointermove', e => {
+  const nowT = performance.now();
+  const dt = Math.max(8, nowT - lastPT);
+  pvX = pvX * .6 + (e.clientX - lastPX) * (16.7 / dt) * .4;   // 投げ初速用のマウス速度
+  pvY = pvY * .6 + (e.clientY - lastPY) * (16.7 / dt) * .4;
+  lastPX = e.clientX; lastPY = e.clientY; lastPT = nowT;
+  pointerPos.x = e.clientX; pointerPos.y = e.clientY;
+  pointerMovedAt = nowT;
+  if (drillPt) drillPt = [e.clientX, e.clientY];
+  // 刀: ボタンを押したまま素早く振ると斬撃発動
+  if (kArm && held === 'katana' && !slashState && nowT > kCooldownUntil &&
+      !revealed && !shattering && Math.hypot(pvX, pvY) > 20) doSlash();
+  if (!isCoarse && held && !revealed && !shattering) document.body.classList.add('armed');
+});
+window.addEventListener('pointerup', () => { releaseCharge(); stopDrill(); kArm = false; });
+window.addEventListener('pointercancel', () => { releaseCharge(); stopDrill(); kArm = false; });
+window.addEventListener('contextmenu', e => e.preventDefault());
+// スキップ: 検証で使っている ?reveal と同じ道で、壊さずに中へ入る(読み直すので状態は確実)
+$('#skip').addEventListener('click', () => { location.replace(location.pathname + '?reveal=1'); });
+$('#mute').addEventListener('click', () => {
+  muted = !muted;
+  $('#mute').textContent = muted ? '🔇' : '🔊';
+  if (muted) stopDrillSound();
+});
+window.addEventListener('resize', () => { if (!armedGlass && !damageOps.length && !location.search.includes('reveal')) location.reload(); });
+
+/* テスト用フック */
+window.__test = {
+  hit: (x, y, c = .6) => doStrike(x, y, c),
+  pickup: n => pickUp(n),
+  drill: (x, y, ms) => { startDrill(x, y); setTimeout(stopDrill, ms); },
+  fragInfo: () => {                        // 破片の位置と大きさを実測する
+    const m0 = new THREE.MeshBasicMaterial();
+    const dm = new DestructibleMesh(new THREE.BoxGeometry(W, H, 7), m0, m0);
+    const frags = dm.fracture(new FractureOptions({
+      fractureMethod: 'voronoi', fragmentCount: 95,
+      voronoiOptions: { mode: '2.5D', projectionAxis: 'z',
+        impactPoint: new THREE.Vector3(0, 0, 0), impactRadius: 230 },
+      seed: 777 }));
+    let posNonZero = 0, maxSz = [0, 0, 0], sumV = 0;
+    const sample = [];
+    for (const f of frags) {
+      if (f.position.lengthSq() > 1) posNonZero++;
+      f.geometry.computeBoundingBox();
+      const sz = f.geometry.boundingBox.getSize(new THREE.Vector3());
+      maxSz = [Math.max(maxSz[0], sz.x), Math.max(maxSz[1], sz.y), Math.max(maxSz[2], sz.z)];
+      sumV += f.geometry.attributes.position.count;
+      if (sample.length < 4) sample.push({
+        pos: [f.position.x, f.position.y, f.position.z].map(v => Math.round(v)),
+        size: [sz.x, sz.y, sz.z].map(v => Math.round(v)),
+        verts: f.geometry.attributes.position.count });
+    }
+    for (const f of frags) f.geometry.dispose();
+    return { n: frags.length, posNonZero, maxSz: maxSz.map(v => Math.round(v)), sumV, sample };
+  },
+  renderOnly: (n) => {                     // 検証用: 破片の描画だけ試す(物理なし)
+    const tex = new THREE.CanvasTexture(bakeComposite());
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const capMat = new THREE.MeshPhysicalMaterial({ map: tex,
+      roughness: .42, metalness: 0, clearcoat: 1, clearcoatRoughness: .14, envMapIntensity: .5 });
+    const sideMat = new THREE.MeshStandardMaterial({
+      color: 0xeef4fb, metalness: .15, roughness: .06, envMapIntensity: 1.8 });
+    const dm = new DestructibleMesh(new THREE.BoxGeometry(W, H, 7), capMat, sideMat);
+    const frags = dm.fracture(new FractureOptions({
+      fractureMethod: 'voronoi', fragmentCount: n || 95,
+      voronoiOptions: { mode: '2.5D', projectionAxis: 'z',
+        impactPoint: new THREE.Vector3(0, 0, 0), impactRadius: 230 },
+      seed: 777 }));
+    for (const f of frags) scene.add(f);
+    const t0 = performance.now();
+    for (let i = 0; i < 3; i++) renderer.render(scene, camera);
+    const ms = Math.round(performance.now() - t0);
+    for (const f of frags) { scene.remove(f); f.geometry.dispose(); }
+    tex.dispose(); capMat.dispose(); sideMat.dispose();
+    return { n: frags.length, ms, texW: renderer.info.memory.textures,
+      geo: renderer.info.memory.geometries };
+  },
+  physOnly: (n, floorW) => {                // 検証用: 物理だけ組んで落ちるか見る
+    const w = new RAPIER.World({ x: 0, y: -2600, z: 0 });
+    w.timestep = 1 / 60;
+    const fb = w.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -H / 2 - 26, 0));
+    w.createCollider(RAPIER.ColliderDesc.cuboid(floorW, 26, 900).setFriction(.8), fb);
+    for (let i = 0; i < (n || 34); i++) {
+      const rb = w.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation((Math.random() - .5) * W, (Math.random() - .5) * H, 0));
+      w.createCollider(RAPIER.ColliderDesc.cuboid(40, 40, 4).setDensity(2.4), rb);
+    }
+    const t0 = performance.now();
+    for (let i = 0; i < 30; i++) w.step();
+    const ms = Math.round(performance.now() - t0);
+    w.free();
+    return { ok: true, ms };
+  },
+  fracOnly: (n) => {                       // 検証用: 破砕だけ回して落ちるか見る
+    const capMat = new THREE.MeshBasicMaterial();
+    const dm = new DestructibleMesh(new THREE.BoxGeometry(W, H, 7), capMat, capMat);
+    const t0 = performance.now();
+    const frags = dm.fracture(new FractureOptions({
+      fractureMethod: 'voronoi', fragmentCount: n || 34,
+      voronoiOptions: { mode: '2.5D', projectionAxis: 'z',
+        impactPoint: new THREE.Vector3(0, 0, 0), impactRadius: 230 },
+      seed: 12345 }));
+    return { n: frags.length, ms: Math.round(performance.now() - t0),
+      verts: frags.map(f => f.geometry.attributes.position.count).reduce((a, b) => a + b, 0) };
+  },
+  state: () => ({ integrity, armedGlass, shattering, revealed, held, hover,
+    charge: +charge.toFixed(2), phase: swingPhase, shards: shardBodies.length || shardMeshes.length }),
+  step: (n = 1) => {                       // rAFが止まる環境用: 物理を手動で進める
+    window.__testClock = Math.max(window.__testClock || 0, performance.now());
+    for (let i = 0; i < n; i++) { window.__testClock += 16.7; stepWorld(window.__testClock); }
+  },
+  capture: () => {
+    if (!renderer) return null;
+    renderer.render(scene, camera);
+    return renderer.domElement.toDataURL('image/png');
+  },
+  gpu: () => {                             // GPU側の在庫。ここが増え続けたら解放漏れ
+    if (!renderer) return null;
+    const i = renderer.info;
+    return { geo: i.memory.geometries, tex: i.memory.textures,
+      prog: i.programs ? i.programs.length : -1,
+      calls: i.render.calls, tris: i.render.triangles,
+      objs: scene.children.length };
+  }
+};
+
+// 読み込み直後のクリックでも安全なように、Promiseを最初から用意しておく
+snapPromise = new Promise(r => setTimeout(() => takeSnapshot().then(r), 250));
+
+/* ================================================================
+   訪問者の場所と天気(Step1: テキスト表示)
+   IP位置推定 → 日本語地名 → Open-Meteoで現在の天気。全て無料・キー不要
+   ================================================================ */
+const WEATHER_LABEL = [
+  [[0], '快晴'], [[1, 2], '晴れ'], [[3], '曇り'], [[45, 48], '霧'],
+  [[51, 53, 55, 56, 57], '霧雨'], [[61, 63, 65, 66, 67, 80, 81, 82], '雨'],
+  [[71, 73, 75, 77, 85, 86], '雪'], [[95, 96, 99], '雷雨']
+];
+const WEATHER_QUOTE = {                    // 天気別のポジティブな一言(ユーザーと共同決定・2026-08-05確定)
+  '快晴': '今日の空は、あなたの未来みたいに澄みきっています。',
+  '晴れ': 'あなたの人生みたいに、光と暖かさしかない一日です。',
+  '曇り': 'この雲のように、あなたを風雨から守ってくれる人がいますように。',
+  '霧':   '霧の向こうには、たいてい良いものがあります。',
+  '霧雨': '霧雨の日は空気が澄みます。深呼吸におすすめの日です。',
+  '雨':   '雨に万物が成長します。',
+  '雪':   '雪だるまさんが生き返る日です。いっしょに遊びましょう。',
+  '雷雨': '大雨がすべての汚れを洗い流してくれます。明日からまた、新しい一日です。'
+};
+const ASSET_V = 12;   // 動画/ポスター/個別ページを差し替えたらこの数字を+1(キャッシュ避け)
+const VIDEO_FILE = { '快晴': 'clear', '晴れ': 'sunny', '曇り': 'cloudy', '霧': 'fog',
+  '霧雨': 'drizzle', '雨': 'rain', '雪': 'snow', '雷雨': 'thunder' };
+const WX_STATE = { place: '', temp: null, real: null, current: null };
+
+/* 選んだ天気を文言とビジュアルに適用(切替ボタンからも呼ばれる) */
+function wxApply(label) {
+  WX_STATE.current = label;
+  $('#w-place').textContent = WX_STATE.place;
+  $('#w-label').textContent = label;
+  $('#w-temp').textContent = Math.round(WX_STATE.temp);
+  $('#w-quote').textContent = WEATHER_QUOTE[label] || '';
+  $('#ns-weather').classList.add('on');
+  document.querySelectorAll('.w-menu button').forEach(b =>
+    b.classList.toggle('active', b.dataset.wx === label));
+  const base = `assets/videos/${VIDEO_FILE[label]}`;
+  const ns = $('#new-site');
+  ns.classList.remove('video-ready');
+  const img = new Image();
+  img.onload = () => { $('#wx-still').src = img.src; ns.classList.add('has-video'); };
+  img.src = `${base}.png?v=${ASSET_V}`;
+  fetch(`${base}.mp4?v=${ASSET_V}`, { method: 'HEAD' }).then(r => {
+    if (!r.ok) return;
+    const v = $('#wx-video');
+    v.addEventListener('canplay', () => ns.classList.add('has-video', 'video-ready'), { once: true });
+    v.src = `${base}.mp4?v=${ASSET_V}`;
+  }).catch(() => {});
+}
+
+async function initWeather() {
+  try {
+    // fetchはHTTPエラー(429等)では例外を投げないので、明示的にokを確認して投げる
+    const fj = async url => {
+      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
+      return r.json();
+    };
+    // ① IPから位置(ポップアップなし・都市レベル)。成功結果は24hキャッシュして無料枠を節約
+    let lat, lon, place = '';
+    const cached = JSON.parse(localStorage.getItem('geoCache') || 'null');
+    if (cached && Date.now() - cached.t < 864e5) {
+      ({ lat, lon, place } = cached);
+    } else {
+      try {
+        const g = await fj('https://ipapi.co/json/');
+        if (g.latitude === undefined || g.error) throw new Error('ipapi no coords');
+        lat = g.latitude; lon = g.longitude; place = g.city || '';
+        localStorage.setItem('geoCache', JSON.stringify({ lat, lon, place, t: Date.now() }));
+      } catch (e) {
+        // 予備(精度は少し粗いのでキャッシュしない=次回また本命に挑戦)
+        const g = await fj('https://get.geojs.io/v1/ip/geo.json');
+        lat = +g.latitude; lon = +g.longitude; place = g.city || '';
+      }
+    }
+    if (lat === undefined || lon === undefined || Number.isNaN(lat)) return;
+    // ② 日本語の地名(練馬区 など)
+    try {
+      const r = await fj(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`);
+      place = r.locality || r.city || place;
+    } catch (e) { /* 英語地名のまま続行 */ }
+    // ③ 現在の天気
+    const w = await fj(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+    const cw = w.current_weather;
+    if (!cw) return;
+    let label = (WEATHER_LABEL.find(([codes]) => codes.includes(cw.weathercode)) || [null, '晴れ'])[1];
+    WX_STATE.place = place;
+    WX_STATE.temp = cw.temperature;
+    WX_STATE.real = label;
+    // テスト用: ?wx=rain 等で天気を強制
+    const forced = new URLSearchParams(location.search).get('wx');
+    if (forced) {
+      const hit = Object.entries(VIDEO_FILE).find(([, en]) => en === forced);
+      if (hit) label = hit[0];
+    }
+    // 切替メニューを構築
+    const menu = $('#w-menu');
+    Object.keys(VIDEO_FILE).forEach(l => {
+      const b = document.createElement('button');
+      b.dataset.wx = l;
+      b.textContent = l === WX_STATE.real ? `${l}(いまの空)` : l;
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        wxApply(l);
+        menu.classList.remove('open');
+      });
+      menu.appendChild(b);
+    });
+    $('#w-switch').addEventListener('click', e => {
+      e.stopPropagation();
+      menu.classList.toggle('open');
+    });
+    window.addEventListener('pointerdown', e => {
+      if (!(e.target instanceof Element && e.target.closest('#ns-weather')))
+        menu.classList.remove('open');
+    });
+    wxApply(label);
+  } catch (e) { /* 取得失敗時は何も表示しない */ }
+}
+initWeather();
+
+/* ================================================================
+   セクション2: 自己紹介 — 画質の低い履歴書
+   机の写真(assets/desk-flatlay.jpg)の上に履歴書(assets/resume-clean.png)。
+   144p/360p/720p は「机+履歴書」を小さな canvas に描いてから、ぼかさずに拡大する(=モザイク)。
+   1080p だけ canvas を消して本物の画像を見せる。4K は小ネタ
+   ================================================================ */
+(() => {
+  const sec = document.getElementById('ns-sec2');
+  const bg = document.getElementById('desk-bg'), real = document.getElementById('resume-real'), cv = document.getElementById('px-canvas');
+  if (!sec || !bg || !real || !cv) return;
+  const ctx = cv.getContext('2d', { alpha: false });
+  const off = document.createElement('canvas'), octx = off.getContext('2d', { alpha: false });
+  const MAT = { x0: .262, y0: .062, x1: .722, y1: .935 };   // 写真の中のマットの位置(幅・高さに対する割合)
+  const LEVELS = { 144: 60, 360: 144, 720: 420, 1080: 0 };   // 表示名 → 実際の粒の行数(0 = 本物)。144p はドット絵くらい荒く
+  let level = 144, ready = 0, rect = null, W = 0, H = 0;
+  bg.addEventListener('load', () => { ready++; layout(); });
+  real.addEventListener('load', () => { ready++; layout(); });
+  bg.src = 'assets/desk-flatlay.jpg?v=1';
+  real.src = 'assets/resume-clean.png?v=3';
+
+  function layout() {
+    W = sec.clientWidth; H = sec.clientHeight;
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const iw = bg.naturalWidth || 1672, ih = bg.naturalHeight || 941;
+    const sc = Math.max(W / iw, H / ih), ox = (W - iw * sc) / 2, oy = (H - ih * sc) / 2;   // object-fit:cover と同じ
+    const mx0 = ox + MAT.x0 * iw * sc, mx1 = ox + MAT.x1 * iw * sc, my0 = oy + MAT.y0 * ih * sc, my1 = oy + MAT.y1 * ih * sc;
+    const rw0 = real.naturalWidth || 1491, rh0 = real.naturalHeight || 1055;
+    // マットの内側に収める(縦画面では画面幅の92%まで)
+    let rw = Math.min((mx1 - mx0) * .9, W * .92), rh = rw * rh0 / rw0;
+    const maxH = Math.min((my1 - my0) * .9, H * .64);
+    if (rh > maxH) { rh = maxH; rw = rh * rw0 / rh0; }
+    const cx = Math.min(Math.max((mx0 + mx1) / 2, rw / 2 + 8), W - rw / 2 - 8);
+    const cy = Math.min(Math.max((my0 + my1) / 2 + H * .03, rh / 2 + 8), H - rh / 2 - 8);
+    rect = { x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh, sc, ox, oy, iw, ih };
+    real.style.left = rect.x.toFixed(1) + 'px'; real.style.top = rect.y.toFixed(1) + 'px';
+    real.style.width = rw.toFixed(1) + 'px'; real.style.height = rh.toFixed(1) + 'px';
+    render();
+  }
+  function render() {
+    if (!rect || ready < 2) return;
+    if (!LEVELS[level]) { sec.classList.add('real'); return; }
+    sec.classList.remove('real');
+    const ph = LEVELS[level], pw = Math.max(1, Math.round(ph * W / H));
+    off.width = pw; off.height = ph;
+    const k = pw / W;
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(bg, rect.ox * k, rect.oy * k, rect.iw * rect.sc * k, rect.ih * rect.sc * k);
+    octx.fillStyle = 'rgba(40,30,20,.32)';                                  // 紙の影
+    octx.fillRect((rect.x + 4) * k, (rect.y + 9) * k, rect.w * k, rect.h * k);
+    octx.drawImage(real, rect.x * k, rect.y * k, rect.w * k, rect.h * k);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, cv.width, cv.height);
+  }
+
+  /* 画質メニュー */
+  const bar = document.getElementById('qbar'), btn = document.getElementById('qbtn'), menu = document.getElementById('qmenu');
+  const cur = document.getElementById('qcur'), now = document.getElementById('qnow-val');
+  const spin = document.getElementById('qspin'), toast = document.getElementById('qtoast');
+  let busy = false, toastT = 0;
+  const say = (msg) => { toast.textContent = msg; toast.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toast.classList.remove('on'), 2600); };
+  btn.addEventListener('click', e => { e.stopPropagation(); bar.classList.toggle('open'); });
+  cv.addEventListener('click', e => { e.stopPropagation(); bar.classList.add('open'); });   // モザイクを押しても開く
+  document.addEventListener('click', () => bar.classList.remove('open'));
+  menu.addEventListener('click', e => {
+    const b = e.target.closest('button[data-q]'); if (!b) return;
+    e.stopPropagation();
+    const q = b.dataset.q;
+    if (q === '4k') { say('回線が細いので、これが限界です。'); bar.classList.remove('open'); return; }
+    const L = +q;
+    bar.classList.remove('open');
+    if (L === level || busy) return;
+    busy = true; spin.classList.add('on');
+    // 動画プレーヤーと同じく、少し待たせてから切り替わる(上げるほど長い)
+    setTimeout(() => {
+      level = L; spin.classList.remove('on'); busy = false;
+      cur.textContent = now.textContent = L + 'p';
+      menu.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.q === q));
+      render();
+      if (L === 1080) say('本物です。ここまで来る人は少ない。');
+    }, 350 + Math.min(900, L * .5));
+  });
+  addEventListener('resize', layout);
+  window.__px = { get level() { return level; }, set: (L) => { level = L; render(); }, layout, get rect() { return rect; } };
+})();
+
+/* ================================================================
+   セクション3: 出土品の復元(粒子モーフ)
+   金色の砂粒子1.4万粒が、職業3説の出土品の形に変身する。
+   形はシルエット(絵文字)を画素サンプリングして自動生成
+   ================================================================ */
+(() => {
+  const sec = document.getElementById('ns-sec3');
+  const cv = document.getElementById('morph-canvas');
+  if (!sec || !cv) return;
+  const N = 14000;
+  const cur = new Float32Array(N * 3), st = new Float32Array(N * 3),
+        tg = new Float32Array(N * 3), prog = new Float32Array(N),
+        rnd = new Float32Array(N);
+  const colCur = new Float32Array(N * 3), colSt = new Float32Array(N * 3),
+        colTg = new Float32Array(N * 3), colOut = new Float32Array(N * 3);   // colOut = 奥行きの陰影を掛けた表示用
+  let mr = null, mscene, mcam, pts, DR2 = 1;
+  let inited = false, visible = false, raf = false, state = 'galaxy', t0 = 0;
+  const shapeCache = {};
+  // 粒子の基本色。淡い紙の上で薄く見えていたので、墨に寄せた深いセージ(明暗をばらつかせる)。
+  // 立体感は下の frame3 で「手前は濃く、奥は紙の色へ溶ける」陰影を掛けて出す
+  const goldArr = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const v = .85 + Math.random() * .35;
+    goldArr[i * 3] = (72 / 255) * v; goldArr[i * 3 + 1] = (80 / 255) * v; goldArr[i * 3 + 2] = (60 / 255) * v;
+  }
+  const PAPER = [.925, .918, .875];   // 紙の色。奥の粒はここへ溶ける
+  // 自作シルエット画像(assets/shapes/{key}.png)があれば絵文字より優先。色も粒子が再現する
+  const IMGS = {};
+  for (const k of ['body', 'actor', 'eng']) {
+    const im = new Image();
+    im.onload = () => { IMGS[k] = im; };
+    im.src = `assets/shapes/${k}.png?v=1`;
+  }
+
+  function sampleShape(ch) {
+    const s = 340, c = document.createElement('canvas');
+    c.width = c.height = s;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.font = '300px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(ch, s / 2, s / 2 + 10);
+    const d = g.getImageData(0, 0, s, s).data;
+    const pxs = [];
+    for (let y = 0; y < s; y += 2) for (let x = 0; x < s; x += 2)
+      if (d[(y * s + x) * 4 + 3] > 120) pxs.push([x, y]);
+    const out = new Float32Array(N * 3);
+    const scale = 1.6;
+    for (let i = 0; i < N; i++) {
+      const [x, y] = pxs[(Math.random() * pxs.length) | 0];
+      out[i * 3]     = (x - s / 2) * scale + (Math.random() - .5) * 2;
+      out[i * 3 + 1] = (s / 2 - y) * scale + (Math.random() - .5) * 2;
+      out[i * 3 + 2] = (Math.random() - .5) * 60;
+    }
+    return out;
+  }
+  function galaxyShape() {
+    const out = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const r = Math.sqrt(Math.random()) * 300, a = Math.random() * Math.PI * 2;
+      out[i * 3] = Math.cos(a) * r * 1.4;
+      out[i * 3 + 1] = Math.sin(a) * r * .55;
+      out[i * 3 + 2] = (Math.random() - .5) * 90;
+    }
+    return out;
+  }
+  /* 粒子で文字を描く(エンジニア説の「ノーコメント」用) */
+  function sampleText(str) {
+    const w = 680, h = 320, c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.font = '800 104px "Hiragino Kaku Gothic ProN", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#fff';
+    g.fillText(str, w / 2, h / 2);
+    const d = g.getImageData(0, 0, w, h).data;
+    const pxs = [];
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2)
+      if (d[(y * w + x) * 4 + 3] > 120) pxs.push([x, y]);
+    const out = new Float32Array(N * 3);
+    const scale = 1.5;
+    for (let i = 0; i < N; i++) {
+      const [x, y] = pxs[(Math.random() * pxs.length) | 0];
+      out[i * 3]     = (x - w / 2) * scale + (Math.random() - .5) * 2;
+      out[i * 3 + 1] = (h / 2 - y) * scale + (Math.random() - .5) * 2;
+      out[i * 3 + 2] = (Math.random() - .5) * 50;
+    }
+    return out;
+  }
+  /* 自作シルエット画像から位置+色をサンプリング */
+  function sampleImage(img) {
+    const s = 380, c = document.createElement('canvas');
+    c.width = c.height = s;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const k = Math.min(s / img.width, s / img.height);
+    const w = img.width * k, h = img.height * k;
+    g.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
+    const d = g.getImageData(0, 0, s, s).data;
+    const pxs = [];
+    for (let y = 0; y < s; y += 2) for (let x = 0; x < s; x += 2) {
+      const o = (y * s + x) * 4;
+      if (d[o + 3] > 120) pxs.push([x, y, d[o], d[o + 1], d[o + 2]]);
+    }
+    if (!pxs.length) return null;
+    const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+    const scale = 1.5;
+    for (let i = 0; i < N; i++) {
+      const [x, y, r, g2, b] = pxs[(Math.random() * pxs.length) | 0];
+      pos[i * 3]     = (x - s / 2) * scale + (Math.random() - .5) * 2;
+      pos[i * 3 + 1] = (s / 2 - y) * scale + (Math.random() - .5) * 2;
+      pos[i * 3 + 2] = (Math.random() - .5) * 50;
+      col[i * 3] = r / 255; col[i * 3 + 1] = g2 / 255; col[i * 3 + 2] = b / 255;
+    }
+    return { pos, col };
+  }
+  function targetsFor(key, emoji) {
+    const ck = IMGS[key] ? key + ':img' : key;
+    if (!shapeCache[ck]) {
+      shapeCache[ck] =
+        (IMGS[key] && sampleImage(IMGS[key])) ||
+        (key === 'nocomment' ? { pos: sampleText('ノーコメント'), col: goldArr }
+          : emoji ? { pos: sampleShape(emoji), col: goldArr }
+          : { pos: galaxyShape(), col: goldArr });
+    }
+    return shapeCache[ck];
+  }
+  function morphTo(key, emoji) {
+    if (!inited) return;
+    const t = targetsFor(key, emoji);
+    st.set(cur); tg.set(t.pos);
+    colSt.set(colCur); colTg.set(t.col);
+    for (let i = 0; i < N; i++) prog[i] = -Math.random() * .45;
+    state = key;
+  }
+  /* クリック後: 各粒子が「今いる角度」を保ったまま半径方向に滑り、
+     花が開くように中央ボタンを囲む金のリングへ(向きの急変なし) */
+  let ringT0 = 0;
+  function ringTo() {
+    if (!inited) return;
+    st.set(cur);
+    for (let i = 0; i < N; i++) {
+      const j = i * 3;
+      const a = Math.atan2(cur[j + 1] / .78, cur[j] / 1.25) + (Math.random() - .5) * .06;
+      const r = 320 + (Math.random() - .5) * 28;
+      tg[j] = Math.cos(a) * r * 1.25;
+      tg[j + 1] = Math.sin(a) * r * .78;
+      tg[j + 2] = (Math.random() - .5) * 40;
+      prog[i] = -Math.random() * .3;
+    }
+    colSt.set(colCur); colTg.set(goldArr);   // リングは金色に戻る
+    ringT0 = performance.now();
+    state = 'ring';
+  }
+  function init3() {
+    if (inited) return; inited = true;
+    DR2 = Math.min(devicePixelRatio || 1, 1.5);
+    mr = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
+    mr.setPixelRatio(DR2);
+    mr.setSize(sec.clientWidth, sec.clientHeight);
+    mscene = new THREE.Scene();
+    mcam = new THREE.PerspectiveCamera(40, sec.clientWidth / sec.clientHeight, 10, 4000);
+    mcam.position.z = 900;
+    const g0 = galaxyShape();
+    cur.set(g0); st.set(g0); tg.set(g0);
+    colCur.set(goldArr); colSt.set(goldArr); colTg.set(goldArr);
+    prog.fill(1);
+    for (let i = 0; i < N; i++) rnd[i] = Math.random() * Math.PI * 2;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(cur, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colOut, 3));
+    pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      // 粒の大きさは窓の幅に合わせる(広い窓で砂粒のように細かくならないように)
+      color: 0xffffff, vertexColors: true, size: 3.0 * DR2 * Math.max(1, Math.min(1.6, innerWidth / 1440)), sizeAttenuation: false,
+      transparent: true, opacity: 1, depthWrite: false,
+      blending: THREE.NormalBlending }));
+    mscene.add(pts);
+    t0 = performance.now();
+  }
+  function frame3(now) {
+    if (!visible) { raf = false; return; }
+    requestAnimationFrame(frame3);
+    const t = (now - t0) / 1000;
+    // 星雲=大きく揺蕩う / 拒否中=イライラと細かく震える / 形成中=静か
+    const idle = state === 'galaxy' ? 1 : state === 'refuse' ? .6 : .25;
+    for (let i = 0; i < N; i++) {
+      let p = prog[i];
+      if (p < 1) p = prog[i] = Math.min(1, p + .022);
+      const e = p <= 0 ? 0 : p * p * (3 - 2 * p);
+      const j = i * 3, r = rnd[i];
+      cur[j]     = st[j]     + (tg[j]     - st[j])     * e + Math.sin(t * (.6 + r % 1) + r) * 2.4 * idle;
+      cur[j + 1] = st[j + 1] + (tg[j + 1] - st[j + 1]) * e + Math.cos(t * .7 + r * 2) * 2.4 * idle;
+      cur[j + 2] = st[j + 2] + (tg[j + 2] - st[j + 2]) * e + Math.sin(t * .5 + r * 3) * 2 * idle;
+      colCur[j]     = colSt[j]     + (colTg[j]     - colSt[j])     * e;
+      colCur[j + 1] = colSt[j + 1] + (colTg[j + 1] - colSt[j + 1]) * e;
+      colCur[j + 2] = colSt[j + 2] + (colTg[j + 2] - colSt[j + 2]) * e;
+      // 奥行きの陰影: 手前(z=+45)はそのままの濃さ、奥(z=-45)は紙の色へ溶ける
+      const k = Math.max(0, Math.min(1, (cur[j + 2] + 45) / 90));
+      const m = .5 + .5 * k;
+      colOut[j]     = PAPER[0] + (colCur[j]     - PAPER[0]) * m;
+      colOut[j + 1] = PAPER[1] + (colCur[j + 1] - PAPER[1]) * m;
+      colOut[j + 2] = PAPER[2] + (colCur[j + 2] - PAPER[2]) * m;
+    }
+    pts.geometry.attributes.position.needsUpdate = true;
+    pts.geometry.attributes.color.needsUpdate = true;
+    pts.rotation.y = Math.sin(t * .16) * .12;
+    // リングはクリック時点からゼロ起算でゆっくり周回、解除時は滑らかに戻す
+    if (state === 'ring') pts.rotation.z = (now - ringT0) / 1000 * .07;
+    else pts.rotation.z *= .92;
+    mr.render(mscene, mcam);
+  }
+  /* 導線: ①右の職業を選ぶ(ホバー=変身) → ②クリックでリング+中央ボタン出現 → ③ボタンで詳細ページへ */
+  const items3 = [...document.querySelectorAll('#hub3 .hub-item')];
+  const goBtn = document.getElementById('hub3-go');
+  const goLabel = document.getElementById('hub3-go-label');
+  let selected = null;
+  const hideGo = () => { selected = null; goBtn.classList.remove('on'); };
+  items3.forEach(b => {
+    b.addEventListener('pointerenter', () => {
+      init3();
+      if (selected && selected !== b.dataset.k) hideGo();
+      items3.forEach(x => x.classList.toggle('active', x === b));
+      morphTo(b.dataset.k, b.dataset.e);
+    });
+    b.addEventListener('click', () => {
+      if (b.dataset.k === 'eng') {              // 本職: 説明を拒否(遷移なし)
+        hideGo();
+        morphTo('nocomment');
+        state = 'refuse';
+        b.classList.add('refuse');
+        setTimeout(() => b.classList.remove('refuse'), 500);
+        setTimeout(() => { if (state === 'refuse') morphTo(b.dataset.k, b.dataset.e); }, 2100);
+        return;
+      }
+      selected = b.dataset.k;
+      goLabel.textContent = `${b.dataset.name}の詳細ページへ`;
+      ringTo();
+      setTimeout(() => { if (selected === b.dataset.k) goBtn.classList.add('on'); }, 450);
+    });
+  });
+  goBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (selected) location.href = `pages/${selected}.html?v=${ASSET_V}`;
+  });
+  document.getElementById('hub3').addEventListener('pointerleave', () => {
+    if (state === 'ring') return;               // ボタンへ誘導中は選択を維持
+    items3.forEach(x => x.classList.remove('active'));
+    morphTo('galaxy');
+  });
+  sec.addEventListener('click', e => {
+    if (e.target instanceof Element && (e.target.closest('#hub3') || e.target.closest('#hub3-go'))) return;
+    if (state === 'ring') {                     // 背景クリックで選択解除
+      hideGo();
+      items3.forEach(x => x.classList.remove('active'));
+      morphTo('galaxy');
+    }
+  });
+  new IntersectionObserver(es => {
+    const on = es.some(x => x.isIntersecting);
+    if (on) {
+      init3();
+      if (!visible) { visible = true; if (!raf) { raf = true; requestAnimationFrame(frame3); } }
+    } else visible = false;
+  }, { threshold: .15 }).observe(sec);
+})();
+
+/* ================================================================
+   セクション5: 趣味の流体(比較試作)
+   WebGL-Fluid-Simulation (Pavel Dobryakov, MIT) をローカル取込・改造。
+   マウスでかき混ぜられる本物の流体。趣味を選ぶとシルエットの輪郭に
+   沿って絵の具が注入され、形が渦を巻いて溶けていく
+   ================================================================ */
+(() => {
+  const sec = document.getElementById('ns-sec5');
+  const cv = document.getElementById('fluid-canvas');
+  if (!sec || !cv) return;
+  let loading = false, pending = [], sec5On = true;
+  function ensureFluid(cb) {
+    if (window.__fluid) { cb && cb(); return; }
+    if (cb) pending.push(cb);
+    if (loading) return;
+    loading = true;
+    const s = document.createElement('script');
+    s.src = 'assets/vendor/fluid.js?v=6';
+    s.onload = () => {
+      // 読込中に画面外へ抜けていた場合、その状態をここで反映する。
+      // 反映しないと流体が見えないまま全力で回り続ける
+      window.__fluid.config.PAUSED = !sec5On;
+      window.__fluid.setActive(sec5On);
+      pending.forEach(f => f()); pending = [];
+    };
+    document.body.appendChild(s);
+  }
+  // 画面に入ったら流体を起動(起動時に自動でランダムな絵の具が舞う)
+  new IntersectionObserver((es, io) => {
+    if (es.some(x => x.isIntersecting)) { ensureFluid(); io.disconnect(); }
+  }, { threshold: .12 }).observe(sec);
+
+  /* またたく星空(流体の下のレイヤー。星座版で好評だった夜空の継承) */
+  const starCv = document.getElementById('fstar-canvas');
+  let sg = null, sInited = false, sVisible = false, sRaf = false;
+  const fstars = [];
+  function initStars() {
+    if (sInited) return; sInited = true;
+    const DR2 = Math.min(devicePixelRatio || 1, 1.5);
+    starCv.width = Math.round(sec.clientWidth * DR2);
+    starCv.height = Math.round(sec.clientHeight * DR2);
+    sg = starCv.getContext('2d');
+    for (let i = 0; i < 230; i++)
+      fstars.push({ x: Math.random() * starCv.width, y: Math.random() * starCv.height,
+        r: (Math.random() * 1.4 + .4) * DR2, p: Math.random() * Math.PI * 2,
+        sp: .4 + Math.random() * 1.2 });
+  }
+  function starFrame(now) {
+    if (!sVisible) { sRaf = false; return; }
+    requestAnimationFrame(starFrame);
+    const t = now / 1000;
+    sg.clearRect(0, 0, starCv.width, starCv.height);
+    for (const s2 of fstars) {
+      const tw = .45 + .55 * (0.5 + 0.5 * Math.sin(t * s2.sp + s2.p));
+      sg.fillStyle = `rgba(255,225,180,${(tw * .8).toFixed(3)})`;
+      sg.beginPath(); sg.arc(s2.x, s2.y, s2.r * tw, 0, 7); sg.fill();
+    }
+  }
+  new IntersectionObserver(es => {
+    const on = es.some(x => x.isIntersecting);
+    if (on) {
+      initStars();
+      if (!sVisible) { sVisible = true; if (!sRaf) { sRaf = true; requestAnimationFrame(starFrame); } }
+    } else sVisible = false;
+    sec5On = on;
+    // 画面外では流体をループごと止める。PAUSEDだけだと描画が回り続けてGPUを焼く
+    if (window.__fluid) { window.__fluid.config.PAUSED = !on; window.__fluid.setActive(on); }
+  }, { threshold: .12 }).observe(sec);
+
+  const HUES = {
+    travel: [[.1, .45, 1], [.3, .8, 1]],          // 空の青
+    estate: [[1, .62, .12], [1, .85, .3]],        // 金
+    game:   [[1, .45, .3], [1, .72, .38]],        // コーラル
+  };
+  const shapeCache5 = {};
+  function fillOf(emoji) {
+    if (shapeCache5[emoji]) return shapeCache5[emoji];
+    const s = 150, c = document.createElement('canvas'); c.width = c.height = s;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.font = '132px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(emoji, s / 2, s / 2 + 4);
+    const d = g.getImageData(0, 0, s, s).data;
+    const pts = [];
+    for (let y = 0; y < s; y += 4) for (let x = 0; x < s; x += 4)
+      if (d[(y * s + x) * 4 + 3] > 120) pts.push([(x - s / 2) / s, (y - s / 2) / s]);
+    shapeCache5[emoji] = pts;
+    return pts;
+  }
+  function pour(key, emoji) {
+    const f = window.__fluid;
+    if (!f) return;
+    const pts = fillOf(emoji);
+    const [c1, c2] = HUES[key] || HUES.estate;
+    const aspect = cv.clientHeight / Math.max(1, cv.clientWidth);
+    const cx = .45, cy = .5, k = .55;
+    // 細い筆・速度ほぼゼロの「スタンプ」で塗りつぶす→形がくっきり残る
+    // (太さはこの一筆だけの指定。共有設定は触らないのでマウスの筆は常に不変)
+    pts.forEach(p => {
+      setTimeout(() => {
+        const c = Math.random() < .5 ? c1 : c2;
+        f.splat(cx + p[0] * k * aspect, cy - p[1] * k,
+          (Math.random() - .5) * 12, (Math.random() - .5) * 12,
+          { r: c[0] * .5, g: c[1] * .5, b: c[2] * .5 }, .004);
+      }, (p[1] + .5) * 280);               // 上から下へサッと描き上げる
+    });
+    // しばらく鑑賞させてから、中心からそよ風を送ってふわっと渦に溶かす(細く・弱く)
+    setTimeout(() => {
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        f.splat(cx + Math.cos(a) * .05 * aspect, cy + Math.sin(a) * .05,
+          Math.cos(a) * 130, Math.sin(a) * 130, { r: 0, g: 0, b: 0 }, .06);
+      }
+    }, 2600);
+  }
+  /* 導線: 趣味をクリック=絵の具で形が描かれる → 少し遅れて金ボタン出現 → 詳細ページへ */
+  const goBtn5 = document.getElementById('hub5-go');
+  const goLabel5 = document.getElementById('hub5-go-label');
+  const items5 = [...document.querySelectorAll('#hub5 .hub-item')];
+  let selected5 = null;
+  items5.forEach(b => {
+    b.addEventListener('click', () => {
+      items5.forEach(x => x.classList.toggle('active', x === b));
+      selected5 = b.dataset.k;
+      goBtn5.classList.remove('on');
+      goLabel5.textContent = `${b.dataset.name}の詳細ページへ`;
+      ensureFluid(() => pour(b.dataset.k, b.dataset.e));
+      setTimeout(() => { if (selected5 === b.dataset.k) goBtn5.classList.add('on'); }, 1300);
+    });
+  });
+  goBtn5.addEventListener('click', e => {
+    e.stopPropagation();
+    if (selected5 === 'game') { openTV(); return; }
+    if (selected5) location.href = `pages/${selected5}.html?v=${ASSET_V}`;
+  });
+
+  /* ── 古いテレビのポップアップ ──
+     ゲームは pages/game.html(テレビの絵)の中の iframe で動く。開いている間は
+     後ろのスクロールと流体を止め、閉じたら iframe を空にして音も止める */
+  const pop = document.getElementById('tv-pop'), tvFrame = document.getElementById('tv-frame');
+  let tvOpen = false;
+  function openTV() {
+    if (tvOpen) return; tvOpen = true;
+    pop.hidden = false;
+    tvFrame.src = `pages/game.html?embed=1&v=${ASSET_V}`;
+    requestAnimationFrame(() => pop.classList.add('on'));
+    if (window.__lenis) window.__lenis.stop();
+    if (window.__fluid) { window.__fluid.config.PAUSED = true; window.__fluid.setActive(false); }
+    setTimeout(() => tvFrame.focus(), 400);
+  }
+  function closeTV() {
+    if (!tvOpen) return; tvOpen = false;
+    pop.classList.remove('on');
+    setTimeout(() => { pop.hidden = true; tvFrame.src = 'about:blank'; }, 450);
+    if (window.__lenis) window.__lenis.start();
+    // 趣味の節がまだ見えていれば流体を起こす
+    const r = document.getElementById('ns-sec5').getBoundingClientRect();
+    if (window.__fluid && r.bottom > 0 && r.top < innerHeight) { window.__fluid.config.PAUSED = false; window.__fluid.setActive(true); }
+  }
+  addEventListener('message', e => { if (e.data && e.data.type === 'tv:close') closeTV(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && tvOpen) closeTV(); });
+  pop.addEventListener('click', e => { if (e.target === pop) closeTV(); });
+  window.__tvpop = { openTV, closeTV };
+  document.getElementById('foot-game').addEventListener('click', e => { e.preventDefault(); openTV(); });
+})();
+
+/* ================================================================
+   入口: 黄(改造人)の組み立てをスクロールで前後に再生
+   ・動画そのものを飛ばすと1回30〜80msかかり毎秒10〜15コマしか更新できない(実際にカクついた)ので、
+     動画を assets/gate/frames/ の WebP 193枚に分け、スクロール量に応じたコマを canvas に描く(毎秒60回でも追従)
+   ・読み込みは「粗い格子から細かく」(0,192,96,48,144,…)。揃っていないコマは一番近い揃ったコマで代用
+   ・画面2つ分手前で読み込み開始。見えていない間は描かない
+   ================================================================ */
+(() => {
+  const gate = document.getElementById('ns-gate');
+  const scroller = document.getElementById('ns-scroll');
+  const cv = document.getElementById('gate-canvas');
+  if (!gate || !scroller || !cv) return;
+  const ctx = cv.getContext('2d', { alpha: false });
+  const lines = [...gate.querySelectorAll('.gt-line')];
+  const meter = gate.querySelector('#gate-meter i');
+  const N = 192;
+  const FR = i => `assets/gate/frames/f_${String(i).padStart(3, '0')}.webp?v=${ASSET_V}`;
+  const imgs = new Array(N).fill(null), loaded = new Uint8Array(N);
+  // 読み込み順
+  const order = [];
+  { const seen = new Set(); const add = i => { if (!seen.has(i)) { seen.add(i); order.push(i); } };
+    add(0); add(N - 1);
+    for (let step = 96; step >= 1; step = step >> 1) for (let i = 0; i < N; i += step) add(i);
+    for (let i = 0; i < N; i++) add(i); }
+  let started = false, inflight = 0, next = 0, targetIdx = 0, drawn = -1, q = 0, visible = false;
+  function nearest(i) {
+    if (loaded[i]) return i;
+    for (let d = 1; d < N; d++) { if (i - d >= 0 && loaded[i - d]) return i - d; if (i + d < N && loaded[i + d]) return i + d; }
+    return -1;
+  }
+  function draw(force) {
+    const j = nearest(targetIdx);
+    if (j < 0 || (j === drawn && !force)) return;
+    const im = imgs[j];
+    const sc = Math.max(cv.width / im.naturalWidth, cv.height / im.naturalHeight);
+    const w = im.naturalWidth * sc, h = im.naturalHeight * sc;
+    ctx.drawImage(im, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+    drawn = j;
+  }
+  const tries = new Uint8Array(N);
+  function fetchOne(i) {
+    const im = new Image(); im.decoding = 'async'; inflight++;
+    im.onload = () => { inflight--; imgs[i] = im; loaded[i] = 1; if (visible && (drawn < 0 || nearest(targetIdx) === i)) draw(); pump(); };
+    // 取りこぼしは少し待って取り直す(簡易サーバーが接続を切ることがある)。3回までで諦め、近いコマで代用
+    im.onerror = () => { inflight--; if (++tries[i] < 3) setTimeout(() => fetchOne(i), 400 * tries[i]); pump(); };
+    im.src = FR(i) + (tries[i] ? `&t=${tries[i]}` : '');
+  }
+  function pump() {
+    while (inflight < 6 && next < order.length) fetchOne(order[next++]);
+  }
+  function load() { if (started) return; started = true; pump(); }
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
+    if (visible) draw(true);
+  }
+  new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) load(); }, { rootMargin: '150% 0px' }).observe(gate);
+  function update() {
+    const r = gate.getBoundingClientRect();
+    const total = Math.max(1, r.height - innerHeight);
+    const p = -r.top / total;                     // 0=入口 → 1=通過
+    visible = p > -0.25 && p < 1.25;
+    if (!visible) return;
+    q = Math.min(1, Math.max(0, p));
+    targetIdx = Math.round(q * (N - 1));
+    if (meter) meter.style.height = (q * 100).toFixed(1) + '%';
+    lines.forEach((el, i) => {
+      const o = Math.min(1, Math.max(0, (q - (.12 + i * .28)) * 6));
+      el.style.opacity = o;
+      el.style.transform = `translateY(${((1 - o) * 22).toFixed(1)}px)`;
+    });
+    if (!started) load();
+    draw();
+  }
+  scroller.addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', () => { resize(); update(); });
+  resize(); update();
+  // 中に入ったら手が空いたところで先に読み込んでおく(4.6MB。入口に来る前に揃える)
+  const early = setInterval(() => {
+    if (document.getElementById('new-site').classList.contains('revealed')) { clearInterval(early); setTimeout(load, 1500); }
+  }, 500);
+  window.__gate = { get q() { return q; }, get idx() { return targetIdx; }, get drawn() { return drawn; },
+    loadedCount: () => loaded.reduce((a, b) => a + b, 0), load, N };
+})();
+
+/* ================================================================
+   スクロールの質感: Lenis(慣性スクロール)
+   ネイティブスクロールを保ったまま滑らかな慣性だけを足す。
+   ※カーテン式(sticky固定)は「画面外に出たセクションは眠る」という
+     このサイトの設計と相性が悪く撤去した(2026-08-06)
+   ================================================================ */
+/* ================================================================
+   セクション1.5: 部屋(3D箱庭)の眠り設計
+   - 見えている間だけ iframe 内の描画ループを回す(room:wake / room:sleep)
+   - 天気セクションにいる間に読み込みだけ先に済ませる(描画は起こさない)
+   - 90秒以上見えないままなら iframe ごと解放し、戻ったら読み直す(GPUメモリも解放)
+   - iframe 上のホイールは親へ転送して Lenis に流す(部屋の上でもページが進む)
+   ================================================================ */
+(() => {
+  const sec = document.getElementById('ns-room');
+  const fr = document.getElementById('room-frame');
+  const scroller = document.getElementById('ns-scroll');
+  if (!sec || !fr || !scroller) return;
+  let loaded = false, awake = false, unloadTimer = null;
+  const post = m => { try { fr.contentWindow && fr.contentWindow.postMessage(m, '*'); } catch (e) {} };
+  function load() { if (loaded) return; loaded = true; fr.src = `pages/room.html?embed=1&v=${ASSET_V}`; }
+  new IntersectionObserver(es => {
+    const on = es.some(x => x.isIntersecting);
+    if (on) { clearTimeout(unloadTimer); load(); awake = true; post({ type:'room:wake' }); }
+    else {
+      awake = false; post({ type:'room:sleep' });
+      clearTimeout(unloadTimer);
+      unloadTimer = setTimeout(() => { if (!awake && loaded) { fr.src = 'about:blank'; loaded = false; } }, 90000);
+    }
+  }, { threshold: .1 }).observe(sec);
+  new IntersectionObserver((es, io) => {
+    if (es.some(x => x.isIntersecting)) { load(); io.disconnect(); }
+  }, { rootMargin: '60% 0px' }).observe(sec);
+  // 左の文章が占める幅を部屋へ伝える(部屋は残りの右側に全景を収める)
+  const copyFrac = () => (innerWidth > 860 && innerWidth / innerHeight > 1) ? .36 : 0;
+  const postLayout = () => post({ type:'room:layout', copyFrac: copyFrac() });
+  fr.addEventListener('load', () => { if (awake) setTimeout(() => post({ type:'room:wake' }), 50); setTimeout(postLayout, 80); });
+  addEventListener('resize', postLayout);
+  const IDLE = ['次の用事を考え中', 'ぼんやりしている', '窓の外を見ている', '息子を探している'];
+  addEventListener('message', e => {
+    const d = e.data; if (!d || typeof d.type !== 'string') return;
+    if (d.type === 'room:wheel') {
+      scroller.dispatchEvent(new WheelEvent('wheel', { deltaX:d.deltaX || 0, deltaY:d.deltaY || 0, deltaMode:0, bubbles:true, cancelable:true }));
+    } else if (d.type === 'room:now') {
+      // 部屋の実況を左のカードに映す
+      const now = document.getElementById('rc-now'), sub = document.getElementById('rc-now-sub'),
+            cnt = document.getElementById('rc-count'), m = document.getElementById('rc-meter');
+      if (!now) return;
+      if (!d.title) { now.textContent = IDLE[(Math.random() * IDLE.length) | 0]; sub.textContent = ''; m.style.width = '0%'; }
+      else { now.textContent = d.title; sub.textContent = d.text || ''; m.style.width = '0%'; }
+      if (cnt) cnt.textContent = `${d.done} / ${d.total} の用事`;
+    } else if (d.type === 'room:meter') {
+      const m = document.getElementById('rc-meter'); if (m) m.style.width = d.p.toFixed(1) + '%';
+    }
+  });
+  window.__roomSec = { get loaded() { return loaded; }, get awake() { return awake; } };
+})();
+
+(() => {
+  const scroller = document.getElementById('ns-scroll');
+  const content = document.getElementById('ns-content');
+  if (!scroller || !content || !window.Lenis) return;
+  const lenis = new Lenis({
+    wrapper: scroller, content,
+    duration: 1.15, smoothWheel: true,
+  });
+  lenis.stop();                        // 破壊が終わってスクロール解禁されたら始動
+  window.__lenis = lenis;              // 検証用
+  (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(0);
+  // 検証用: ?reveal で破壊を飛ばして新サイトを即公開
+  if (new URLSearchParams(location.search).has('reveal')) {
+    document.getElementById('new-site').classList.add('revealed');
+    const t = document.getElementById('three'); if (t) t.style.pointerEvents = 'none';
+    const o = document.getElementById('old-site'); if (o) o.style.visibility = 'hidden';
+    ['integrity', 'mute', 'skip'].forEach(id => document.getElementById(id)?.classList.add('fade-out'));
+    try { revealed = true; } catch (e) {}
+    const hideTools = () => { try { [hammerRoot, drillRoot, shadowH, shadowD, typeof katanaRoot !== 'undefined' ? katanaRoot : null, typeof shadowK !== 'undefined' ? shadowK : null].forEach(x => { if (x) x.visible = false; }); } catch (e) {} };
+    const hv = setInterval(hideTools, 300); setTimeout(() => clearInterval(hv), 15000);
+    if (t) t.style.opacity = '0';                    // 検証モードでは道具の層ごと消す
+  }
+  const iv = setInterval(() => {
+    if (document.getElementById('new-site').classList.contains('revealed')) {
+      lenis.start();
+      clearInterval(iv);
+    }
+  }, 400);
+})();
+</script>
+<div class="tv-pop" id="tv-pop" hidden><iframe id="tv-frame" title="ゲーム" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe></div>
+</body>
+</html>

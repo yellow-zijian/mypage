@@ -1,0 +1,1382 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅行 — 黄梓健</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body { background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%); font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  #stage { position:fixed; inset:0; }
+
+  .back { position:fixed; top:clamp(18px, 3.5vh, 40px); left:clamp(18px, 2.5vw, 40px); z-index:20;
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#6f6d62; text-decoration:none; border:1px solid rgba(96,102,88,.3); border-radius:999px;
+    padding:.9em 1.5em; transition: all .25s ease; background:rgba(255,255,255,.4); backdrop-filter:blur(6px); }
+  .back:hover { border-color:#7f8a6b; color:#4a4a43; box-shadow:0 0 20px rgba(96,102,88,.25); }
+
+  .head { position:fixed; left:clamp(18px, 2.5vw, 40px); top:clamp(76px, 11vh, 118px); z-index:12;
+    opacity:0; transform:translateY(10px); transition:.9s cubic-bezier(.22,.9,.3,1); pointer-events:none; }
+  .head.on { opacity:1; transform:none; }
+  .eyebrow { font:600 clamp(10px, .9vw, 13px)/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing:.4em; color:#7f8a6b; margin-bottom:.9em; }
+  h1 { font:800 clamp(24px, 3vw, 44px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; }
+
+  /* 地球の上のピン: 日本の地図へ降りる入口。触れるものなので桃色の丸いボタンにする */
+  .pin { position:fixed; z-index:11; transform:translate(-50%,-100%); cursor:pointer;
+    opacity:0; transition: opacity .6s ease; text-align:center; }
+  .pin.on { opacity:1; }
+  .pin b { display:inline-block; font:800 clamp(12px, 1.05vw, 16px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#fff; letter-spacing:.1em; padding:.8em 1.3em; border-radius:999px; background:#c48d7e;
+    box-shadow:0 6px 18px rgba(196,141,126,.35), 0 0 0 4px rgba(255,255,255,.75);
+    animation: pinpulse 2.4s ease-in-out infinite; transition: background .25s ease, transform .25s ease; }
+  .pin s { display:block; text-decoration:none; width:1px; height:clamp(18px, 2.6vh, 34px);
+    margin:.4em auto 0; background:linear-gradient(180deg, #c48d7e, transparent); }
+  .pin:hover b { background:#b57b6c; transform:translateY(-2px); }
+  @keyframes pinpulse {
+    0%, 100% { box-shadow:0 6px 18px rgba(196,141,126,.35), 0 0 0 4px rgba(255,255,255,.75); }
+    50% { box-shadow:0 6px 22px rgba(196,141,126,.5), 0 0 0 10px rgba(196,141,126,.16); } }
+  .jpgo { margin-top:1em; width:100%; padding:.85em 0; border-radius:999px; cursor:pointer; border:none;
+    background:#c48d7e; color:#fff; font:800 clamp(11px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.14em; box-shadow:0 6px 16px rgba(196,141,126,.28); transition: background .25s ease; }
+  .jpgo:hover { background:#b57b6c; }
+  /* 共有(桃色の線のボタン)と、もらった地図の一覧 */
+  .share { margin-top:.6em; width:100%; padding:.75em 0; border-radius:999px; cursor:pointer;
+    border:1px solid #c48d7e; background:transparent; color:#c48d7e;
+    font:800 clamp(11px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em;
+    transition: all .25s ease; }
+  .share:hover { background:rgba(196,141,126,.12); }
+  .recv { margin-top:1em; padding-top:.9em; border-top:1px solid rgba(96,102,88,.16); }
+  .recv em { font-style:normal; display:block; font:600 clamp(9px, .8vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.2em; color:#a5a398; }
+  .recv ol { list-style:none; margin:.55em 0 0; padding:0; max-height:9.6em; overflow:auto; }
+  .recv li button { width:100%; display:flex; gap:.6em; align-items:baseline; background:none; border:0; padding:.34em 0;
+    cursor:pointer; font:600 clamp(11px, .9vw, 13px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; text-align:left; }
+  .recv .rk { width:1.5em; flex:none; color:#a5a398; font:700 .85em/1.3 "Helvetica Neue", Arial, sans-serif; }
+  .recv b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .recv i { font-style:normal; color:#7a786e; font-size:.9em; flex:none; }
+  .recv li.me button { cursor:default; } .recv li.me b { color:#7f8a6b; }
+  .recv li:not(.me) button:hover b { color:#c48d7e; }
+  .recv li.now b { color:#c48d7e; }
+  /* だれかの地図を見ているとき: 塗れない・消せない・共有しない */
+  body.viewing .reset, body.viewing .share { display:none; }
+  .back-own { display:none; margin-top:.6em; width:100%; padding:.75em 0; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(96,102,88,.28); background:transparent; color:#6f6d62;
+    font:700 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em; }
+  body.viewing .back-own { display:block; }
+  .back-own:hover { border-color:#7f8a6b; color:#4a4a43; }
+  .who { margin-top:.5em; font:700 clamp(12px, 1.05vw, 15px)/1.4 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#c48d7e; letter-spacing:.1em; }
+  /* 共有の小窓 */
+  .share-box { position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
+    background:rgba(74,74,67,.22); backdrop-filter:blur(4px); }
+  .share-box.on { display:flex; }
+  .sb-card { width:min(420px, 92vw); background:rgba(255,255,255,.96); border:1px solid rgba(96,102,88,.2);
+    border-radius:18px; padding:clamp(18px, 2vw, 26px); box-shadow:0 20px 60px rgba(60,60,50,.18); }
+  .sb-card em { font-style:normal; display:block; font:600 clamp(9px, .8vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.2em; color:#a5a398; margin-bottom:.7em; }
+  .sb-card input { width:100%; box-sizing:border-box; padding:.75em .9em; border-radius:12px;
+    border:1px solid rgba(96,102,88,.3); background:#fbfaf6; color:#4a4a43;
+    font:600 clamp(14px, 1.1vw, 17px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; outline:none; }
+  .sb-card input:focus { border-color:#c48d7e; }
+  .sb-card input[readonly] { font:500 12px/1.4 "Helvetica Neue", Arial, sans-serif; color:#6f6d62; }
+  .sb-card .jpgo { margin-top:.8em; }
+  .sb-out { margin-top:1.1em; padding-top:1em; border-top:1px solid rgba(96,102,88,.16); }
+  .sb-out p { margin:.7em 0 0; font:600 clamp(11px, .9vw, 13px)/1.5 "Hiragino Kaku Gothic ProN", sans-serif; color:#7f8a6b; min-height:1.5em; }
+
+  /* 日本地図 */
+  .jp { position:fixed; inset:0; z-index:14; opacity:0; pointer-events:none;
+    transition: opacity .9s ease; background:radial-gradient(120% 100% at 50% 40%, #eef0e8 0%, #e6e4da 60%, #f6f3ec 100%); }
+  .jp.on { opacity:1; pointer-events:auto; }
+  path.pref { opacity:0; transform-origin:center; }
+  .jp.on path.pref { animation: landIn .7s cubic-bezier(.22,.9,.3,1) forwards; }
+  @keyframes landIn { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:none; } }
+  #jpsvg text { opacity:0; }
+  .jp.on #jpsvg text { animation: fadeIn .5s ease forwards; animation-delay:.75s; }
+  @keyframes fadeIn { to { opacity:1; } }
+  .jp svg { position:absolute; inset:0; width:100%; height:100%; }
+  .pref { cursor:pointer; }
+  .route { stroke:#7f8a6b; stroke-width:1.5; fill:none; stroke-linecap:round;
+    filter:drop-shadow(0 0 5px rgba(96,102,88,.8)); transition: opacity .4s ease; }
+  path.pref { cursor:pointer; fill:rgba(127,138,107,.13); stroke:rgba(96,102,88,.30);
+    stroke-width:.7; stroke-linejoin:round; transition: fill .4s ease, stroke .3s ease; }
+  path.pref.mine  { fill:rgba(196,141,126,.38); stroke:rgba(196,141,126,.85); }
+  path.pref.yours { fill:rgba(96,102,88,.45); stroke:rgba(127,138,107,.95); }
+  path.pref.both  { fill:rgba(157,179,191,.52); stroke:#c48d7e; stroke-width:1.3; }
+  path.pref.hov   { fill:rgba(127,138,107,.65); stroke:#fff; stroke-width:1.3; }
+  #jpsvg text { font:600 9.5px/1 "Hiragino Kaku Gothic ProN", sans-serif; fill:#a5a398;
+    text-anchor:middle; cursor:pointer; transition: fill .3s ease;
+    paint-order:stroke; stroke:rgba(255,255,255,.85); stroke-width:2.6px; }
+  #jpsvg text.lit { fill:#4a4a43; }
+  #jpsvg text.hov { fill:#fff; }
+
+  .jp-ui { position:fixed; z-index:16; left:clamp(18px, 2.5vw, 40px); top:clamp(76px, 11vh, 118px);
+    opacity:0; transition:.8s cubic-bezier(.22,.9,.3,1) .3s; transform:translateY(10px); }
+  .jp.on ~ .jp-ui { opacity:1; transform:none; }
+  .jp-ui .eyebrow { margin-bottom:.7em; }
+  .jp-ui h2 { font:800 clamp(20px, 2.4vw, 34px)/1.25 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .jp-ui p { margin-top:.9em; font:500 clamp(11px, .95vw, 14px)/1.85
+    "Hiragino Kaku Gothic ProN", sans-serif; color:#7a786e; max-width:20em; }
+
+  .score { position:fixed; z-index:16; right:clamp(16px, 2.6vw, 46px); top:50%;
+    transform:translateY(-50%) translateX(36px); width:clamp(232px, 20vw, 300px);
+    background:rgba(255,255,255,.72); border:1px solid rgba(96,102,88,.22); border-radius:18px;
+    padding:clamp(16px, 1.5vw, 24px); backdrop-filter:blur(12px);
+    opacity:0; pointer-events:none; transition:.8s cubic-bezier(.22,.9,.3,1) .45s; }
+  .jp.on ~ .score { opacity:1; transform:translateY(-50%); pointer-events:auto; }
+  .score-row { padding:.85em 0; border-bottom:1px solid rgba(96,102,88,.14); }
+  .score-row:last-of-type { border-bottom:none; }
+  .score-row em { font-style:normal; display:block; font:600 clamp(9px, .8vw, 12px)/1
+    "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.2em; color:#a5a398; margin-bottom:.7em; }
+  .score-row .n { display:flex; align-items:baseline; gap:.3em; }
+  .score-row .n b { font:800 clamp(26px, 2.5vw, 40px)/1 "Helvetica Neue", sans-serif; }
+  .score-row .n span { font:700 clamp(11px, .95vw, 14px)/1 "Helvetica Neue", sans-serif; color:#a5a398; }
+  .score-row.gold .n b { color:#c48d7e; }
+  .score-row.you .n b { color:#7f8a6b; }
+  .bar { height:5px; border-radius:3px; background:rgba(96,102,88,.14); overflow:hidden; margin-top:.7em; }
+  .bar i { display:block; height:100%; width:0; border-radius:3px; transition: width .5s cubic-bezier(.22,.9,.3,1); }
+  .score-row.gold .bar i { background:linear-gradient(90deg, #e3bfb3, #c48d7e); }
+  .score-row.you .bar i { background:linear-gradient(90deg, #cfd4c3, #7f8a6b); }
+  .title-row { margin-top:1.1em; padding-top:1.1em; border-top:1px solid rgba(96,102,88,.16); }
+  .title-row em { font-style:normal; display:block; font:600 clamp(9px, .8vw, 12px)/1
+    "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.2em; color:#a5a398; margin-bottom:.55em; }
+  .title-row b { font:800 clamp(15px, 1.4vw, 21px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; transition: color .4s ease; }
+  .title-row b.done { color:#c48d7e; text-shadow:0 0 20px rgba(196,141,126,.55); }
+  .regions { display:flex; flex-wrap:wrap; gap:.34em; margin-top:1em; }
+  .regions span { font:700 clamp(8px, .72vw, 11px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    padding:.5em .68em; border-radius:999px; letter-spacing:.06em;
+    border:1px solid rgba(96,102,88,.2); color:#a5a398; transition: all .4s ease; }
+  .regions span.part { color:#6f6d62; border-color:rgba(96,102,88,.45); }
+  .regions span.full { color:#ffffff; border-color:transparent;
+    background:linear-gradient(135deg, #c48d7e, #c48d7e); box-shadow:0 0 14px rgba(196,141,126,.4); }
+  .regions span.pop { animation: pop .6s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes pop { 0% { transform:scale(1); } 40% { transform:scale(1.38); } 100% { transform:scale(1); } }
+  #confetti { position:fixed; inset:0; z-index:19; pointer-events:none; }
+  .verdict { margin-top:1.1em; padding-top:1.1em; border-top:1px solid rgba(96,102,88,.16);
+    font:700 clamp(11px, 1vw, 15px)/1.7 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; min-height:3.4em; }
+  .reset { margin-top:1em; width:100%; padding:.7em 0; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(96,102,88,.28); background:transparent; color:#a5a398;
+    font:700 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em;
+    transition: all .25s ease; }
+  .reset:hover { border-color:#7f8a6b; color:#4a4a43; }
+
+  .globe-btn { position:fixed; z-index:16; left:clamp(18px, 2.5vw, 40px); bottom:clamp(20px, 4vh, 44px);
+    padding:.85em 1.6em; border-radius:999px; cursor:pointer; opacity:0; pointer-events:none;
+    border:1px solid rgba(96,102,88,.3); background:rgba(255,255,255,.5); color:#6f6d62;
+    font:700 clamp(11px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    backdrop-filter:blur(6px); transition:.6s ease .5s; }
+  .jp.on ~ .globe-btn { opacity:1; pointer-events:auto; }
+  .globe-btn:hover { border-color:#7f8a6b; color:#4a4a43; }
+
+  .wscore { position:fixed; z-index:12; right:clamp(16px, 2.6vw, 46px); top:50%;
+    transform:translateY(-50%); width:clamp(214px, 18vw, 272px);
+    background:rgba(255,255,255,.66); border:1px solid rgba(96,102,88,.2); border-radius:18px;
+    padding:clamp(15px, 1.4vw, 22px); backdrop-filter:blur(12px);
+    opacity:0; transition: opacity .8s ease .8s; }
+  .wscore.on { opacity:1; }
+  .flash { position:fixed; inset:0; z-index:15; background:#fff; opacity:0; pointer-events:none; }
+  .tip { position:fixed; z-index:18; pointer-events:none; opacity:0; transform:translate(-50%,-140%);
+    padding:.6em .95em; border-radius:11px; white-space:nowrap; transition: opacity .18s ease;
+    background:rgba(255,255,255,.92); border:1px solid rgba(96,102,88,.3); backdrop-filter:blur(8px);
+    font:700 clamp(11px, .95vw, 14px)/1.5 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .tip.on { opacity:1; }
+  .tip em { font-style:normal; display:block; font-weight:600; font-size:.8em; margin-top:.25em; }
+  .tip em.g { color:#c48d7e; } .tip em.p { color:#7f8a6b; } .tip em.n { color:#a5a398; }
+
+  /* 縦画面: 地図は上半分、成績は下のシートに */
+  @media (max-width: 860px), (max-aspect-ratio: 1/1) {
+    .jp svg { top:8%; height:52%; }
+    .score { right:50%; left:auto; top:auto; bottom:0; transform:translateX(50%) translateY(26px);
+      width:100%; max-width:none; border-radius:20px 20px 0 0; border-bottom:none;
+      padding:16px 18px calc(16px + env(safe-area-inset-bottom)); }
+    .jp.on ~ .score { transform:translateX(50%); }
+    .score-row { padding:.5em 0; }
+    .score-row .n b { font-size:26px; }
+    .verdict { margin-top:.7em; padding-top:.7em; min-height:0; }
+    .title-row { margin-top:.7em; padding-top:.7em; }
+    .regions { margin-top:.6em; }
+    .reset { margin-top:.7em; }
+    .jp-ui p { display:none; }
+    .jp-ui { top:clamp(60px, 8vh, 90px); }
+    .jp-ui h2 { font-size:19px; }
+    .globe-btn { bottom:auto; top:clamp(16px, 3vh, 30px); left:auto; right:clamp(16px, 4vw, 30px);
+      padding:.7em 1.1em; }
+    /* 縦画面では下のシートが大きくなりすぎて地球を隠す。行間と文字を詰める */
+    .wscore { right:50%; top:auto; bottom:clamp(10px, 2vh, 20px); transform:translateX(50%);
+      width:min(400px, 94vw); padding:12px 14px; }
+    .wscore .score-row { padding:.42em 0; }
+    .wscore .score-row .n b { font-size:23px; }
+    .wscore .title-row { margin-top:.55em; padding-top:.55em; }
+    .wscore .title-row b { font-size:15px; }
+    .wscore .regions { margin-top:.5em; gap:.26em; }
+    .wscore .regions span { padding:.3em .5em; font-size:9px; }
+    .wscore .verdict { margin-top:.55em; padding-top:.55em; font-size:11px; min-height:0; line-height:1.5; }
+    .wscore .reset { margin-top:.6em; padding:.55em 0; }
+    .wscore .jpgo { margin-top:.6em; padding:.62em 0; }
+    .wscore .share, .wscore .back-own { margin-top:.45em; padding:.55em 0; }
+    .wscore .recv { margin-top:.6em; padding-top:.5em; } .wscore .recv ol { max-height:5.2em; }
+    .back { padding:.75em 1.1em; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+
+<div class="head" id="head">
+  <h1>旅行</h1>
+  <p class="who" id="who" hidden></p>
+</div>
+
+<div class="jp" id="jp"><svg id="jpsvg" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+<div class="jp-ui">
+  <h2>日本、どこまで行った？</h2>
+  <p>桃色は黄が踏んだ土地。緑はあなたの土地。</p>
+</div>
+
+<div class="score">
+  <div class="score-row gold">
+    <em>黄</em>
+    <div class="n"><b id="s-me">0</b><span>/ 47</span></div>
+    <div class="bar"><i id="b-me"></i></div>
+  </div>
+  <div class="score-row you">
+    <em>あなた</em>
+    <div class="n"><b id="s-you">0</b><span>/ 47</span></div>
+    <div class="bar"><i id="b-you"></i></div>
+  </div>
+  <div class="title-row"><em>称号</em><b id="rank">—</b></div>
+  <div class="regions" id="regions"></div>
+  <div class="verdict" id="verdict"></div>
+  <button class="share" id="j-share">共有</button>
+  <button class="back-own" id="j-own">自分の地図に戻る</button>
+  <button class="reset" id="reset">最初から</button>
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="wscore" id="wscore">
+  <div class="score-row you"><em>行った国・地域</em><div class="n"><b id="w-you">0</b><span>/ <i id="w-tot">196</i></span></div>
+    <div class="bar"><i id="bw-you"></i></div></div>
+  <div class="title-row"><em>称号</em><b id="w-rank">—</b></div>
+  <div class="regions" id="w-conts"></div>
+  <div class="verdict" id="w-verdict"></div>
+  <button class="jpgo" id="w-jpgo">日本の地図へ</button>
+  <button class="share" id="w-share">共有</button>
+  <button class="back-own" id="w-own">自分の地図に戻る</button>
+  <button class="reset" id="w-reset">最初から</button>
+  <div class="recv" id="recv" hidden><em>もらった地図</em><ol id="recv-list"></ol></div>
+</div>
+<div class="share-box" id="share-box">
+  <div class="sb-card">
+    <em>名前</em>
+    <input id="sb-name" maxlength="12" placeholder="名前" autocomplete="off">
+    <button class="jpgo" id="sb-make">リンクを作る</button>
+    <div class="sb-out" id="sb-out" hidden>
+      <input id="sb-link" readonly>
+      <button class="jpgo" id="sb-copy">コピー</button>
+      <p id="sb-msg"></p>
+    </div>
+    <button class="reset" id="sb-close">閉じる</button>
+  </div>
+</div>
+<button class="globe-btn" id="toglobe">← 地球へ戻る</button>
+<canvas id="confetti"></canvas>
+<div class="flash" id="flash"></div>
+
+<script type="importmap">
+{ "imports": { "three": "../assets/vendor/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ================================================================
+   旅行 — 夜の地球に降りる / 日本を塗る
+   ---------------------------------------------------------------
+   ① 宇宙。夜側の地球が都市の灯りだけで浮かんでいる
+   ② 訪問者が行った国・地域を押して塗り、称号をもらう(黄の国は出さない)
+   ③ 日本の上の「日本の地図へ」ボタン(右の欄にも同じボタン)を押すと降下 → 閃光 → 47都道府県へ
+   ④ 訪問者は自分の行った県を押して塗れる。制覇率が黄と並ぶ
+   ================================================================ */
+
+/* 日本(東京)。地図へ降りる入口と、訪問者の経路の起点 */
+const HOME = { n: '日本', lat: 35.69, lon: 139.69 };
+
+/* ── 47都道府県(県庁所在地の緯度経度) ── */
+const PREFS = [
+  ['北海道',43.06,141.35],['青森',40.82,140.74],['岩手',39.70,141.15],['宮城',38.27,140.87],
+  ['秋田',39.72,140.10],['山形',38.24,140.36],['福島',37.75,140.47],['茨城',36.34,140.45],
+  ['栃木',36.57,139.88],['群馬',36.39,139.06],['埼玉',35.86,139.65],['千葉',35.60,140.12],
+  ['東京',35.69,139.69],['神奈川',35.45,139.64],['新潟',37.90,139.02],['富山',36.70,137.21],
+  ['石川',36.59,136.63],['福井',36.07,136.22],['山梨',35.66,138.57],['長野',36.65,138.18],
+  ['岐阜',35.39,136.72],['静岡',34.98,138.38],['愛知',35.18,136.91],['三重',34.73,136.51],
+  ['滋賀',35.00,135.87],['京都',35.02,135.76],['大阪',34.69,135.52],['兵庫',34.69,135.18],
+  ['奈良',34.69,135.83],['和歌山',34.23,135.17],['鳥取',35.50,134.24],['島根',35.47,133.05],
+  ['岡山',34.66,133.93],['広島',34.40,132.46],['山口',34.19,131.47],['徳島',34.07,134.56],
+  ['香川',34.34,134.04],['愛媛',33.84,132.77],['高知',33.56,133.53],['福岡',33.61,130.42],
+  ['佐賀',33.25,130.30],['長崎',32.74,129.87],['熊本',32.79,130.74],['大分',33.24,131.61],
+  ['宮崎',31.91,131.42],['鹿児島',31.56,130.56],['沖縄',26.21,127.68],
+];
+/* ★黄が行ったことのある県(本人申告 2026-09-10、20県。神戸は兵庫として数える。ここを書き換えるだけで更新できる) */
+const MINE = new Set(['北海道','宮城','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川',
+  '山梨','長野','静岡','愛知','三重','京都','大阪','兵庫','鹿児島','沖縄']);
+
+/* ================================================================
+   ① 夜の地球
+   ================================================================ */
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setClearColor(0xeef0e8, 1);   // 淡色版: 紙の空
+/* 倍率の上限だけでは大きな窓で効かないので、総画素数にも上限を設ける。
+   全画面の加算合成が多いページなので、面積がそのままGPUの負荷になる */
+const pixRatio = () => {
+  let pr = Math.min(devicePixelRatio || 1, 1.5);
+  const px = innerWidth * innerHeight * pr * pr;
+  return px > 5.2e6 ? pr * Math.sqrt(5.2e6 / px) : pr;
+};
+renderer.setPixelRatio(pixRatio());
+renderer.setSize(innerWidth, innerHeight);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, .01, 100);
+const aspBack = () => { const a = innerWidth / innerHeight;
+  return a >= 1.6 ? 1 : a >= 1 ? 1 + (1.6 - a) * .30 : 1.10 + (1 - a) * .52; };
+camera.position.set(0, .55 * aspBack(), 3.9 * aspBack());
+camera.lookAt(0, 0, 0);
+const globe = new THREE.Group();
+scene.add(globe);
+const WORLD_V = 5;        // assets/world.json を作り直したら+1(キャッシュ避け)
+let coastGeo = null;      // 海岸線ジオメトリ(色を塗り替えるので外から触れるようにする)
+
+const ll = (lat, lon, r = 1) => {
+  const p = (90 - lat) * Math.PI / 180, t = (lon + 180) * Math.PI / 180;
+  return new THREE.Vector3(-r * Math.sin(p) * Math.cos(t), r * Math.cos(p), r * Math.sin(p) * Math.sin(t));
+};
+
+// 海(夜側なのでほぼ黒。輪郭だけ分かる)
+// 見えない当たり判定用の球。海の色は地図テクスチャ側に入っているのでここでは描かない
+const oceanMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(.99, 48, 48),
+  new THREE.MeshBasicMaterial({ color: 0xdfe6ea })
+);
+globe.add(oceanMesh);
+
+/* ================================================================
+   本物の世界地図(Natural Earth 50m を間引いたもの / 218の国と地域)
+   ・陸の塗り  … 正距円筒でキャンバスに描いて球のテクスチャにする
+   ・海岸線    … ベクターの線。塗りが少し甘くても線が鋭ければ地図は鋭く見えるので、
+                  テクスチャは2048×1024で足りる(4096だとGPUに45MB乗ってしまう)
+   ================================================================ */
+const WORLD = (await (await fetch(`../assets/world.json?v=${WORLD_V}`)).json()).c;
+const PLAYABLE = WORLD.filter(c => !c.x);          // 遊べる国・地域(196。台湾・香港は地域として別に数える)。属領・南極は背景として描くだけ
+const TOTAL_C = PLAYABLE.length;
+const byIso = new Map(WORLD.map(c => [c.i, c]));
+const lineIdx = new Map();                         // ISO → [開始頂点, 頂点数]
+for (const id of ['w-tot']) {
+  const el = document.getElementById(id); if (el) el.textContent = TOTAL_C;
+}
+
+const MAP_W = 1024, MAP_H = 512;   // 塗りだけなので小さくてよい。1枚あたり2MB(2048だと8MB)
+const mapCv = document.createElement('canvas');
+mapCv.width = MAP_W; mapCv.height = MAP_H;
+const mctx = mapCv.getContext('2d');
+const baseCv = document.createElement('canvas');
+baseCv.width = MAP_W; baseCv.height = MAP_H;
+const bctx = baseCv.getContext('2d');
+// SphereGeometryのUVと ll() は同じ式なので、この対応で寸分ずれない
+const uvX = lon => (lon + 180) / 360 * MAP_W;
+const uvY = lat => (90 - lat) / 180 * MAP_H;
+
+/* 塗りは控えめに、縁を光らせる。ベタ塗りだとシールを貼ったように見えて安っぽい */
+/* 淡色版(2026-09-10): 紙の地図。あなた=くすみ桃(黄の国は地球には出さない) */
+const C_OCEAN  = '#dfe6ea';   // 海
+const C_LAND   = '#f4f1e9';   // まだ行っていない国
+const C_BACK   = '#e9e6dd';   // 属領・南極(遊べない背景)
+const C_YOU    = '#e3bfb3';   // あなたが行った国
+const C_HOVER  = '#dfe3d3';   // カーソルが乗っている国
+const C_YOU_H  = '#d7aa9c';
+const G_YOU    = 'rgba(196,141,126,';
+
+function tracePath(c, ctx) {
+  ctx.beginPath();
+  for (const r of c.p) {
+    for (let i = 0; i < r.length; i += 2) {
+      const x = uvX(r[i] / 100), y = uvY(r[i + 1] / 100);
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+  }
+}
+// 変化しない部分を焼いておく。塗り替えのたびに218国を描き直すのは無駄
+bctx.fillStyle = C_OCEAN; bctx.fillRect(0, 0, MAP_W, MAP_H);
+for (const c of WORLD) { bctx.fillStyle = c.x ? C_BACK : C_LAND; tracePath(c, bctx); bctx.fill(); }
+
+const mapTex = new THREE.CanvasTexture(mapCv);
+mapTex.colorSpace = THREE.SRGBColorSpace;
+mapTex.anisotropy = 4;
+/* 色について(実測して判明したこと)
+   標準マテリアルは出力時に色空間変換がかかり、指定より明るく描かれる。
+   一方 ShaderMaterial は自分で <colorspace_fragment> を書かない限り変換されない。
+   ここは自前シェーダなので、定数に書いた色がそのまま画面に出る(扱いやすい)。 */
+globe.add(new THREE.Mesh(
+  new THREE.SphereGeometry(.9995, 128, 128),
+  new THREE.ShaderMaterial({
+    uniforms: { uMap: { value: mapTex } },
+    vertexShader: `varying vec2 vUv;
+      void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `uniform sampler2D uMap; varying vec2 vUv;
+      void main(){
+        gl_FragColor = vec4(texture2D(uMap, vUv).rgb, 1.);
+      }`,
+  })
+));
+
+/* ── 海岸線・国境(ベクター) ──
+   長い直線の辺は球の内側に潜るので、緯度経度のまま細かく割ってから球に載せる。
+   緯度経度で割るとテクスチャ側の塗りとも完全に一致する */
+{
+  const pos = [], STEP = 1.1;       // 度。これ以上長い辺は割る
+  const v = new THREE.Vector3();
+  const push = (lat, lon) => { const p = ll(lat, lon, 1.0022); pos.push(p.x, p.y, p.z); };
+  for (const c of WORLD) {
+    const start = pos.length / 3;
+    for (const r of c.p) {
+      const n = r.length / 2;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const lo1 = r[i * 2] / 100, la1 = r[i * 2 + 1] / 100;
+        const lo2 = r[j * 2] / 100, la2 = r[j * 2 + 1] / 100;
+        let dLo = lo2 - lo1;
+        if (Math.abs(dLo) > 180) continue;          // 日付変更線をまたぐ辺は捨てる(南極だけ)
+        const seg = Math.max(1, Math.ceil(Math.max(Math.abs(dLo), Math.abs(la2 - la1)) / STEP));
+        for (let s = 0; s < seg; s++) {
+          const t0 = s / seg, t1 = (s + 1) / seg;
+          push(la1 + (la2 - la1) * t0, lo1 + dLo * t0);
+          push(la1 + (la2 - la1) * t1, lo1 + dLo * t1);
+        }
+      }
+    }
+    lineIdx.set(c.i, [start, pos.length / 3 - start]);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aCol', new THREE.Float32BufferAttribute(new Float32Array(pos.length), 3));
+  coastGeo = g;
+  globe.add(new THREE.LineSegments(g, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec3 aCol; varying vec3 vC; varying float vF;
+      void main(){
+        vC = aCol;
+        vec3 wn = normalize(mat3(modelMatrix) * position);
+        vec3 wp = (modelMatrix * vec4(position,1.)).xyz;
+        vF = smoothstep(-.02, .30, dot(wn, normalize(cameraPosition - wp)));  // 裏側は消す
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.);
+      }`,
+    fragmentShader: `varying vec3 vC; varying float vF;
+      void main(){ gl_FragColor = vec4(vC, vF); }`,
+  })));
+}
+
+// 都市の灯り(点)は「意味が分からない・国の状態を食う」ため撤去した。
+// 国の形と、日本からの経路の帯で見せる。
+
+// 大気(縁が光る)
+globe.add(new THREE.Mesh(
+  new THREE.SphereGeometry(1.05, 64, 64),
+  new THREE.ShaderMaterial({
+    transparent: true, side: THREE.BackSide, depthWrite: false, blending: THREE.NormalBlending,
+    uniforms: { uOp: { value: 1 } },
+    vertexShader: `varying vec3 vN; varying vec3 vP;
+      void main(){ vN = normalize(mat3(modelMatrix) * normal);
+        vP = (modelMatrix * vec4(position,1.)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vP; uniform float uOp;
+      void main(){
+        vec3 vd = normalize(cameraPosition - vP);
+        float f = pow(1. - abs(dot(vN, vd)), 2.6);
+        gl_FragColor = vec4(vec3(.62, .70, .74), f * .55 * uOp);
+      }`,
+  })
+));
+
+// 星
+{
+  const pos = [], siz = [];
+  for (let i = 0; i < 1400; i++) {
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(28 + Math.random() * 30);
+    pos.push(v.x, v.y, v.z); siz.push(.6 + Math.random() * 1.9);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aSize', new THREE.Float32BufferAttribute(siz, 1));
+  scene.add(new THREE.Points(g, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.NormalBlending,
+    uniforms: { uPix: { value: Math.min(devicePixelRatio, 1.5) } },
+    vertexShader: `attribute float aSize; uniform float uPix;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position,1.);
+        gl_PointSize = clamp(aSize * uPix * (14. / -mv.z), .8, 3.5);
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `void main(){
+        float d = length(gl_PointCoord - .5);
+        gl_FragColor = vec4(vec3(.50,.55,.42), smoothstep(.5, .1, d) * .45); }`,
+  })));
+}
+
+// 日本の上の輪。地図へ降りる入口の目印(ボタンと同じ桃色)
+const rings = [HOME].map(v => {
+  const p = ll(v.lat, v.lon, 1.004);
+  const m = new THREE.Mesh(
+    new THREE.RingGeometry(.028, .036, 40),
+    new THREE.MeshBasicMaterial({ color: 0xc48d7e, transparent: true, opacity: .95,
+      side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false })
+  );
+  m.position.copy(p);
+  m.lookAt(p.clone().multiplyScalar(2));
+  globe.add(m);
+  return { m, v, p };
+});
+
+/* ── 世界の国: 国の形そのものをクリックして塗る ── */
+const been = new Set(JSON.parse(localStorage.getItem('world-visited-2') || '[]'));
+let hovIso = null;
+let VIEW = null;   // だれかの地図を見ているとき、その人(名前・国・県)。下の③で決まる
+
+/* 小さい国・地域の目印。数ピクセルしかない土地は狙えないので、桃色の小さな輪を置き、
+   カーソルが近づいたら(2度以内)そこを優先して選べるようにする。行った所は輪の中に点が入る */
+const SMALL = PLAYABLE.filter(c => Math.max(c.b[2] - c.b[0], c.b[3] - c.b[1]) < 200);
+const SMALL_R = 2.0;   // 目印の当たり判定(度)
+const markGeo = new THREE.RingGeometry(.0095, .0145, 32);
+const dotGeo = new THREE.CircleGeometry(.0055, 24);
+const marks = SMALL.map(c => {
+  const p = ll(c.c[1], c.c[0], 1.004);
+  const m = new THREE.Mesh(markGeo, new THREE.MeshBasicMaterial({ color: 0xc48d7e, transparent: true, opacity: .9,
+    side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false }));
+  m.position.copy(p); m.lookAt(p.clone().multiplyScalar(2));
+  const d = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0xc48d7e, transparent: true, opacity: .95,
+    side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false }));
+  d.position.copy(p); d.lookAt(p.clone().multiplyScalar(2)); d.visible = false;
+  globe.add(m); globe.add(d);
+  return { c, m, d, s: 1 };
+});
+function updateMarks() { for (const k of marks) k.d.visible = been.has(k.c.i); }
+function smallAt(lat, lon) {
+  let best = null, bd = SMALL_R;
+  const k = Math.cos(lat * Math.PI / 180);
+  for (const c of SMALL) {
+    const d = Math.hypot((c.c[0] - lon) * k, c.c[1] - lat);
+    if (d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+/* 日本から各国への経路。
+   WebGLは線の太さを指定できないので、四角形の帯(リボン)として描く。
+   帯の幅の向きは頂点シェーダで「進行方向 × 視線」から出すので、
+   どこから見ても画面上の太さが一定になる。
+   1本ずつ別マテリアルで作ると塗り替えのたびに溜まって落ちるので、
+   全部を1つのジオメトリにまとめ、マテリアルは1個だけ使い回す。 */
+const arcMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.NormalBlending,
+  side: THREE.DoubleSide,
+  uniforms: {
+    uCol:  { value: new THREE.Color(0xc48d7e) },
+    uOp:   { value: .85 },
+    uW:    { value: .0026 },      // 画面上の半分の太さ(視距離に比例させる)
+    uTime: { value: 0 },
+  },
+  vertexShader: `
+    attribute vec3 aTan; attribute float aSide; attribute float aT;
+    uniform float uW;
+    varying float vT; varying float vF; varying float vS;
+    void main(){
+      vec4 mv = modelViewMatrix * vec4(position, 1.);
+      vec3 tg = normalize(mat3(modelViewMatrix) * aTan);
+      vec3 vd = normalize(-mv.xyz);
+      vec3 sd = normalize(cross(tg, vd));          // 視線に正対する幅の向き
+      mv.xyz += sd * aSide * uW * (-mv.z);         // 距離に比例=画面上は一定の太さ
+      vec3 wn = normalize(mat3(modelMatrix) * position);
+      vec3 wp = (modelMatrix * vec4(position,1.)).xyz;
+      vF = smoothstep(-.02, .30, dot(wn, normalize(cameraPosition - wp)));   // 裏側は消す
+      vT = aT; vS = aSide;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    uniform vec3 uCol; uniform float uOp; uniform float uTime;
+    varying float vT; varying float vF; varying float vS;
+    void main(){
+      float edge = 1. - smoothstep(.35, 1., abs(vS));   // 帯の縁をぼかして芯を光らせる
+      float p = fract(vT - uTime * .17);
+      float pulse = smoothstep(.88, 1., p) * 2.2;       // 日本から相手国へ流れる光
+      vec3 c = uCol * (.75 + edge * .55 + pulse);
+      gl_FragColor = vec4(c, (uOp * (.34 + edge * .66) + pulse * .5) * vF);
+    }`,
+});
+const arcs = new THREE.Mesh(new THREE.BufferGeometry(), arcMat);
+arcs.frustumCulled = false;
+globe.add(arcs);
+
+/* 大円の経路を帯のジオメトリに変換する。
+   arcsIn: [[始点Vector3, 終点Vector3, 持ち上げ], ...] */
+function buildRibbon(list) {
+  const SEG = 44;
+  const pos = [], tan = [], side = [], tt = [], idx = [];
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), pv = new THREE.Vector3();
+  for (const [A, B] of list) {
+    const om = Math.acos(Math.max(-1, Math.min(1, A.dot(B))));
+    const so = Math.sin(om);
+    const lift = Math.min(.085, .022 + om * .026);   // 上げすぎると球から離れて画面外へ抜ける
+    const pts = [];
+    for (let i = 0; i <= SEG; i++) {
+      const t = i / SEG;
+      if (so < 1e-4) a.copy(A).lerp(B, t).normalize();
+      else a.copy(A).multiplyScalar(Math.sin((1 - t) * om) / so)
+             .addScaledVector(B, Math.sin(t * om) / so).normalize();
+      pts.push(a.clone().multiplyScalar(1.008 + Math.sin(t * Math.PI) * lift));
+    }
+    const base = pos.length / 3;
+    for (let i = 0; i <= SEG; i++) {
+      const p = pts[i];
+      pv.copy(pts[Math.min(SEG, i + 1)]).sub(pts[Math.max(0, i - 1)]);
+      if (pv.lengthSq() < 1e-12) pv.set(0, 1, 0);
+      pv.normalize();
+      for (const sgn of [-1, 1]) {
+        pos.push(p.x, p.y, p.z);
+        tan.push(pv.x, pv.y, pv.z);
+        side.push(sgn);
+        tt.push(i / SEG);
+      }
+      if (i < SEG) {
+        const k = base + i * 2;
+        idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aTan', new THREE.Float32BufferAttribute(tan, 3));
+  g.setAttribute('aSide', new THREE.Float32BufferAttribute(side, 1));
+  g.setAttribute('aT', new THREE.Float32BufferAttribute(tt, 1));
+  g.setIndex(idx);
+  return g;
+}
+
+/* 海岸線。地図の鋭さはここで決まるので、地の色よりはっきり明るくする */
+/* 淡い紙では海岸線は地より暗く */
+const L_LAND  = [0.62, 0.66, 0.56];
+const L_BACK  = [0.76, 0.75, 0.69];
+const L_YOU   = [0.66, 0.44, 0.37];
+const L_HOVER = [0.34, 0.40, 0.30];
+
+function fillOf(c) {
+  if (c.x) return C_BACK;
+  const y = been.has(c.i);
+  if (c.i === hovIso) return y ? C_YOU_H : C_HOVER;
+  return y ? C_YOU : C_LAND;
+}
+function lineOf(c) {
+  if (c.x) return L_BACK;
+  if (been.has(c.i)) return L_YOU;
+  return c.i === hovIso ? L_HOVER : L_LAND;
+}
+/* 海岸線の色は頂点属性なので、変わった国の範囲だけ書き換えれば済む */
+function paintLines(only) {
+  const a = coastGeo.attributes.aCol, arr = a.array;
+  for (const c of (only || WORLD)) {
+    const r = lineIdx.get(c.i); if (!r) continue;
+    const col = lineOf(c);
+    for (let i = r[0]; i < r[0] + r[1]; i++) {
+      arr[i * 3] = col[0]; arr[i * 3 + 1] = col[1]; arr[i * 3 + 2] = col[2];
+    }
+  }
+  a.needsUpdate = true;
+}
+/* 塗りは焼いておいた下地の上に、色が変わる国だけ重ねる(218国を毎回描き直さない) */
+/* 1国ぶんの塗り。ぼかしが重いので、描く国の数がそのまま時間になる */
+const GLOW_Q = MAP_W / 2048;   // 解像度を変えてもにじみ幅が同じに見えるように
+function drawCountry(c) {
+  const y = been.has(c.i), h = c.i === hovIso;
+  if (!y && !h) return;
+  mctx.fillStyle = fillOf(c);
+  tracePath(c, mctx);
+  mctx.fill();
+  if (!y) return;              // ホバーだけの国は塗るだけで、光までは足さない
+  // 国境の内側だけに光をにじませる。クリップしてから太い線をぼかして描く
+  const glow = G_YOU;
+  mctx.save();
+  tracePath(c, mctx); mctx.clip();
+  mctx.shadowColor = glow + '.95)';
+  mctx.lineJoin = 'round';
+  for (const [blur, w, a] of [[16 * GLOW_Q, 4.0 * GLOW_Q, .60], [6 * GLOW_Q, 1.8 * GLOW_Q, .95]]) {
+    mctx.shadowBlur = blur; mctx.lineWidth = w;
+    mctx.strokeStyle = glow + a + ')';
+    tracePath(c, mctx); mctx.stroke();
+  }
+  mctx.restore();
+}
+function paintFill() {
+  mctx.drawImage(baseCv, 0, 0);
+  for (const c of WORLD) if (!c.x) drawCountry(c);
+  mapTex.needsUpdate = true;
+}
+/* drawCountry は「塗る理由がある国」だけ描く。ホバー中もその対象 */
+
+/* 見た目だけ描き直す軽い方(弧の作り直しは要らない) */
+function repaint(only) {
+  paintFill();
+  paintLines(only);
+}
+/* 塗り替えを1フレームに1回へまとめる。
+   まとめないと、連続で変わったときに2MBのテクスチャ転送が何十回も積まれ、
+   GPUのコンテキストごと落ちる(実測: 100連続でCONTEXT_LOST_WEBGL)。 */
+let paintQueued = false, pendingAdd = [], needFull = false;
+function queueRepaint(added) {
+  // 追加だけなら、その国を今のキャンバスに重ねれば済む。
+  // 消したときは下地から描き直すしかないので全面
+  if (added) pendingAdd.push(added); else needFull = true;
+  if (paintQueued) return;
+  paintQueued = true;
+  requestAnimationFrame(() => {
+    paintQueued = false;
+    if (needFull) paintFill();
+    else { for (const c of pendingAdd) drawCountry(c); mapTex.needsUpdate = true; }
+    needFull = false; pendingAdd = [];
+    paintLines();
+    buildArcs();
+  });
+}
+/* 称号。数が増えるほど大げさになる(このサイトの調子に合わせる) */
+const W_RANK = [
+  [TOTAL_C, '全踏破 ミスター地球'], [120, '地球の常連'], [80, '大陸を集める人'],
+  [50, '世界を渡る人'], [30, '旅人'], [15, '旅行好き'], [7, '休暇の人'],
+  [3, '遠出した人'], [1, '隣まで行った'], [0, 'まだ地球にいる'],
+];
+const CONTS = ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア'];
+const CONT_TOTAL = {};
+for (const c of PLAYABLE) CONT_TOTAL[c.k] = (CONT_TOTAL[c.k] || 0) + 1;
+const contDone = new Set();          // 制覇済みの大陸(祝う演出の重複を防ぐ)
+let wFirst = true;                   // 読み込み直後は祝わない(保存済みの状態で鳴ってしまう)
+let wAllDone = false;
+
+function worldPaint(added) {
+  queueRepaint(added);
+  updateMarks();
+  updateScore();
+}
+
+function buildArcs() {
+  const home = ll(35.7, 139.7);
+  const list = [];
+  for (const iso of been) {
+    const c = byIso.get(iso);
+    if (!c || iso === 'JPN') continue;
+    list.push([home, ll(c.c[1], c.c[0])]);
+  }
+  arcs.geometry.dispose();
+  arcs.geometry = buildRibbon(list);
+  // 本数が増えても1本1本が見えるように、細く薄くしすぎない
+  arcMat.uniforms.uW.value  = been.size > 40 ? .0018 : been.size > 16 ? .0022 : .0028;
+  arcMat.uniforms.uOp.value = been.size > 40 ? .55  : been.size > 16 ? .70  : .88;
+}
+
+function updateScore() {
+  const w = document.getElementById('w-you');
+  if (w) {
+    w.textContent = been.size;
+    // 2/196は棒がほぼ見えないので、0より大きければ最低限の幅を持たせる
+    const barW = v => v === 0 ? 0 : Math.max(2.2, v / TOTAL_C * 100);
+    document.getElementById('bw-you').style.width = barW(been.size) + '%';
+
+    document.getElementById('w-rank').textContent =
+      (W_RANK.find(r => been.size >= r[0]) || W_RANK[W_RANK.length - 1])[1];
+    document.getElementById('w-rank').classList.toggle('done', been.size >= TOTAL_C);
+
+    // 大陸ごとの制覇度
+    const got = {};
+    for (const iso of been) { const c = byIso.get(iso); if (c) got[c.k] = (got[c.k] || 0) + 1; }
+    const box = document.getElementById('w-conts');
+    box.innerHTML = CONTS.map(k => {
+      const g = got[k] || 0, tot = CONT_TOTAL[k] || 0;
+      const cls = g >= tot && tot ? 'full' : g ? 'part' : '';
+      return `<span class="${cls}" data-k="${k}">${k}${g >= tot && tot ? '' : ` ${g}/${tot}`}</span>`;
+    }).join('');
+    for (const k of CONTS) {
+      const done = (got[k] || 0) >= (CONT_TOTAL[k] || 1);
+      if (done && !contDone.has(k)) {
+        contDone.add(k);
+        if (!wFirst) { chime(); box.querySelector(`[data-k="${k}"]`)?.classList.add('pop'); }
+      }
+      if (!done) contDone.delete(k);
+    }
+    // すべて踏んだ
+    if (been.size >= TOTAL_C && !wAllDone) { wAllDone = true; if (!wFirst) { burst(); fanfare(); } }
+    if (been.size < TOTAL_C) wAllDone = false;
+    wFirst = false;
+
+    const v = document.getElementById('w-verdict');
+    v.innerHTML = been.size === 0 ? ''
+      : been.size >= TOTAL_C ? '<span style="color:#7f8a6b">地球に、行っていない場所がない。</span>'
+      : `<span style="color:#c48d7e">${been.size}の国・地域。</span>残り${TOTAL_C - been.size}。`;
+  }
+  if (!VIEW) localStorage.setItem('world-visited-2', JSON.stringify([...been]));
+}
+
+const ray = new THREE.Raycaster();
+const _pv = new THREE.Vector3();
+/* 画面の点 → 球の表面 → 緯度経度。ll() の逆算 */
+function pickLatLon(e) {
+  ray.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1,
+    -(e.clientY / innerHeight) * 2 + 1), camera);
+  const hits = ray.intersectObject(oceanMesh, false);
+  if (!hits.length) return null;
+  globe.updateMatrixWorld();
+  _pv.copy(hits[0].point);
+  globe.worldToLocal(_pv).normalize();
+  const lat = 90 - Math.acos(Math.max(-1, Math.min(1, _pv.y))) * 180 / Math.PI;
+  let lon = Math.atan2(_pv.z, -_pv.x) * 180 / Math.PI - 180;
+  lon = ((lon + 540) % 360) - 180;
+  return [lat, lon];
+}
+/* 緯度経度が輪の内側にあるか(交差数の偶奇)。bboxで先に絞るので196でも軽い */
+function inRing(r, lon, lat) {
+  let inside = false;
+  const n = r.length / 2;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = r[i * 2] / 100, yi = r[i * 2 + 1] / 100;
+    const xj = r[j * 2] / 100, yj = r[j * 2 + 1] / 100;
+    if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function countryAt(lat, lon) {
+  const sm = smallAt(lat, lon); if (sm) return sm;   // 小さい所が近ければ、それを優先
+  const LO = lon * 100, LA = lat * 100;
+  for (const c of PLAYABLE) {
+    const b = c.b;
+    if (LO < b[0] || LO > b[2] || LA < b[1] || LA > b[3]) continue;
+    for (const r of c.p) if (inRing(r, lon, lat)) return c;
+  }
+  return null;
+}
+/* 塗った瞬間に地表から波紋を出す。使い捨てなので消えたら必ず解放する */
+const ripples = [];
+function ripple(lat, lon, gold) {
+  const g = new THREE.RingGeometry(.012, .020, 48);
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({
+    color: gold ? 0x7f8a6b : 0xc48d7e, transparent: true, opacity: .95,
+    side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false }));
+  const p = ll(lat, lon, 1.004);
+  m.position.copy(p);
+  m.lookAt(p.clone().multiplyScalar(2));
+  globe.add(m);
+  ripples.push({ m, t0: performance.now() });
+}
+function stepRipples(now) {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i], k = (now - r.t0) / 900;
+    if (k >= 1) {
+      globe.remove(r.m); r.m.geometry.dispose(); r.m.material.dispose();
+      ripples.splice(i, 1); continue;
+    }
+    r.m.scale.setScalar(1 + k * 7);
+    r.m.material.opacity = (1 - k) * (1 - k) * .95;
+  }
+}
+
+const tipEl = () => document.getElementById('tip');
+let downAt = 0, downX = 0, downY = 0;
+canvas.addEventListener('pointerdown', e => { downAt = performance.now(); downX = e.clientX; downY = e.clientY; });
+canvas.addEventListener('pointerup', e => {
+  // 回そうとしただけの操作で塗ってしまわないように、時間と移動量の両方で弾く
+  if (mode !== 'globe' || performance.now() - downAt > 320) return;
+  if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
+  if (VIEW) return;                      // だれかの地図は塗れない
+  const p = pickLatLon(e); if (!p) return;
+  const c = countryAt(p[0], p[1]); if (!c) return;
+  const add = !been.has(c.i);
+  add ? been.add(c.i) : been.delete(c.i);
+  ripple(p[0], p[1], false);
+  blip(add ? 660 : 380, .05, .12);
+  worldPaint(add ? c : null);
+});
+canvas.addEventListener('pointerleave', () => { hoverHold = false; tipEl().classList.remove('on'); });
+canvas.addEventListener('pointermove', e => {
+  if (mode !== 'globe' || dragging) { tipEl().classList.remove('on'); hoverHold = false; return; }
+  const p = pickLatLon(e);
+  const c = p ? countryAt(p[0], p[1]) : null;
+  const t = tipEl();
+  hoverHold = !!c;
+  if (!c) {
+    t.classList.remove('on'); canvas.style.cursor = 'grab';
+    if (hovIso) { const p0 = byIso.get(hovIso); hovIso = null; paintLines(p0 ? [p0] : null); queueRepaint(); }
+    return;
+  }
+  if (hovIso !== c.i) {
+    const p0 = byIso.get(hovIso);
+    hovIso = c.i;
+    paintLines(p0 ? [p0, c] : [c]);   // 輪郭は変わった2国だけ書き換え
+    queueRepaint();                   // 面の塗りは1フレームに1回にまとめて作り直す
+  }
+  t.innerHTML = c.n + (been.has(c.i) ? '<em class="p">あなたが行った</em>' : '<em class="n">未踏</em>');
+  t.classList.add('on');
+  t.style.left = e.clientX + 'px'; t.style.top = e.clientY + 'px';
+  canvas.style.cursor = 'pointer';
+});
+
+/* ── 日本の上のボタン(DOM)。押すと地図へ降りる ── */
+const pins = [HOME].map(v => {
+  const el = document.createElement('div');
+  el.className = 'pin';
+  el.innerHTML = `<b>日本の地図へ</b><s></s>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', dive);
+  return { el, v, p: ll(v.lat, v.lon, 1.005) };
+});
+
+/* ── 操作 ── */
+let spin = .0016, dragging = false, lx = 0, ly = 0, tilt = .32;
+let hoverHold = false;   // 国の上にカーソルがある間は自転を止める(小さい国が狙えない)
+canvas.addEventListener('pointerdown', e => { dragging = true; lx = e.clientX; ly = e.clientY; });
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  spin += (e.clientX - lx) * .00022;
+  tilt = Math.max(-.9, Math.min(.9, tilt - (e.clientY - ly) * .003));
+  lx = e.clientX; ly = e.clientY;
+});
+function spinTo(v) {
+  targetRot = -(v.lon + 90) * Math.PI / 180;
+  targetTilt = v.lat * Math.PI / 180 * .8;
+}
+let targetRot = null, targetTilt = null;
+
+/* ── 降下 ── */
+let diving = 0, mode = 'globe';
+function dive() {
+  if (mode !== 'globe' || diving) return;
+  spinTo(HOME);
+  // 日本が正面に来てから降下を始める(いきなり突っ込むと何処へ行ったか分からない)
+  const wait = setInterval(() => {
+    if (targetRot === null) { clearInterval(wait); diving = performance.now(); }
+  }, 60);
+  setTimeout(() => { clearInterval(wait); if (!diving) diving = performance.now(); }, 2200);
+}
+document.getElementById('w-jpgo').addEventListener('click', dive);
+document.getElementById('toglobe').addEventListener('click', () => {
+  document.getElementById('jp').classList.remove('on');
+  mode = 'globe'; diving = 0;
+  camera.position.set(0, .55 * aspBack(), 3.9 * aspBack());
+  camera.lookAt(0,0,0);
+  camera.fov = 38; camera.updateProjectionMatrix();   // 降下で狭めた画角を戻す(戻し忘れると地球が大きいまま)
+});
+
+/* ── ループ ── */
+let rot = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) return;      // 裏のタブで回し続けない(発熱・電池対策)
+  if (targetRot !== null) {
+    let d = ((targetRot - rot + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    rot += d * .06;
+    tilt += (targetTilt - tilt) * .06;
+    if (Math.abs(d) < .002) targetRot = null;
+  } else {
+    if (hoverHold && !dragging) spin *= .82;              // 狙っている間はぴたりと止める
+    else if (!dragging) spin += (.0016 - spin) * .02;
+    rot += spin;
+  }
+  globe.rotation.y = rot;
+  globe.rotation.x = tilt;
+  stepRipples(now);
+  arcMat.uniforms.uTime.value = now / 1000;   // 経路を流れる光
+
+  for (const r of rings) {
+    const s = 1 + Math.sin(now / 460) * .16;
+    r.m.scale.setScalar(s);
+    r.m.material.opacity = .55 + Math.sin(now / 460) * .3;
+  }
+  // 小さい所の目印は、狙っている間だけ大きくなる
+  for (const k of marks) {
+    const t = k.c.i === hovIso ? 1.9 : 1;
+    k.s += (t - k.s) * .2;
+    k.m.scale.setScalar(k.s);
+  }
+
+  if (diving) {
+    const k = Math.min(1, (now - diving) / 2800);
+    const e = Math.pow(k, 2.6);                       // 後半で一気に加速して落ちる
+    const bk = aspBack();
+    camera.position.set(0, (.55 - e * .52) * bk, (3.9 - e * 3.06) * bk);
+    camera.lookAt(0, .03, 0);
+    camera.fov = 38 - e * 17;
+    camera.updateProjectionMatrix();
+    if (k > .78) {
+      const f = document.getElementById('flash');
+      f.style.opacity = Math.min(1, (k - .78) / .2);
+    }
+    if (k >= 1) {
+      diving = 0; mode = 'jp';
+      document.getElementById('jp').classList.add('on');
+      const f = document.getElementById('flash');
+      f.style.transition = 'opacity .9s ease'; f.style.opacity = 0;
+      setTimeout(() => { f.style.transition = ''; }, 1000);
+    }
+  }
+
+  // ピンを画面へ
+  const showPins = mode === 'globe' && !diving;
+  for (const p of pins) {
+    const w = p.p.clone().applyEuler(globe.rotation);
+    const v = w.clone().project(camera);
+    const front = w.clone().normalize().dot(camera.position.clone().normalize()) > .26;
+    p.el.classList.toggle('on', showPins && front && v.z < 1);
+    let sx = (v.x * .5 + .5) * innerWidth, sy = (-v.y * .5 + .5) * innerHeight;
+    p.el.style.left = sx + 'px';
+    p.el.style.top = sy + 'px';
+    p.el.style.pointerEvents = showPins && front ? 'auto' : 'none';
+  }
+  // 地図を見ている間は地球を描かない(裏で回し続けても誰も見ていない)
+  if (mode === 'jp' && !diving) return;
+  if (now > 900) { document.getElementById('head').classList.add('on');
+    document.getElementById('wscore').classList.toggle('on', mode === 'globe' && !diving); }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(frame);
+
+addEventListener('resize', () => {
+  renderer.setPixelRatio(pixRatio());   // 窓の大きさで上限が変わるので取り直す
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  if (!diving) { camera.position.set(0, .55 * aspBack(), 3.9 * aspBack()); camera.lookAt(0, 0, 0); }
+});
+
+/* ================================================================
+   ② 日本 — 訪問者が塗れる47都道府県
+   ================================================================ */
+const svg = document.getElementById('jpsvg');
+const NS = 'http://www.w3.org/2000/svg';
+
+/* 47都道府県の県境。国土数値情報(国土交通省)由来の公開データを
+   ダグラス・ポイカー法で簡略化して埋め込んである。沖縄は左下の別枠。 */
+const GEO = [{"n":"三重","d":"M567.5,484.6 570.7,489.6 571.8,489.8 571.8,488.8 575.5,492.6 576.4,495.2 575.6,494.7 572.0,496.7 571.3,498.6 572.6,499.2 571.9,499.3 571.0,502.3 567.7,507.6 567.4,510.9 568.6,511.3 567.5,514.0 571.7,515.0 572.5,516.4 576.6,518.7 577.8,518.7 578.0,519.8 578.5,518.8 579.2,520.4 580.2,520.3 579.8,520.9 580.5,521.5 580.1,522.3 580.9,521.2 581.9,521.6 581.5,524.7 580.6,524.0 580.3,524.5 579.9,524.2 580.2,525.0 579.5,525.3 577.9,525.1 578.3,525.8 579.1,525.0 579.3,525.6 579.7,525.3 579.8,526.2 581.3,525.2 580.2,526.5 581.0,529.3 579.9,529.4 579.1,530.6 576.2,530.0 575.6,529.6 576.3,529.2 577.8,529.8 578.4,529.4 578.5,530.1 579.5,529.8 579.5,529.1 578.5,529.3 578.6,528.6 579.8,528.8 578.4,528.1 579.1,527.6 577.6,527.8 577.6,526.9 577.1,527.8 577.8,528.3 577.1,528.7 576.4,528.3 576.6,527.5 576.0,527.5 575.7,528.3 576.1,528.5 574.6,528.0 573.4,528.9 573.6,527.3 574.8,526.3 573.5,526.0 573.1,527.1 573.4,526.1 572.3,526.1 572.8,527.1 571.5,527.8 572.9,527.4 570.3,530.1 569.1,529.3 570.0,529.0 569.8,528.4 568.3,529.0 568.3,530.5 568.0,529.2 567.5,530.0 567.6,529.4 566.7,529.2 567.1,531.0 566.5,530.1 566.2,530.4 566.7,530.7 565.9,530.9 566.8,531.4 565.8,531.8 565.2,531.3 565.3,530.1 564.4,530.6 564.8,530.8 564.7,531.8 562.8,532.6 562.9,531.9 562.3,532.0 561.5,533.2 561.2,532.2 560.0,532.9 560.6,532.9 560.4,533.6 558.5,534.5 558.7,536.5 559.8,536.6 559.2,537.9 558.9,537.4 558.1,538.1 558.3,537.2 557.4,537.5 558.1,536.0 556.6,537.3 556.9,537.9 555.7,538.3 555.9,539.0 557.5,539.0 557.2,540.1 558.6,540.9 557.2,541.2 558.2,541.6 557.7,541.9 558.2,543.0 557.0,543.2 557.5,542.5 556.0,541.8 556.2,542.5 555.3,543.1 556.4,543.0 556.7,544.2 556.1,544.9 555.6,544.3 554.9,544.6 555.6,545.5 554.9,545.8 553.7,545.1 553.7,546.5 553.1,547.0 552.6,546.4 550.7,549.1 548.8,554.4 547.8,553.8 547.1,554.4 543.1,550.1 543.0,548.1 543.3,547.4 543.7,548.2 544.6,547.8 544.8,547.1 544.4,546.7 544.3,547.2 544.0,546.0 544.5,546.1 544.5,545.5 545.9,545.6 545.4,545.4 545.7,544.5 547.2,545.0 547.5,543.3 548.3,543.8 548.8,543.4 548.2,541.8 549.0,540.2 552.1,540.7 551.7,538.1 552.6,538.1 552.0,536.4 552.5,534.6 551.7,532.9 553.1,530.4 551.8,528.1 553.0,527.5 550.9,523.9 551.8,522.0 555.8,521.4 556.7,519.4 556.2,518.9 556.2,517.8 554.4,518.2 554.0,516.4 552.5,517.0 550.2,515.4 550.0,514.5 551.0,512.9 549.8,511.7 550.7,512.2 551.5,511.1 550.3,509.8 550.8,509.0 549.4,507.4 549.6,506.4 549.1,505.9 551.6,504.8 551.5,503.7 553.0,502.6 551.5,501.9 552.4,500.8 553.1,501.7 554.9,501.5 557.4,502.8 561.6,500.7 561.9,499.0 563.4,497.3 563.5,494.2 564.4,493.4 564.6,490.7 564.2,490.4 564.9,489.0 563.2,487.8 563.4,486.5 566.8,485.6 567.5,484.6Z","cx":563.6,"cy":525.9,"lon":136.419,"lat":34.349},{"n":"京都","d":"M513.4,471.9 509.4,473.1 508.9,471.6 506.8,469.6 507.4,468.2 507.2,466.4 509.7,466.8 511.5,464.9 512.9,465.0 514.3,464.2 515.2,462.7 520.1,460.9 523.2,464.8 523.0,466.2 522.5,465.6 521.8,466.0 520.9,468.1 519.0,470.4 519.1,471.9 521.3,469.1 521.2,470.4 522.0,470.9 520.9,470.8 520.9,472.0 522.5,472.9 524.0,472.9 523.5,475.8 524.6,474.7 524.6,473.9 526.5,474.6 526.4,472.9 524.6,473.4 524.5,471.3 527.5,470.6 527.8,469.5 528.8,468.9 528.5,470.6 529.7,471.0 528.7,471.5 528.4,472.6 529.3,473.4 528.7,475.1 530.1,477.0 531.1,477.2 531.2,479.1 535.4,479.7 537.5,480.7 540.0,480.2 539.8,480.7 541.4,482.0 542.2,483.8 543.2,483.2 542.2,486.3 543.1,489.1 542.4,493.7 541.6,494.3 542.3,495.3 541.8,495.8 542.4,496.2 542.1,496.8 542.9,496.8 543.9,498.7 543.5,501.3 544.7,502.2 546.2,501.2 546.4,503.1 548.5,503.5 548.5,504.2 549.4,504.6 548.7,505.4 549.6,506.4 549.4,507.4 550.4,508.2 549.4,509.7 547.8,509.3 547.5,508.1 545.7,508.2 545.7,507.4 544.4,509.6 539.5,508.7 538.5,506.5 539.1,505.2 537.3,503.3 536.6,501.0 535.0,499.3 533.8,499.6 534.3,497.7 532.9,497.6 533.0,498.4 532.3,499.2 533.1,499.2 533.1,499.8 531.7,500.2 530.7,498.9 529.5,498.7 529.7,496.7 525.9,495.9 525.4,493.9 526.7,492.3 526.2,491.9 526.2,490.5 524.5,490.2 524.4,489.5 522.3,489.8 522.6,488.6 522.0,488.3 519.6,489.0 518.8,488.5 519.2,487.1 517.7,486.1 517.8,484.5 516.0,484.3 514.5,485.6 514.1,484.4 512.4,484.1 512.0,483.1 509.4,482.2 509.1,479.8 509.6,477.8 510.5,477.8 511.7,478.8 513.8,477.8 513.4,471.9Z","cx":528.8,"cy":485.4,"lon":135.461,"lat":35.24},{"n":"佐賀","d":"M331.9,565.9 340.6,565.5 343.4,567.6 344.9,567.8 345.6,568.6 345.4,569.3 348.5,567.1 350.0,567.4 350.0,571.7 347.9,572.2 348.2,573.1 347.1,573.6 347.5,574.2 346.8,575.2 346.2,574.0 345.6,575.8 344.7,575.5 344.5,576.3 344.0,576.2 344.2,577.3 342.8,578.0 343.4,580.9 341.0,580.6 339.4,578.1 339.5,578.5 338.3,578.2 338.9,578.7 338.6,579.8 335.9,582.2 334.9,581.6 335.2,582.3 334.6,582.7 335.6,583.0 338.5,589.1 333.6,588.4 330.8,586.4 330.3,585.1 327.7,583.2 327.8,582.4 328.9,582.0 328.4,579.8 326.4,580.2 323.9,578.9 323.7,576.3 321.8,574.1 322.9,571.8 324.6,574.2 325.2,574.0 324.3,573.1 325.0,572.3 324.3,571.9 325.0,572.0 325.7,568.7 324.1,568.6 324.4,568.1 322.6,566.6 323.5,566.5 323.0,565.9 323.5,565.2 324.6,566.3 324.5,567.1 325.4,566.6 325.1,565.7 324.4,565.6 324.9,565.5 324.3,563.7 325.3,564.3 324.7,563.5 325.3,563.7 324.9,562.0 326.0,562.9 326.0,563.8 326.7,562.3 327.9,562.2 327.9,562.9 328.9,563.2 329.3,564.2 328.2,565.5 328.9,565.9 329.2,565.3 329.3,566.6 331.2,567.0 332.0,566.6 331.9,565.9Z","cx":332.9,"cy":572.2,"lon":130.065,"lat":33.332},{"n":"兵庫","d":"M507.2,466.4 507.4,468.2 506.8,469.6 508.9,471.6 509.4,473.1 513.3,471.8 513.7,473.2 513.2,473.7 513.8,477.8 511.7,478.8 510.5,477.8 509.6,477.8 509.1,479.8 509.4,482.2 512.0,483.1 512.4,484.1 514.1,484.4 514.5,485.6 516.0,484.3 517.8,484.5 517.7,486.1 519.2,487.1 518.8,488.5 519.6,489.0 522.0,488.3 522.6,488.6 522.3,489.8 524.4,489.5 524.5,490.2 526.2,490.5 526.5,492.9 525.5,494.3 524.7,494.0 524.0,494.8 524.9,495.3 525.1,497.2 524.6,497.9 529.0,499.8 527.2,500.5 527.7,501.3 528.2,501.0 527.2,503.1 527.1,504.6 528.7,508.5 526.3,510.9 525.6,511.0 526.6,510.0 525.5,510.9 525.6,510.3 524.9,510.1 525.2,509.7 523.8,508.8 522.3,509.4 522.5,509.8 518.9,510.7 518.7,512.3 514.2,513.4 510.8,512.4 506.5,509.1 505.7,509.7 505.1,509.2 505.2,508.1 504.7,508.5 502.9,506.9 500.6,506.4 499.9,506.9 499.9,506.2 499.3,506.8 499.5,506.0 499.2,506.9 498.7,506.7 499.1,506.2 498.3,506.2 498.4,506.8 497.7,506.4 496.5,507.4 496.5,506.7 496.3,507.2 494.9,506.2 493.0,507.5 492.7,505.1 492.6,507.0 492.1,507.6 492.3,506.9 491.4,507.1 491.5,507.8 490.7,508.7 489.7,508.8 488.8,507.7 488.9,508.1 487.4,509.0 487.1,508.2 487.9,506.9 487.2,506.3 487.2,505.4 486.2,504.2 485.3,504.2 485.3,501.6 486.4,500.6 485.0,499.2 486.1,496.5 485.4,496.1 485.4,495.4 487.2,494.4 487.3,492.6 488.4,492.2 489.0,489.7 490.6,489.6 490.7,487.9 489.6,487.5 489.7,486.2 490.3,485.4 492.5,485.6 494.4,483.7 494.0,481.6 494.4,480.3 492.9,479.2 493.2,477.0 491.7,476.2 491.4,473.5 490.7,472.9 491.0,470.8 489.2,468.4 491.4,468.2 491.7,467.4 492.1,467.8 495.2,465.9 496.0,466.8 497.5,466.4 498.3,467.3 499.6,466.1 499.8,466.9 500.7,466.1 501.3,466.7 501.5,466.1 503.2,466.3 503.5,465.7 503.7,466.4 504.8,465.9 506.3,467.1 507.2,466.4ZM504.3,522.4 505.4,520.5 506.1,520.6 507.7,518.0 509.6,516.9 511.4,514.4 512.1,514.1 512.8,515.0 513.0,515.6 511.3,518.9 508.2,522.8 508.2,526.2 508.9,526.5 510.3,529.7 504.6,532.8 502.2,533.2 502.3,532.4 501.1,531.8 501.9,530.2 499.6,530.8 500.2,530.1 499.5,528.4 500.7,526.8 502.2,526.8 504.3,522.4Z","cx":504.8,"cy":492.1,"lon":134.799,"lat":35.093},{"n":"北海道","d":"M750.9,33.7 750.6,31.1 752.1,29.1 752.1,27.5 753.7,25.8 753.0,23.5 753.3,21.3 754.7,22.6 754.7,23.4 758.8,23.2 761.0,22.0 762.3,18.5 764.1,18.0 765.2,19.9 767.1,21.4 768.0,23.4 772.4,26.2 780.3,35.5 783.5,38.7 784.5,39.0 784.7,39.9 785.6,40.4 786.0,42.3 787.4,43.5 787.6,45.4 789.3,47.0 790.2,48.9 794.4,53.9 799.9,58.7 802.4,61.9 815.2,70.3 815.8,71.9 817.6,73.2 822.8,75.7 835.2,80.2 845.7,82.5 847.8,82.1 848.1,85.4 849.3,86.2 849.6,87.9 853.6,89.7 861.4,90.9 867.7,90.3 871.8,87.0 872.8,85.2 874.9,84.0 875.7,82.6 882.1,78.3 883.5,75.7 887.2,71.5 888.4,75.4 887.1,78.4 884.4,81.5 883.8,84.5 880.4,88.6 878.6,92.1 878.4,94.6 877.4,96.0 877.6,98.4 880.4,103.3 887.5,106.0 887.6,107.3 885.7,107.6 885.3,107.1 887.5,106.7 886.5,106.2 887.0,105.7 884.0,105.7 884.8,104.9 882.3,104.3 882.3,105.4 883.1,106.0 885.1,114.0 889.1,119.4 893.0,120.5 894.4,118.4 898.7,114.9 901.3,115.2 902.8,114.5 904.8,115.1 904.6,115.8 899.8,118.5 897.7,118.3 896.5,120.0 895.8,119.8 895.4,122.7 894.3,123.4 894.4,124.2 893.5,124.3 894.1,125.1 893.2,125.4 893.4,124.8 892.8,124.2 889.9,124.2 885.4,124.9 882.5,126.5 880.4,126.1 879.3,127.1 879.4,129.0 878.3,129.6 878.3,130.5 876.3,131.3 876.0,132.7 874.2,133.5 870.6,133.3 869.1,132.0 869.8,130.4 867.9,130.0 865.9,131.6 865.0,133.6 867.3,135.4 866.9,135.7 861.8,134.9 855.2,135.2 852.1,134.0 851.9,132.7 848.6,132.5 840.6,135.3 835.9,138.4 824.2,149.0 816.6,159.2 813.8,166.2 814.7,169.5 813.8,175.6 811.9,178.0 811.3,180.3 811.6,181.5 808.5,178.9 807.5,176.9 802.9,174.4 801.2,172.7 795.9,171.7 793.9,170.2 790.6,169.4 787.5,167.1 783.8,165.8 782.4,164.3 779.7,163.4 776.3,161.0 773.3,157.8 767.3,156.1 761.5,151.3 757.0,149.8 752.8,149.6 755.2,148.2 752.6,148.8 752.3,149.8 747.9,150.7 742.6,153.4 734.4,159.0 729.9,164.4 727.4,162.8 728.1,162.3 729.2,163.4 729.2,162.5 730.2,162.3 726.9,161.3 725.2,157.2 721.9,155.4 721.7,153.7 719.3,151.6 716.9,151.5 714.8,152.3 713.0,151.4 710.6,151.5 707.1,155.3 705.0,159.0 703.6,164.0 704.0,166.6 708.1,168.3 713.4,172.9 714.9,173.2 719.2,171.8 721.2,172.8 723.4,176.5 726.6,178.8 728.4,181.9 735.3,184.7 735.2,185.8 736.5,186.4 736.7,187.1 735.6,187.9 734.0,187.8 731.8,190.5 728.7,191.3 726.2,189.6 721.7,188.3 720.2,188.7 719.1,189.9 719.1,187.9 719.5,188.7 720.0,188.1 719.6,186.9 716.9,186.4 716.1,187.3 715.4,189.8 712.7,191.7 709.7,192.4 709.2,196.9 709.5,198.4 708.4,200.1 703.0,201.7 700.8,205.5 698.9,204.1 696.8,204.6 694.6,202.6 693.1,198.5 693.0,196.0 693.9,192.2 696.2,188.4 696.2,187.0 697.4,187.0 698.0,186.2 698.2,184.7 697.6,184.3 698.6,182.9 698.4,179.2 694.5,173.0 690.8,172.1 689.3,168.7 686.9,168.0 685.4,166.3 685.8,165.7 685.1,164.0 685.7,162.0 687.4,160.2 688.2,157.1 687.2,150.2 689.8,147.2 695.3,146.5 696.3,145.0 698.7,143.9 700.3,140.5 702.1,141.9 702.5,143.2 704.7,142.7 704.7,140.5 706.1,139.2 707.8,136.2 712.5,133.1 712.7,131.2 712.0,131.0 709.2,126.2 706.7,124.5 705.4,122.6 705.5,120.9 706.7,118.3 706.2,117.5 709.0,117.7 710.3,116.9 710.4,115.7 711.6,115.7 714.7,118.5 716.5,119.1 717.0,119.7 716.9,120.5 721.8,122.4 721.8,123.4 722.3,123.8 730.5,121.8 730.0,123.4 730.3,123.9 735.8,126.1 740.4,123.7 745.3,117.7 745.5,113.6 742.9,109.1 743.9,106.0 742.7,103.4 741.9,99.7 744.0,96.0 747.9,94.5 748.8,93.6 750.3,93.6 752.6,90.9 752.8,89.0 753.4,89.7 753.1,89.3 754.0,85.5 753.4,72.9 754.4,72.3 757.0,67.5 758.7,58.0 758.1,53.0 756.2,45.4 750.9,33.7ZM902.2,84.3 902.1,82.5 905.3,79.1 907.2,76.0 911.1,72.4 911.7,69.9 916.1,64.1 917.7,63.8 919.6,65.3 920.5,66.9 923.5,68.2 929.5,67.9 932.4,66.5 930.8,69.9 929.2,71.1 927.2,70.1 925.3,71.2 924.8,72.7 922.3,74.6 915.6,75.2 913.9,76.5 913.1,78.9 908.7,81.0 906.5,84.8 907.0,86.2 905.7,85.7 904.7,86.4 903.5,90.3 898.9,91.3 896.7,93.1 896.1,94.2 894.9,102.7 895.0,99.4 890.9,100.0 889.7,94.6 891.4,93.7 892.7,91.6 896.5,89.3 896.8,88.5 902.2,84.3Z","cx":779.7,"cy":126.4,"lon":142.371,"lat":43.137},{"n":"千葉","d":"M685.5,446.8 685.8,446.2 686.4,446.7 689.4,451.4 691.2,452.3 691.4,453.6 696.1,456.4 698.0,456.6 699.2,458.0 703.8,456.6 705.1,457.1 706.9,455.4 710.2,454.3 711.8,455.2 711.3,454.2 712.1,452.8 715.3,455.3 716.5,457.3 719.2,458.3 720.7,460.8 723.4,462.7 724.9,462.5 725.2,463.7 725.0,464.8 723.7,463.9 717.4,465.1 712.7,469.0 708.5,475.4 707.8,479.2 708.6,482.4 707.5,487.8 706.3,488.1 704.9,490.3 704.4,489.5 702.1,491.1 700.9,491.4 700.6,490.6 698.0,491.1 696.6,493.5 695.0,494.0 692.9,495.8 692.0,499.5 689.5,500.9 687.7,500.8 686.7,498.9 684.6,497.9 684.6,497.4 688.1,497.0 688.4,496.2 688.2,495.2 686.7,494.6 687.5,494.4 687.1,493.1 687.9,492.4 687.2,491.8 687.7,490.5 686.9,488.3 688.9,485.7 687.8,483.0 685.6,482.0 687.0,482.0 687.7,481.2 687.2,480.7 687.7,480.0 688.4,480.4 688.0,479.3 689.8,480.1 689.5,479.5 690.6,478.7 689.9,477.8 690.1,476.7 691.7,476.3 691.8,475.6 692.3,475.9 691.9,476.2 692.7,476.0 692.3,475.1 692.9,474.8 693.2,475.8 693.2,475.0 693.8,474.6 694.4,475.1 694.0,474.4 694.9,473.8 694.5,473.6 695.8,471.6 697.1,472.0 696.8,471.3 697.8,471.3 696.9,470.7 698.2,470.6 696.7,470.5 696.5,469.6 697.7,470.3 697.9,469.3 696.8,469.3 697.2,468.9 696.6,468.4 696.6,469.2 694.1,466.5 693.1,466.6 693.7,466.4 693.1,466.2 693.0,464.9 691.1,465.7 691.7,465.9 690.6,466.6 691.4,467.2 689.9,467.7 689.9,468.3 689.0,467.9 689.4,465.6 690.6,464.6 689.3,461.6 690.0,457.0 687.3,452.1 687.0,449.4 685.5,446.8Z","cx":696.3,"cy":473.4,"lon":140.075,"lat":35.504},{"n":"和歌山","d":"M531.2,525.8 533.1,524.7 535.7,524.4 536.5,529.1 537.8,529.5 538.5,531.2 537.7,532.4 535.6,531.9 534.6,534.6 533.5,535.0 533.0,536.6 531.9,537.4 531.6,538.4 533.1,539.2 533.7,541.3 534.6,541.4 535.1,542.2 535.2,544.1 534.5,543.9 533.8,546.0 534.6,546.4 534.5,547.6 537.0,546.2 539.5,547.0 541.4,546.1 542.8,546.6 543.1,550.1 544.4,550.8 545.0,552.4 546.1,552.8 546.2,553.9 548.8,554.4 547.4,556.4 547.4,557.2 547.9,557.2 547.6,557.8 546.0,558.2 546.6,559.1 546.3,558.7 545.7,559.8 546.9,560.2 546.8,560.9 545.6,561.1 544.4,562.0 545.6,561.8 543.9,563.3 541.0,564.6 540.4,565.9 541.0,567.0 540.6,567.4 539.4,567.4 540.2,566.1 539.6,565.3 537.8,565.5 537.5,564.8 536.1,565.0 534.9,564.2 533.6,564.6 532.8,563.8 530.6,563.4 529.8,562.3 528.3,562.3 528.3,561.6 526.3,560.4 526.3,558.2 524.0,556.8 524.5,556.3 524.2,555.7 524.9,555.7 525.1,556.5 525.8,556.2 526.6,554.5 524.9,554.3 524.9,553.5 524.0,553.6 523.3,552.3 520.6,551.8 520.6,551.0 518.8,550.0 517.3,547.1 516.2,546.7 514.1,547.3 514.2,546.2 515.1,545.9 514.5,545.0 516.2,543.6 515.0,543.8 515.1,543.2 514.5,542.9 517.5,541.5 517.1,541.0 518.3,540.4 517.0,538.9 514.9,538.5 516.1,537.4 516.2,536.4 517.3,536.8 516.6,535.6 518.2,535.8 519.6,534.9 518.7,535.1 518.6,533.3 518.5,533.8 517.2,533.3 517.1,531.6 515.7,531.1 516.7,531.5 516.4,530.8 514.3,529.8 514.7,528.0 515.8,527.7 516.1,529.5 517.6,529.3 519.5,528.7 519.6,527.8 522.3,527.4 522.7,528.2 524.3,526.6 526.5,526.8 529.7,525.3 530.3,526.5 531.2,525.8ZM545.3,543.1 548.6,541.5 548.2,541.8 548.8,543.4 548.3,543.8 547.5,543.3 547.2,545.0 545.7,544.5 545.4,545.4 545.9,545.6 544.8,545.3 544.5,544.2 545.3,543.1Z","cx":529.7,"cy":546.2,"lon":135.486,"lat":33.904},{"n":"埼玉","d":"M662.0,438.0 669.0,440.5 670.3,439.4 673.9,442.2 678.6,441.3 680.0,442.4 681.3,441.1 682.2,441.6 683.8,446.9 685.5,446.8 687.0,449.4 687.3,452.1 689.5,455.6 690.0,457.0 689.7,460.8 689.1,460.9 688.9,460.1 687.3,460.3 687.1,459.3 686.2,459.7 685.1,459.2 684.1,460.9 681.1,460.0 679.9,461.5 678.7,461.0 677.2,462.1 677.2,461.2 676.0,461.6 677.0,460.8 676.9,459.7 675.3,461.0 671.5,461.7 670.7,460.4 669.1,460.2 668.2,458.4 664.4,458.2 659.5,456.6 658.1,455.6 653.4,458.2 651.7,456.9 650.5,457.2 649.2,455.4 647.6,455.3 647.8,453.7 646.8,451.6 648.4,449.3 651.1,449.2 652.4,447.4 655.3,446.5 655.8,445.2 658.8,445.0 658.8,444.1 659.5,443.9 659.6,442.0 662.0,438.0Z","cx":670.7,"cy":453.0,"lon":139.369,"lat":35.954},{"n":"大分","d":"M386.6,556.5 387.1,556.1 387.7,556.6 388.1,555.8 389.5,556.8 389.9,556.3 391.9,558.1 393.7,561.8 393.6,566.1 392.3,568.8 389.6,568.2 390.4,569.8 388.5,570.4 388.3,571.5 386.8,571.4 386.3,570.6 384.9,570.9 385.4,575.1 388.2,576.1 389.7,574.9 391.2,575.4 391.0,574.8 391.6,575.2 391.9,574.6 394.3,576.4 394.2,575.8 395.1,575.8 394.8,576.3 398.5,576.0 398.3,575.5 399.6,575.1 398.5,576.5 398.3,578.1 397.1,579.0 396.9,580.5 395.8,581.5 397.5,582.1 399.5,581.2 400.0,581.6 397.8,583.2 398.1,583.9 399.9,583.5 399.9,584.3 400.5,584.2 401.0,582.9 401.0,584.1 402.1,584.5 403.2,582.9 402.9,583.6 403.7,584.6 400.6,584.9 399.6,587.6 399.4,587.0 399.1,587.7 401.6,589.7 401.7,589.1 402.2,588.9 402.4,590.0 403.2,589.2 403.2,590.4 404.3,590.0 404.3,589.4 406.2,590.3 404.1,590.2 403.4,591.6 402.3,590.8 402.6,592.4 402.9,591.9 403.7,592.3 401.7,594.3 401.3,593.9 401.5,594.5 401.0,594.7 401.8,595.5 401.8,594.6 402.4,595.2 402.6,594.3 403.4,595.1 402.1,596.7 401.5,596.0 400.8,597.0 400.2,596.4 400.2,597.0 399.6,597.0 399.1,596.2 399.3,598.0 398.6,596.8 398.5,598.5 399.0,598.8 398.5,599.1 397.5,598.8 398.0,595.4 395.6,595.4 394.7,594.6 393.6,594.9 392.5,597.7 388.3,597.5 387.4,598.4 385.5,597.8 385.6,596.4 384.1,594.7 379.9,596.2 379.2,594.9 376.4,592.8 375.7,589.2 376.4,588.4 375.1,586.8 374.6,584.8 373.1,583.5 372.6,580.9 370.4,578.7 366.5,578.9 366.0,580.9 367.7,583.3 367.2,585.3 366.4,586.2 361.0,582.7 361.8,581.9 362.7,578.8 360.9,577.7 361.7,576.8 360.5,576.5 360.6,575.6 362.0,575.1 361.4,574.6 361.9,574.0 361.6,572.4 360.8,571.7 361.9,570.1 362.7,570.0 363.0,567.0 364.1,566.5 364.1,565.6 367.9,563.7 373.2,564.2 372.8,563.3 373.6,562.4 373.1,560.6 373.5,559.3 375.2,559.9 375.7,559.5 377.3,561.0 382.4,561.2 382.2,560.4 383.8,559.4 385.1,557.4 384.9,556.8 386.0,556.7 385.8,556.2 386.6,556.5Z","cx":388.4,"cy":580.4,"lon":131.594,"lat":33.152},{"n":"大阪","d":"M525.5,494.3 525.9,495.9 529.9,496.8 529.5,498.7 530.7,498.9 531.7,500.2 533.1,499.8 533.1,499.2 532.3,499.2 533.0,498.4 532.9,497.6 534.3,497.7 533.8,499.6 535.4,499.5 536.8,501.5 537.3,503.3 539.1,505.2 538.5,506.5 537.9,506.3 537.6,508.9 536.5,509.9 536.7,510.9 535.7,514.1 536.8,515.2 535.7,517.0 536.6,518.0 537.0,521.3 536.2,522.5 536.7,523.3 535.8,524.3 533.1,524.7 530.5,526.5 529.7,525.3 526.5,526.8 524.3,526.6 522.7,528.2 522.3,527.4 519.6,527.8 518.7,529.1 516.1,529.5 515.4,527.5 520.0,526.1 524.9,521.3 525.3,520.0 525.7,520.3 525.8,518.6 525.4,518.3 525.8,517.6 525.5,518.1 526.2,518.8 527.7,517.6 528.2,516.5 527.0,516.3 526.6,514.5 527.3,515.9 527.5,515.0 528.5,516.1 528.4,515.3 529.0,515.2 527.5,514.8 527.4,514.3 528.2,514.6 527.4,513.7 528.1,513.4 528.3,513.9 528.4,512.5 527.1,512.2 527.5,511.5 526.9,511.3 527.4,510.3 526.7,510.3 528.7,508.5 527.1,504.6 527.2,503.1 528.2,501.0 527.7,501.3 527.2,500.5 529.0,499.6 524.6,497.9 525.1,497.2 524.9,495.3 524.0,494.8 524.7,494.0 525.5,494.3ZM520.4,521.5 521.2,521.5 520.5,522.2 521.7,521.9 520.3,523.0 520.4,522.2 519.4,522.3 520.4,521.5Z","cx":529.1,"cy":511.3,"lon":135.468,"lat":34.671},{"n":"奈良","d":"M537.9,506.3 538.5,506.5 539.5,508.7 542.9,509.7 544.4,509.6 545.7,507.4 545.7,508.2 547.5,508.1 547.8,509.3 548.9,509.6 550.4,508.2 550.9,509.4 550.3,509.8 551.5,511.1 550.7,512.2 549.8,511.7 551.0,512.9 550.0,514.5 550.2,515.4 552.5,517.0 554.0,516.4 554.4,518.2 556.2,517.8 556.2,518.9 556.7,519.4 555.8,521.4 551.8,522.0 550.9,523.9 553.0,527.5 551.8,528.1 553.1,530.4 551.7,532.9 552.5,534.6 552.0,536.4 552.6,538.1 551.7,538.1 552.1,540.7 549.0,540.2 547.8,542.2 545.7,542.7 544.5,544.2 545.0,545.5 544.5,545.5 544.5,546.1 543.5,545.5 543.3,547.0 544.1,547.3 543.7,548.2 542.8,546.6 541.4,546.1 539.5,547.0 537.0,546.2 534.5,547.6 534.6,546.4 533.8,546.0 534.5,543.9 535.2,544.1 535.1,542.2 534.6,541.4 533.7,541.3 533.1,539.2 531.6,538.4 533.5,535.0 535.5,533.3 535.1,532.6 535.6,531.9 537.7,532.4 538.5,531.4 538.0,529.7 536.5,529.1 535.7,524.4 536.6,523.7 536.2,522.5 537.0,521.3 536.6,518.0 535.7,517.0 536.8,515.2 535.7,514.1 536.7,510.9 536.5,509.9 537.6,508.9 537.9,506.3Z","cx":543.6,"cy":527.2,"lon":135.87,"lat":34.322},{"n":"宮城","d":"M747.5,315.5 748.4,314.4 752.8,315.8 753.4,317.2 753.0,317.6 754.4,320.6 753.8,320.8 753.0,319.0 751.9,320.0 751.2,318.6 750.8,318.8 751.5,319.5 751.1,321.2 751.8,322.3 748.8,324.1 748.6,324.9 749.7,326.6 750.4,326.3 750.3,328.6 750.0,327.8 749.0,327.4 748.4,328.8 747.7,328.6 747.8,329.3 746.0,329.3 746.0,330.7 749.1,331.0 749.0,332.2 746.6,333.8 747.9,335.8 749.2,335.0 749.6,337.1 748.9,337.7 748.5,336.6 747.0,336.3 746.8,336.7 747.9,337.4 747.9,338.3 747.2,338.9 748.5,339.5 747.8,340.1 746.1,339.9 747.1,340.9 747.0,342.1 748.1,341.1 748.6,342.1 749.5,341.8 749.1,342.6 748.4,342.2 747.4,342.8 748.6,343.1 749.3,344.5 749.0,345.2 749.5,346.0 748.9,347.6 748.3,346.4 747.8,346.6 747.9,346.1 746.2,345.6 747.1,344.9 746.7,344.0 745.1,344.2 746.5,343.0 745.6,343.0 745.5,341.8 745.0,342.2 744.8,341.6 743.5,342.5 742.9,341.2 739.6,340.9 739.6,341.4 735.7,343.4 735.5,344.1 736.0,344.1 736.3,345.4 735.3,344.8 734.9,345.3 734.7,344.5 735.3,344.6 735.0,343.8 735.4,343.8 734.7,343.6 734.7,342.8 733.8,342.4 733.7,343.2 733.0,342.6 732.2,343.2 732.3,344.0 731.4,344.1 731.8,344.8 730.8,345.4 731.5,345.5 731.2,346.0 732.7,345.4 733.2,346.3 731.4,347.6 730.9,347.1 729.9,347.6 731.6,347.9 730.8,347.9 729.4,350.1 727.3,356.0 726.8,360.3 727.4,364.7 724.7,364.9 724.7,368.9 721.7,368.8 721.4,369.2 722.7,370.0 722.4,370.3 720.0,369.9 718.8,368.9 718.2,367.4 718.6,365.1 717.6,364.5 716.3,364.5 715.8,363.8 715.1,364.2 714.2,363.5 711.3,364.5 710.6,363.6 710.8,362.4 708.4,361.2 707.6,362.1 706.3,362.2 703.6,360.8 704.1,359.6 703.6,357.4 707.1,357.4 708.9,356.0 709.0,354.6 711.0,351.8 710.7,347.7 711.6,347.1 711.9,345.7 712.8,345.4 712.7,343.7 714.6,342.1 714.7,340.1 716.1,339.3 714.1,336.7 714.3,336.1 713.7,335.3 714.6,334.1 713.1,331.1 713.4,330.4 715.4,330.9 716.2,328.5 715.6,327.2 717.0,325.0 715.6,324.4 715.0,322.0 713.2,320.8 713.5,319.5 714.0,320.2 715.9,319.3 716.8,319.8 720.7,316.5 723.6,316.2 725.6,317.7 728.4,318.7 729.4,320.2 733.3,319.6 735.0,320.1 735.2,321.1 733.7,321.9 733.7,322.6 735.0,323.0 735.3,324.3 736.5,324.3 738.4,326.0 739.8,323.7 740.9,323.9 741.2,322.6 744.2,323.6 745.0,324.3 744.8,325.1 745.8,324.4 745.5,323.1 746.6,322.9 746.2,321.9 746.8,321.0 746.3,320.1 747.7,318.3 747.5,315.5Z","cx":734.2,"cy":338.7,"lon":141.119,"lat":38.468},{"n":"宮崎","d":"M385.3,597.5 387.4,598.4 388.3,597.5 392.5,597.7 393.6,594.9 394.7,594.6 395.6,595.4 398.0,595.4 397.6,599.3 399.0,598.8 398.0,599.4 398.2,600.2 397.7,600.0 397.7,601.2 396.8,600.6 395.5,602.6 395.1,602.1 394.5,603.6 394.1,603.4 394.9,603.9 394.2,605.4 392.0,606.9 391.7,609.6 392.7,609.1 392.6,609.9 393.2,610.3 392.0,611.4 390.7,610.8 390.6,612.4 390.1,612.8 390.9,612.3 391.2,612.9 391.3,612.1 391.4,613.2 390.6,613.3 391.8,613.5 390.1,614.2 389.6,617.1 389.0,617.3 388.0,619.7 383.6,636.7 384.3,636.4 383.6,637.0 383.3,641.0 384.5,642.5 383.4,646.0 383.8,647.0 383.1,647.3 383.8,648.9 381.7,651.3 381.8,652.3 381.4,651.8 381.2,652.9 380.7,653.0 380.8,655.0 380.3,654.7 380.3,655.2 380.9,656.2 380.0,656.8 380.3,658.6 378.9,660.2 379.5,661.3 379.0,661.8 378.0,660.5 376.1,660.9 375.4,659.8 375.6,658.8 374.2,657.6 372.6,657.3 373.0,655.5 374.0,654.8 373.7,652.9 374.2,651.9 373.6,649.9 372.8,649.1 371.0,649.6 369.7,648.2 368.8,649.4 367.7,647.9 367.3,644.2 366.0,644.0 366.3,642.8 364.3,642.5 362.3,641.1 362.3,639.9 363.7,637.9 363.1,637.9 362.0,635.8 359.5,635.0 358.7,632.1 356.0,630.1 356.1,629.2 357.2,627.8 360.3,628.4 361.6,628.2 363.4,626.7 364.4,627.5 365.8,627.2 367.3,624.8 368.9,625.7 370.8,625.5 370.4,623.6 368.3,621.4 368.7,619.7 369.7,619.9 370.8,617.8 369.5,616.5 369.2,614.2 368.4,614.1 367.5,612.8 367.1,610.3 367.7,609.1 367.5,607.8 368.2,607.4 368.7,606.1 370.7,606.2 371.0,603.5 372.0,602.0 373.2,602.2 373.3,600.4 375.3,598.9 375.7,597.7 375.3,597.2 376.4,595.2 379.2,594.9 380.1,596.2 384.1,594.7 385.6,596.4 385.3,597.5Z","cx":379.0,"cy":624.6,"lon":131.336,"lat":32.178},{"n":"富山","d":"M607.7,406.3 608.9,407.7 610.5,408.0 610.8,408.8 611.2,413.3 612.3,415.9 611.9,418.9 612.3,420.7 611.7,422.8 611.9,424.1 609.7,425.3 609.5,426.4 610.4,426.5 610.3,427.3 609.0,427.7 607.7,431.5 606.7,431.8 606.2,433.1 604.3,433.0 603.0,431.6 601.4,432.1 599.4,431.5 598.8,430.0 596.0,431.6 595.9,429.8 594.0,430.4 593.6,429.9 592.2,431.4 591.6,430.2 590.5,430.1 588.0,432.9 588.1,433.4 586.8,434.0 586.5,435.9 583.8,438.4 583.1,438.2 583.6,436.6 582.7,435.2 581.3,434.5 580.1,435.3 580.0,434.2 579.8,435.0 578.8,435.1 578.5,437.0 577.1,437.3 576.8,435.3 577.7,434.6 576.3,431.4 577.3,430.7 577.2,427.8 578.0,425.8 577.1,425.0 576.8,422.6 578.3,420.4 578.0,419.1 577.0,418.2 579.1,416.4 579.4,412.7 580.9,408.8 582.1,407.7 583.7,408.0 584.1,406.9 586.0,406.9 586.5,407.3 585.6,408.2 585.8,408.9 584.1,411.2 585.3,413.2 587.7,415.2 588.8,415.4 588.0,415.9 589.4,416.5 589.1,415.5 591.4,416.5 596.2,416.4 598.9,414.2 599.9,411.0 599.5,410.1 600.5,408.6 607.7,406.3Z","cx":592.1,"cy":423.1,"lon":137.205,"lat":36.611},{"n":"山口","d":"M391.9,510.9 392.0,513.6 392.9,514.0 393.2,515.5 392.3,516.1 392.4,517.6 391.1,518.9 392.2,520.3 392.2,522.0 395.6,522.0 394.6,524.5 395.0,526.7 397.0,528.1 398.8,527.8 399.0,526.9 399.5,527.3 400.2,526.5 401.6,527.9 403.6,524.9 402.8,523.0 403.0,522.4 404.0,520.8 405.5,520.5 406.0,521.7 405.6,525.6 406.6,525.9 407.0,526.9 407.7,526.7 408.4,531.1 410.5,531.4 410.2,532.5 412.0,532.2 411.5,533.4 412.2,534.1 412.1,535.1 411.6,536.0 410.4,536.3 411.1,539.6 410.9,541.7 409.8,543.6 407.4,544.0 407.8,547.1 408.8,548.8 407.4,549.5 407.5,547.5 404.7,545.9 405.2,545.3 404.0,546.3 402.5,545.0 402.0,545.6 401.8,544.4 398.2,542.3 398.2,541.5 397.0,541.3 395.6,542.4 396.6,542.9 396.2,543.3 394.5,542.9 396.8,540.5 396.0,539.9 395.2,540.4 395.8,539.1 393.8,539.6 394.1,538.6 392.1,539.7 389.9,539.7 389.0,540.9 388.4,539.9 386.4,541.9 385.3,541.7 385.4,541.0 384.1,540.1 383.7,540.7 384.2,541.3 383.1,541.4 383.5,542.4 382.7,542.6 382.0,541.1 381.2,542.5 381.9,540.8 381.2,540.7 381.5,539.9 380.8,539.6 380.8,540.3 380.2,540.5 380.5,541.5 379.4,542.6 379.7,543.4 376.5,545.3 376.0,544.7 375.2,545.1 375.8,544.4 375.5,544.0 374.9,544.8 374.4,544.4 373.3,544.9 372.5,543.9 373.1,543.0 372.7,543.0 373.0,542.0 371.7,541.7 371.7,542.2 370.2,540.1 368.5,539.9 368.2,539.2 366.5,542.4 364.1,544.2 364.0,545.7 363.3,545.7 363.5,545.2 362.2,544.1 363.8,544.2 363.4,543.9 363.6,539.1 362.7,538.8 361.7,536.8 361.9,535.7 362.9,535.7 363.1,534.8 364.1,534.1 364.3,532.2 363.8,532.0 364.0,530.9 362.0,528.8 363.1,527.4 363.2,525.3 364.1,526.3 366.8,524.8 368.1,525.0 367.3,523.4 365.3,523.3 365.2,524.1 364.3,524.0 365.8,521.7 367.5,523.1 371.6,522.8 372.4,524.9 374.0,523.8 374.6,525.0 375.0,524.0 377.9,524.4 379.1,522.8 381.9,522.4 382.1,521.8 381.2,520.9 381.9,521.4 382.8,519.9 383.6,519.7 383.4,517.9 383.7,517.3 385.1,517.5 386.3,516.2 387.0,513.9 388.7,513.4 388.2,513.1 388.7,511.7 389.8,511.6 390.4,512.7 390.3,512.2 391.3,511.6 391.0,511.1 391.9,510.9ZM410.6,548.3 409.4,545.3 409.9,543.9 410.5,544.1 410.9,543.4 413.5,543.8 414.1,545.5 414.7,545.4 415.1,546.3 416.6,545.1 417.7,545.0 418.2,544.0 420.2,544.1 417.9,545.9 416.6,545.9 416.3,546.5 416.6,548.1 415.0,548.3 415.3,547.1 413.5,546.3 412.9,546.8 413.2,547.7 411.2,547.5 410.6,548.3Z","cx":386.0,"cy":532.7,"lon":131.528,"lat":34.2},{"n":"山形","d":"M688.9,309.1 693.4,309.7 693.9,308.9 695.9,308.4 695.9,310.3 699.1,312.3 700.7,311.7 700.9,312.9 703.1,312.9 704.7,313.8 705.5,312.9 706.7,313.3 707.3,314.7 709.8,315.4 710.4,318.2 711.8,319.3 713.1,319.0 713.2,320.8 715.0,322.0 715.6,324.4 717.0,325.0 715.6,327.2 716.2,328.5 715.4,330.9 713.4,330.4 713.1,331.1 714.6,334.1 713.7,335.3 714.3,336.1 714.1,336.7 716.1,339.3 714.7,340.1 714.6,342.1 712.7,343.7 712.8,345.4 711.9,345.7 711.6,347.1 710.7,347.7 711.0,351.8 709.0,354.6 708.7,356.4 707.1,357.4 703.6,357.4 704.1,359.6 703.5,361.4 703.8,362.6 703.1,367.5 704.4,368.7 702.2,371.5 699.6,371.0 697.8,372.0 695.4,370.0 693.3,370.9 691.3,367.8 689.4,368.6 688.4,367.8 686.7,368.9 685.7,367.6 684.2,368.1 683.3,366.6 682.0,366.9 680.1,364.8 681.1,358.4 682.4,357.4 682.4,356.6 681.7,356.5 682.4,354.7 682.1,352.3 682.7,350.8 685.8,351.2 688.5,349.4 689.9,346.7 688.1,344.4 684.6,343.6 683.5,342.1 682.9,342.2 683.5,337.4 679.0,336.2 676.9,334.6 679.6,329.3 682.6,326.8 684.9,323.6 686.7,317.0 687.6,316.5 687.0,316.3 688.9,311.4 688.9,309.1Z","cx":698.4,"cy":340.0,"lon":140.132,"lat":38.439},{"n":"山梨","d":"M634.4,452.2 637.0,453.1 637.5,455.4 638.1,455.6 638.8,455.6 639.5,454.4 642.4,454.5 643.2,455.0 643.1,456.6 645.5,456.8 646.1,455.5 647.4,455.0 649.2,455.4 650.5,457.2 651.7,456.9 653.4,458.2 655.2,457.5 658.2,463.7 662.0,465.7 661.6,466.7 662.2,468.3 662.0,470.7 660.4,473.1 659.0,473.2 658.2,474.5 655.0,475.9 654.2,478.1 652.7,479.0 651.9,478.6 650.8,479.3 645.7,480.1 645.1,478.2 643.1,478.5 642.1,476.1 641.3,476.6 640.3,477.9 640.4,481.3 639.6,482.1 640.3,487.2 638.8,488.7 636.6,488.1 635.3,487.0 634.2,482.2 632.9,481.5 631.3,482.5 630.0,481.3 630.1,479.9 629.4,479.3 630.3,477.9 629.8,475.6 630.7,472.9 629.4,467.3 628.0,465.8 627.5,464.0 629.5,461.9 627.7,460.2 629.6,456.2 631.3,457.3 634.4,452.2Z","cx":642.5,"cy":469.0,"lon":138.592,"lat":35.601},{"n":"岐阜","d":"M586.8,434.0 588.1,433.4 588.0,432.9 590.5,430.1 591.6,430.2 592.2,431.4 593.6,429.9 594.0,430.4 595.9,429.8 596.0,431.6 598.8,430.0 599.4,431.5 601.4,432.1 603.2,431.6 604.3,433.0 606.0,433.2 606.0,434.0 608.1,435.4 608.1,437.8 605.5,440.9 606.3,443.1 604.8,444.5 604.7,445.9 606.9,447.4 606.3,450.3 604.4,451.7 602.0,455.7 600.4,455.2 598.5,455.8 597.8,457.8 596.8,458.0 596.5,459.3 596.9,460.1 598.5,459.9 599.1,461.1 601.3,461.7 602.8,465.1 604.5,466.8 603.3,468.8 604.2,469.8 605.4,469.8 605.5,471.6 607.6,473.2 607.6,475.0 606.2,476.0 607.7,478.2 605.5,478.2 606.4,479.2 606.6,481.1 604.9,482.3 605.1,483.5 603.5,483.5 600.3,486.2 599.8,485.4 598.8,485.4 598.6,484.5 597.2,484.6 597.2,484.0 595.8,483.1 591.4,484.8 590.7,483.5 588.4,482.6 587.6,483.1 587.1,481.1 586.4,481.1 586.4,479.8 583.9,478.0 584.3,477.0 583.3,477.3 583.3,478.2 581.8,479.1 578.6,480.2 576.3,479.6 573.0,485.4 572.7,490.3 571.8,488.8 571.8,489.8 570.7,489.6 568.3,486.4 567.7,484.7 566.8,485.6 563.3,486.4 562.1,485.3 562.8,484.7 562.5,483.3 563.6,480.6 563.4,479.5 564.5,478.6 563.3,477.3 563.6,475.1 562.4,474.2 563.1,473.0 561.9,470.9 560.9,472.0 559.9,471.5 560.1,468.3 558.8,468.2 558.4,466.7 560.1,463.8 560.0,461.5 562.1,460.2 564.1,461.1 566.0,461.1 566.7,462.2 567.4,460.5 569.1,461.0 570.1,460.1 570.9,460.6 571.8,459.7 572.3,460.7 574.6,459.6 577.0,460.0 577.5,458.0 578.6,457.3 578.2,455.6 576.8,454.3 577.1,453.3 575.6,452.7 575.6,451.3 574.7,451.1 575.0,448.7 576.1,447.8 575.7,447.0 576.7,444.4 576.2,443.6 577.3,443.0 579.3,439.6 577.9,438.8 577.1,437.3 578.5,437.0 578.8,435.1 579.8,435.0 580.0,434.2 580.1,435.3 581.3,434.5 582.7,435.2 583.6,436.6 583.1,438.2 583.8,438.4 586.5,435.9 586.8,434.0Z","cx":585.1,"cy":460.6,"lon":137.013,"lat":35.787},{"n":"岡山","d":"M476.3,480.4 475.7,482.1 476.1,482.4 479.3,482.5 480.8,483.7 481.2,484.6 480.7,485.5 481.6,485.9 481.3,487.5 482.0,488.6 485.2,486.8 485.9,487.4 487.4,487.2 489.3,485.2 490.3,485.1 489.5,486.9 490.7,487.9 490.6,489.6 489.0,489.7 488.4,492.2 487.3,492.6 487.2,494.4 485.4,495.4 485.4,496.1 486.1,496.5 485.0,498.8 486.4,500.6 485.3,501.6 484.9,503.1 485.3,504.2 486.2,504.2 487.2,505.4 487.2,506.3 487.9,506.9 487.1,508.2 487.4,509.0 485.7,508.4 484.6,509.3 482.5,508.1 482.2,508.5 483.1,508.8 482.8,509.2 483.5,509.3 483.0,509.6 484.3,509.3 484.6,509.9 482.6,512.2 481.9,512.2 482.1,513.1 482.5,513.1 481.9,513.9 481.1,513.8 480.1,515.0 477.9,515.2 478.0,514.2 477.5,514.6 475.6,513.9 473.8,514.6 474.3,515.3 476.9,514.7 477.4,515.6 476.8,516.8 475.8,517.0 475.9,518.5 474.9,517.5 474.3,518.0 474.4,519.3 473.5,519.9 473.3,521.3 469.7,520.2 468.8,520.9 469.3,522.3 468.0,522.0 466.2,517.9 466.1,519.2 465.5,519.3 466.4,520.4 465.0,520.1 465.0,517.3 464.5,517.3 464.3,518.8 463.4,518.2 461.0,519.5 461.0,520.5 459.1,520.8 457.1,518.5 458.6,521.1 456.6,521.7 457.2,521.0 456.0,520.9 455.6,520.0 455.6,516.6 453.3,513.6 454.1,511.3 453.3,510.9 452.4,508.5 453.2,505.2 450.2,501.4 450.7,499.2 450.2,498.4 451.1,496.1 449.1,494.0 450.0,493.1 449.9,492.0 454.1,491.2 454.4,490.2 453.7,488.7 454.2,487.9 455.6,488.5 457.6,487.6 458.5,488.0 457.8,486.0 459.7,485.2 461.1,480.7 464.1,481.9 466.5,481.8 468.4,483.0 469.6,485.0 470.8,483.9 470.8,483.0 473.0,482.4 473.3,481.2 476.3,480.4Z","cx":472.7,"cy":503.2,"lon":133.915,"lat":34.85},{"n":"岩手","d":"M751.0,252.0 751.2,250.5 754.7,248.6 759.5,256.7 760.2,259.0 759.2,259.2 758.9,260.0 759.4,260.4 758.7,260.4 761.7,262.5 760.5,263.1 760.0,265.1 762.9,268.6 763.9,268.6 764.6,269.7 764.9,271.2 764.1,271.8 764.0,272.7 765.2,274.4 765.9,277.2 765.6,278.6 766.4,279.2 765.8,280.0 766.3,280.3 765.2,281.3 765.7,281.6 765.1,283.1 765.7,283.3 765.2,284.9 765.6,285.1 764.9,285.4 765.1,286.2 764.3,287.6 764.7,287.8 767.2,284.7 767.2,288.2 768.3,288.4 768.8,289.6 768.3,290.8 767.4,290.4 766.5,292.9 765.3,292.6 764.5,293.2 765.4,294.5 767.5,292.5 768.4,293.1 767.6,294.3 767.8,295.2 766.6,295.1 765.7,295.9 765.3,295.1 764.0,296.9 764.3,297.6 765.0,297.5 764.7,298.3 763.1,298.3 762.5,299.2 763.1,299.8 766.1,298.6 765.2,300.3 762.1,300.7 763.5,301.5 763.6,302.3 762.2,302.0 762.7,302.8 762.3,303.3 765.2,303.2 764.2,303.5 764.3,304.6 763.5,304.4 762.1,305.0 762.2,305.5 761.4,305.1 761.4,305.8 763.4,306.4 760.3,307.9 761.5,308.6 761.6,309.2 763.4,309.7 761.9,310.7 759.4,309.4 759.7,311.0 761.7,311.6 759.5,311.9 760.9,313.2 759.0,313.4 758.9,312.5 757.6,313.6 756.5,313.6 756.4,311.3 755.7,313.4 756.9,314.7 755.7,314.7 755.9,315.3 755.2,315.9 756.3,316.7 755.5,317.3 754.2,315.6 754.6,314.6 754.1,314.2 752.6,314.5 752.8,315.8 750.5,314.7 747.7,314.6 747.7,318.3 746.3,320.1 746.8,321.0 746.2,321.9 746.6,322.9 745.5,323.1 745.8,324.4 744.8,325.1 745.0,324.3 744.2,323.6 741.2,322.6 740.9,323.9 739.8,323.7 739.1,325.4 737.8,325.9 736.5,324.3 735.0,324.1 735.0,323.0 733.7,322.6 733.7,321.9 735.2,321.1 735.0,320.1 733.3,319.6 729.4,320.2 728.4,318.7 725.6,317.7 723.6,316.2 721.7,316.4 721.3,314.5 723.0,311.9 722.7,311.0 720.9,310.6 721.0,309.1 721.5,308.9 720.8,308.2 722.9,306.3 721.4,305.5 722.2,303.7 718.8,300.9 719.3,299.5 718.3,297.2 717.3,296.7 717.5,295.6 718.3,295.4 718.4,293.7 719.9,292.7 719.5,291.9 720.5,290.2 720.1,288.8 722.5,287.1 723.4,285.0 723.5,283.2 721.7,281.1 722.8,280.6 724.4,278.3 722.2,277.1 722.0,275.2 723.6,274.2 724.5,275.1 725.5,274.7 724.4,270.9 724.3,265.7 725.5,264.2 725.1,263.1 725.6,261.8 724.8,261.2 726.0,260.3 726.1,259.3 727.8,258.7 728.3,257.8 729.2,259.0 730.8,259.0 733.7,257.4 733.6,256.3 737.7,254.7 741.4,252.1 742.6,254.0 744.3,252.3 744.7,252.8 746.0,251.9 747.3,251.9 749.4,253.2 751.0,252.0Z","cx":748.0,"cy":293.4,"lon":141.499,"lat":39.464},{"n":"島根","d":"M448.3,471.4 446.6,472.4 447.5,474.5 450.4,476.6 451.1,477.9 451.2,479.3 450.1,480.6 450.0,481.8 450.7,484.2 445.0,486.4 445.0,487.1 446.0,487.2 446.5,488.6 444.9,489.9 444.5,492.9 442.9,492.5 440.6,493.3 439.1,491.7 437.6,492.9 434.8,491.7 433.2,493.6 433.5,494.2 430.2,497.4 430.2,498.2 428.0,498.6 426.1,500.7 428.5,501.7 428.9,503.2 428.4,503.5 427.8,503.1 427.1,504.0 425.5,503.5 422.6,505.7 419.6,505.4 418.9,504.5 417.5,506.4 416.6,505.4 415.3,505.9 414.6,505.4 414.0,506.5 413.2,505.5 411.9,505.2 411.2,507.7 407.9,509.6 409.0,510.8 407.3,514.0 407.7,515.3 404.9,518.1 404.4,519.0 405.3,519.4 405.6,520.6 404.0,520.8 403.0,522.4 402.8,523.0 403.6,524.9 401.6,527.9 400.2,526.5 399.5,527.3 399.0,526.9 398.8,527.8 396.6,528.1 395.0,526.7 394.6,525.2 395.6,522.0 392.2,522.0 392.2,520.3 391.1,518.9 392.4,517.6 392.3,516.1 393.2,515.5 392.9,514.0 392.0,513.6 391.9,510.9 393.9,511.1 397.5,509.6 398.4,508.5 398.2,507.5 401.1,505.9 401.5,504.7 403.3,503.3 403.4,502.3 404.4,501.7 405.1,502.2 405.5,500.6 407.2,498.5 411.7,494.8 414.3,493.8 415.2,491.9 415.7,492.1 415.5,491.7 417.1,490.5 417.0,489.7 418.3,487.7 425.9,483.3 427.3,481.1 427.6,479.3 427.5,478.1 425.8,477.4 426.0,476.6 428.0,476.3 428.0,475.8 430.4,476.0 430.6,475.6 429.5,475.0 434.5,473.0 438.2,473.0 438.3,471.6 440.4,471.9 440.6,471.0 441.5,470.7 441.2,470.1 442.9,470.1 442.7,468.9 443.9,470.1 444.4,469.9 444.9,470.9 445.2,470.4 446.4,470.8 446.4,470.0 446.5,470.6 447.3,469.9 450.6,470.2 451.2,470.6 448.3,471.4ZM448.4,443.6 448.3,442.8 447.8,443.2 448.3,442.3 446.1,441.3 446.4,439.8 445.9,439.4 446.0,437.8 446.8,438.2 446.5,437.2 447.8,436.4 447.6,436.0 449.0,436.0 449.7,435.1 453.4,438.7 452.9,441.5 451.7,442.0 451.9,440.7 451.6,441.7 450.6,441.8 451.6,441.9 451.8,443.2 449.9,443.1 449.6,442.3 449.5,443.2 448.4,443.6ZM439.4,449.1 437.5,448.0 438.6,445.7 439.6,446.0 439.9,444.6 441.4,445.1 441.9,444.4 442.8,444.6 441.9,445.7 440.9,446.0 441.5,447.1 441.0,448.1 439.7,447.5 439.6,446.1 439.2,447.1 438.7,446.8 439.4,449.1ZM441.9,449.3 442.3,447.7 441.7,446.3 442.4,445.7 442.7,446.5 443.0,445.5 444.2,445.8 443.7,447.1 445.0,447.5 442.9,447.6 443.2,448.6 441.9,449.3Z","cx":422.1,"cy":496.1,"lon":132.522,"lat":35.005},{"n":"広島","d":"M434.3,492.1 435.5,491.6 437.6,492.9 439.1,491.7 440.6,493.3 443.5,492.5 444.6,493.4 448.5,492.8 451.1,496.1 450.2,498.4 450.7,499.2 450.1,500.8 451.5,503.6 453.2,505.2 452.4,508.5 453.3,510.9 454.1,511.3 453.3,513.6 455.9,517.5 455.6,521.5 454.5,520.9 454.2,520.1 454.2,521.0 455.4,522.0 455.1,522.5 454.1,522.0 453.4,522.8 453.3,524.5 452.0,525.2 451.6,524.5 449.8,524.3 449.6,523.6 448.3,524.0 449.3,523.0 448.8,521.7 447.9,523.1 443.9,524.4 442.5,523.8 442.1,526.2 440.0,526.9 437.6,526.4 436.5,527.0 436.3,526.5 433.9,528.5 433.4,527.5 432.1,527.7 431.7,529.2 430.5,529.0 430.5,530.0 431.2,530.3 430.7,530.9 428.6,531.0 428.0,532.2 427.1,531.9 426.4,532.6 424.8,531.3 423.7,532.8 422.7,533.0 422.4,531.8 423.3,530.8 421.8,530.1 421.9,529.0 421.1,527.6 421.4,526.5 421.0,526.5 422.3,525.6 421.9,525.2 420.2,525.8 419.8,525.3 419.4,526.0 417.6,525.2 415.5,525.8 415.7,526.3 415.0,526.2 413.1,529.1 411.6,530.1 411.1,531.2 412.0,532.2 410.2,532.5 410.5,531.4 408.4,531.1 407.7,526.7 407.0,526.9 406.6,525.9 405.6,525.6 406.0,521.7 405.3,519.4 404.4,519.0 407.7,515.3 407.3,514.0 409.0,510.8 407.9,509.6 411.2,507.7 411.9,505.2 413.2,505.5 414.0,506.5 414.6,505.4 415.3,505.9 416.6,505.4 417.5,506.4 418.9,504.5 419.6,505.4 422.6,505.7 425.5,503.5 427.1,504.0 427.8,503.1 428.4,503.5 428.9,503.2 428.5,501.7 426.1,500.7 428.0,498.6 430.2,498.2 430.2,497.4 433.5,494.2 433.2,493.6 434.3,492.1ZM418.7,536.0 419.3,533.7 419.7,533.8 419.0,532.9 418.7,534.0 416.6,530.1 418.4,530.2 419.1,531.6 419.7,531.3 420.3,532.4 420.1,530.6 418.8,530.3 419.3,529.7 418.9,528.8 420.3,528.9 420.5,528.3 421.2,529.6 420.9,532.5 420.2,533.6 420.9,535.4 418.7,536.0ZM423.1,538.2 422.5,537.1 419.8,538.1 419.4,537.6 419.6,536.6 421.4,535.8 421.1,534.1 422.2,532.7 423.3,533.7 422.0,534.8 423.0,535.4 423.4,535.0 422.7,536.9 424.0,536.0 424.6,536.6 423.8,536.6 423.1,538.2ZM435.1,532.5 434.0,532.2 433.5,530.8 435.1,530.5 435.3,529.9 435.8,530.6 436.7,529.0 437.3,529.2 436.3,531.1 436.6,532.0 435.1,532.5ZM446.4,529.3 444.3,526.9 444.8,525.5 445.8,525.7 446.0,526.7 446.5,526.4 447.0,527.3 446.4,529.3Z","cx":430.4,"cy":516.9,"lon":132.752,"lat":34.549},{"n":"徳島","d":"M491.7,532.4 494.1,531.6 496.5,531.7 496.4,531.1 496.9,530.9 496.9,532.5 499.0,533.6 497.7,536.4 497.3,538.9 497.8,539.0 497.0,539.3 497.5,541.0 497.1,541.3 498.0,542.0 497.7,542.6 498.7,542.1 498.8,541.4 501.4,545.2 500.2,547.3 499.4,547.2 499.7,547.5 498.6,548.3 499.2,547.9 499.1,549.0 501.7,548.7 500.5,549.5 503.0,549.3 499.0,551.8 498.3,551.5 497.6,552.5 496.8,552.3 496.3,554.0 496.0,553.4 495.5,553.8 494.5,555.4 490.1,557.5 488.9,558.8 489.9,558.9 488.9,560.5 487.8,560.7 488.9,560.9 487.0,561.1 487.1,562.5 486.0,561.8 482.7,561.7 481.2,558.7 482.4,557.8 482.1,556.2 477.8,555.9 478.2,554.3 476.9,549.6 475.6,550.0 475.2,549.1 474.3,549.3 473.6,550.9 472.6,551.3 471.1,550.6 469.9,548.9 466.6,549.2 463.5,547.8 463.4,547.1 464.5,545.6 464.0,545.2 464.6,544.3 464.1,541.3 465.6,540.8 465.9,539.8 467.7,538.3 469.1,538.5 469.7,537.4 473.5,536.6 474.7,538.5 475.6,538.5 477.6,536.5 480.2,536.4 481.0,534.3 482.0,533.8 485.2,533.5 486.5,534.2 488.2,534.0 488.4,533.4 490.7,534.7 491.5,534.1 491.7,532.4Z","cx":486.3,"cy":545.5,"lon":134.291,"lat":33.918},{"n":"愛媛","d":"M422.4,558.3 424.2,557.6 427.1,555.1 428.5,552.7 428.1,549.4 428.8,547.9 429.2,548.0 428.6,547.0 428.9,546.0 430.5,545.9 431.2,542.3 430.9,541.9 434.5,539.1 436.6,538.8 436.8,536.9 435.5,536.5 436.6,536.5 437.3,535.4 440.6,539.5 441.7,543.0 442.8,544.5 443.7,544.5 443.7,545.2 444.0,544.5 444.3,545.1 446.7,544.7 448.7,543.8 448.7,542.7 449.0,543.5 449.6,543.0 449.2,542.6 451.0,542.1 451.8,542.7 451.8,542.2 452.4,542.8 454.3,542.2 458.1,543.2 461.1,539.8 463.6,540.6 464.3,541.5 463.9,542.6 464.6,544.3 464.0,545.2 464.5,545.6 463.4,547.2 460.6,547.8 459.5,547.2 457.5,549.6 454.5,549.1 453.7,549.8 452.3,549.4 451.3,550.2 449.5,549.5 448.0,551.7 446.5,551.2 445.2,553.2 444.7,555.2 443.8,555.9 443.7,557.3 442.2,557.6 441.9,559.1 442.3,559.6 441.1,561.1 441.7,562.6 440.0,565.4 437.8,566.1 433.9,565.5 432.4,566.3 434.4,570.6 435.6,571.4 435.8,572.7 431.9,574.8 431.2,576.3 431.3,577.9 430.0,578.2 428.4,581.0 426.2,578.8 425.6,579.1 426.0,581.3 427.2,582.3 427.4,584.0 427.0,584.7 427.7,585.5 428.2,588.5 427.7,589.9 426.8,590.0 426.9,590.7 424.8,591.2 424.4,590.2 425.0,589.7 423.0,589.8 423.8,590.5 421.8,589.6 421.5,590.0 422.2,590.3 421.2,591.0 422.2,591.1 421.0,591.9 419.8,590.1 421.4,589.3 420.2,588.6 421.2,587.8 421.1,588.9 423.2,589.1 421.7,588.3 421.1,586.5 420.7,586.8 420.6,585.0 419.5,585.1 419.5,585.7 418.0,584.7 418.1,586.0 417.5,586.7 416.8,586.2 417.5,586.0 418.2,584.0 418.8,584.9 419.3,584.3 420.7,584.7 420.5,583.5 419.9,583.8 419.9,583.0 420.6,582.8 419.3,581.6 420.1,581.5 420.2,582.1 421.3,581.3 419.1,581.0 418.5,580.2 418.8,579.6 420.0,579.5 418.4,577.8 417.9,578.0 419.8,577.7 419.8,579.0 420.6,578.8 420.7,579.8 421.0,578.9 421.8,579.5 421.6,578.5 420.9,578.4 421.7,577.6 423.4,577.2 422.0,576.0 422.8,575.0 421.6,575.5 420.6,574.8 420.1,575.7 420.6,574.1 422.1,573.0 418.8,572.7 418.3,573.5 416.6,572.8 416.8,572.0 418.4,571.1 417.9,570.9 418.3,569.9 417.0,570.8 416.9,569.8 417.5,569.1 416.9,568.4 418.2,567.1 417.0,567.2 418.4,566.3 417.2,566.4 417.6,566.1 417.3,565.6 416.7,566.4 415.9,565.1 415.5,565.2 415.8,565.8 414.9,565.8 414.6,566.8 414.0,565.7 413.3,567.0 409.8,568.5 408.7,570.3 406.9,570.8 407.5,569.7 406.6,569.7 403.6,571.6 407.5,568.2 408.0,569.0 408.1,568.2 409.1,568.6 408.5,567.6 408.8,567.3 409.5,567.8 409.4,567.0 411.2,567.1 411.9,566.1 412.6,566.8 412.5,565.7 418.3,562.5 420.5,559.3 422.4,558.3ZM438.0,533.1 437.3,532.3 438.1,531.5 439.0,531.7 439.2,530.4 438.1,529.8 439.1,529.3 438.8,528.6 440.3,528.4 441.5,530.1 441.5,531.8 438.0,533.1ZM440.7,536.9 439.9,536.8 440.3,534.8 440.9,535.0 440.2,533.8 440.5,533.1 441.8,533.1 442.4,534.1 443.5,533.7 440.7,536.9Z","cx":428.3,"cy":567.2,"lon":132.692,"lat":33.441},{"n":"愛知","d":"M583.2,477.5 584.4,477.1 583.9,478.0 586.4,479.8 586.4,481.1 587.1,481.1 587.6,483.1 588.4,482.6 590.7,483.5 591.4,484.8 595.8,483.1 597.2,484.0 597.2,484.6 598.6,484.5 598.8,485.4 599.8,485.4 600.3,486.2 603.5,483.5 605.3,483.2 604.5,484.8 605.7,487.3 608.0,486.9 609.4,485.7 612.2,486.3 612.9,487.1 615.1,486.7 613.8,488.0 614.7,489.4 613.4,490.2 613.7,491.6 610.7,494.8 610.1,496.2 610.3,497.6 608.7,498.8 607.9,501.3 606.3,502.2 606.0,503.2 602.9,504.0 602.3,504.9 602.6,506.1 601.9,507.6 602.5,510.0 602.2,511.2 589.9,515.0 585.3,515.5 587.4,511.7 588.4,513.1 589.0,513.0 589.7,512.5 589.4,512.0 592.8,511.1 593.6,509.7 594.1,510.2 594.2,509.3 595.0,508.6 595.6,508.7 595.6,510.3 595.0,511.0 595.8,511.0 596.5,509.9 595.9,510.0 595.9,508.9 597.4,508.7 596.3,508.5 596.7,506.3 595.5,505.0 593.8,505.2 592.5,504.4 590.9,507.0 590.8,506.0 585.7,506.5 584.5,504.7 582.9,504.4 584.1,501.2 584.0,498.2 583.3,502.1 582.6,501.8 582.5,502.7 582.0,502.5 582.4,503.0 581.6,506.8 583.3,508.4 583.6,510.2 580.5,508.9 578.8,507.1 579.8,503.8 578.8,501.6 578.2,501.6 578.1,497.9 579.1,496.0 579.9,496.0 579.3,495.6 579.9,493.5 580.9,492.5 579.8,492.1 579.1,494.8 579.2,492.8 578.4,492.6 578.1,493.5 578.6,493.4 578.8,494.9 577.8,495.2 578.0,494.0 577.3,494.0 577.4,495.0 576.7,494.8 577.2,495.7 576.3,495.4 575.5,492.6 572.8,490.2 573.0,485.4 576.3,479.6 578.6,480.2 581.8,479.1 583.3,478.2 583.2,477.5Z","cx":590.9,"cy":497.1,"lon":137.173,"lat":34.984},{"n":"新潟","d":"M677.2,334.8 679.0,336.2 683.5,337.4 682.9,342.2 683.5,342.1 684.6,343.6 688.1,344.4 690.0,347.4 688.5,349.4 685.8,351.2 683.2,350.6 682.1,352.3 682.4,354.7 681.7,356.5 682.4,356.6 682.4,357.4 681.1,358.4 680.0,363.7 681.1,366.2 682.0,366.9 683.1,366.6 684.2,368.3 681.2,371.1 679.9,373.2 680.1,374.1 677.2,375.9 677.2,377.6 677.8,378.3 677.8,380.6 678.7,381.4 678.5,382.1 677.8,382.6 672.8,382.0 671.7,384.5 670.4,384.1 665.4,385.0 664.4,386.8 665.7,387.8 665.8,389.8 665.2,390.2 665.0,392.4 663.3,394.6 664.4,396.6 665.3,395.9 666.5,397.9 665.8,400.2 666.7,403.3 666.0,408.1 665.6,407.2 663.8,407.0 663.5,405.4 660.8,402.8 660.6,404.5 659.0,406.0 656.1,406.4 656.5,410.4 654.5,410.7 654.2,412.2 654.7,413.0 650.8,413.8 651.2,414.8 650.8,416.2 649.6,417.0 647.3,416.2 646.5,417.4 645.3,415.6 646.2,414.2 645.7,413.5 646.1,411.9 642.4,409.3 642.3,406.0 641.5,404.5 639.6,404.1 635.3,405.6 633.4,409.0 631.8,409.4 631.5,412.4 630.8,412.6 630.2,411.3 628.7,411.3 627.0,412.5 625.2,412.2 622.9,414.5 621.1,413.3 622.1,411.0 621.5,409.8 616.2,409.2 616.0,410.3 616.5,411.5 614.8,414.1 612.3,416.1 611.2,413.3 611.3,411.3 610.6,410.4 610.5,408.0 608.9,407.7 607.7,406.3 617.7,402.7 622.8,399.5 624.7,397.5 626.4,398.1 628.8,397.7 629.9,397.2 630.2,396.0 630.0,397.1 636.8,390.7 641.1,388.2 643.4,383.4 646.8,380.1 648.1,378.0 649.6,372.4 651.5,368.4 659.8,362.1 665.6,360.2 670.8,355.2 672.8,351.9 673.6,349.1 673.9,342.0 677.2,334.8ZM629.9,368.9 628.4,367.8 630.9,366.7 631.5,365.2 631.3,363.6 633.4,361.6 631.9,359.7 630.9,359.8 630.2,361.6 629.3,360.9 629.5,359.5 629.0,359.0 629.7,358.6 629.8,356.0 631.5,353.9 632.8,350.9 636.9,347.9 637.6,345.4 639.7,344.9 638.9,350.7 637.3,353.3 636.8,356.0 638.5,357.1 641.4,356.0 641.8,357.1 640.8,359.6 639.1,363.6 638.0,364.7 633.9,367.7 629.9,368.9Z","cx":654.6,"cy":388.5,"lon":138.925,"lat":37.373},{"n":"東京","d":"M655.2,457.5 656.1,456.3 658.1,455.6 659.5,456.6 664.4,458.2 668.2,458.4 669.1,460.2 670.7,460.4 671.5,461.7 675.3,461.0 676.9,459.7 677.0,460.8 676.0,461.6 677.2,461.2 677.2,462.1 678.7,461.0 679.9,461.5 680.6,460.1 682.4,460.0 684.1,460.9 684.9,460.1 684.7,459.4 687.1,459.3 687.3,460.3 688.9,460.1 689.1,460.9 689.7,460.8 689.3,461.6 690.6,464.6 689.4,465.6 689.0,467.3 686.6,467.2 686.3,468.1 685.6,467.4 686.2,466.8 685.5,467.2 685.9,466.5 684.9,466.7 684.3,469.6 684.7,470.8 685.8,470.4 686.6,471.9 686.0,472.4 684.8,471.6 682.8,471.9 682.8,471.2 681.4,469.6 677.7,467.6 676.4,467.1 675.3,468.9 674.1,467.9 673.7,468.9 675.7,470.2 675.1,470.8 675.1,469.8 674.5,470.2 674.9,473.4 674.3,473.5 671.7,469.8 667.5,468.5 666.0,468.8 665.1,467.0 663.8,467.0 663.1,466.0 658.2,463.7 655.2,457.5ZM673.2,511.0 670.3,509.9 669.9,507.1 670.4,505.5 673.1,506.8 673.6,509.3 673.2,511.0ZM687.5,585.2 684.7,582.5 684.1,581.3 684.4,580.2 685.3,580.1 687.0,581.8 688.0,582.0 688.4,583.7 687.8,583.9 687.5,585.2ZM675.5,539.8 674.8,539.5 674.5,538.3 675.1,536.5 676.8,536.2 677.6,536.8 677.7,538.7 675.5,539.8ZM667.2,526.8 666.1,525.3 667.4,522.2 667.8,523.3 667.2,526.8ZM679.8,548.5 678.3,548.1 678.7,546.5 679.9,546.9 680.2,547.7 679.8,548.5ZM662.0,533.4 662.2,530.9 663.4,531.3 663.6,532.5 662.0,533.4ZM684.5,469.6 684.8,468.3 685.2,469.9 685.9,470.0 684.5,469.6Z","cx":677.4,"cy":464.9,"lon":139.553,"lat":35.693},{"n":"栃木","d":"M692.2,398.5 698.6,400.6 700.6,402.5 701.0,404.3 702.6,404.2 702.8,407.1 702.3,407.7 703.2,408.5 702.6,409.1 703.3,413.5 702.9,416.1 704.2,418.5 701.6,419.7 702.3,421.4 703.0,427.4 702.0,428.0 700.3,432.8 698.3,432.0 697.3,433.0 696.0,432.5 696.1,433.2 695.2,433.8 693.2,434.2 692.6,433.7 692.3,434.9 690.5,435.6 690.3,437.2 689.2,436.2 688.1,436.7 687.1,440.0 683.7,441.7 681.4,441.5 681.3,440.4 680.2,439.3 680.6,438.8 679.9,438.5 677.7,438.8 676.4,438.0 674.1,438.6 670.4,433.4 672.2,430.0 673.1,429.8 672.6,427.8 673.4,426.7 673.2,426.0 674.8,424.4 674.2,423.3 671.7,423.5 669.2,422.1 669.5,419.4 670.8,417.0 670.1,415.7 672.0,413.2 669.9,412.1 670.2,411.0 672.2,408.7 672.8,408.8 674.0,406.8 676.7,406.3 678.4,404.7 681.4,403.6 681.7,402.8 684.6,402.2 685.4,401.3 687.1,401.5 686.9,400.1 688.7,398.7 692.2,398.5Z","cx":686.1,"cy":421.0,"lon":139.795,"lat":36.658},{"n":"沖縄","d":"M141.0,602.1 141.0,601.5 141.4,601.4 142.3,600.4 142.6,599.5 142.6,598.9 142.9,598.8 143.3,599.5 143.5,599.4 143.9,601.3 143.0,603.0 142.4,603.9 140.9,603.9 141.0,604.5 140.5,604.4 140.9,605.2 140.7,605.5 140.0,605.9 139.0,605.5 139.3,606.2 138.4,606.4 138.5,606.9 137.6,607.2 137.6,607.9 136.3,607.5 135.6,608.0 135.8,608.6 136.4,609.1 136.5,609.9 137.1,610.1 137.1,610.9 136.2,609.8 135.8,610.1 135.9,610.4 135.3,610.8 135.4,611.2 135.1,611.4 134.9,612.3 134.6,612.8 134.4,612.7 134.7,613.4 135.5,613.0 135.6,613.5 133.9,615.1 132.8,615.3 132.9,614.2 132.6,614.0 132.9,613.9 132.6,613.9 132.7,613.4 132.4,613.3 132.4,612.9 132.6,612.5 133.0,612.7 132.8,612.5 133.2,612.3 132.9,611.9 133.2,612.0 133.6,611.3 134.1,611.2 134.4,610.6 133.6,607.8 134.0,608.2 134.6,607.7 135.1,607.9 135.9,607.0 135.8,606.5 137.1,606.2 137.3,605.7 137.8,605.7 138.1,605.1 138.1,604.7 137.5,604.5 136.7,604.4 136.4,603.7 136.7,603.3 136.3,602.7 136.4,602.2 137.7,602.3 138.5,602.7 138.1,603.5 138.8,603.9 140.3,603.1 140.6,603.3 140.1,602.9 141.0,602.1ZM69.6,653.5 67.1,652.5 67.1,653.0 66.4,652.9 66.1,652.4 66.5,652.3 66.5,651.8 66.9,652.2 66.8,651.5 67.6,652.3 67.5,651.6 67.7,651.5 67.5,650.6 68.1,649.7 68.7,650.6 69.0,650.3 69.6,650.4 69.9,650.8 70.7,651.2 70.5,652.2 70.3,652.0 70.1,652.5 70.2,653.0 69.8,652.9 69.6,653.5ZM74.7,651.9 73.6,651.2 74.1,650.2 73.7,649.7 73.1,650.1 72.9,649.8 73.0,649.3 73.7,649.5 73.7,648.7 74.1,649.1 74.1,649.6 75.4,649.3 75.5,648.4 76.0,648.0 76.4,648.2 76.6,647.5 76.4,647.1 76.9,646.1 77.4,646.2 76.8,647.8 75.9,649.1 75.9,651.3 75.7,651.6 75.0,651.4 74.7,651.9ZM93.5,643.9 92.8,643.4 92.6,643.0 92.8,642.7 92.8,643.1 93.1,643.1 92.7,642.2 93.4,641.1 92.7,639.8 93.4,640.4 93.6,641.3 94.0,641.6 94.0,642.1 95.6,642.9 96.2,643.8 94.6,643.5 93.5,643.9ZM117.2,609.8 116.9,609.3 118.1,608.9 118.8,609.8 118.5,610.2 118.6,610.9 118.1,610.6 117.8,609.9 117.2,609.8ZM192.3,620.9 192.0,620.7 192.1,619.9 192.8,619.8 192.9,620.7 192.3,620.9ZM55.3,649.6 54.0,649.4 54.5,648.9 55.3,648.9 55.8,649.1 55.3,649.6ZM91.5,641.8 91.0,641.3 91.1,640.7 91.9,641.1 92.1,641.5 92.0,641.9 91.5,641.8ZM135.2,602.3 134.4,602.2 134.3,601.7 135.2,601.6 135.6,602.0 135.2,602.3ZM137.4,596.3 137.3,595.7 137.6,595.3 138.8,594.2 138.3,595.2 137.5,595.8 137.4,596.3ZM83.3,645.4 82.9,645.3 82.9,644.8 83.8,644.8 83.7,645.3 83.3,645.4ZM127.6,614.0 127.4,613.2 127.7,612.3 128.0,612.8 127.6,614.0ZM137.4,598.0 137.0,597.5 137.4,597.1 137.7,597.5 137.4,598.0ZM68.3,657.8 67.7,657.5 68.5,657.4 68.3,657.8ZM193.6,618.5 193.2,617.8 194.0,618.0 193.6,618.5ZM137.3,610.1 137.5,609.6 138.2,609.0 138.3,609.5 137.3,610.1Z","cx":137.1,"cy":607.4,"lon":127.918,"lat":26.462},{"n":"滋賀","d":"M553.8,464.6 555.1,464.4 558.5,466.3 558.8,468.2 560.1,468.3 559.9,471.5 560.9,472.0 561.9,470.9 562.9,472.3 562.4,474.2 563.6,475.1 563.3,477.3 564.5,478.6 563.4,479.5 563.6,480.6 562.5,483.3 562.8,484.7 562.1,485.3 563.4,486.5 563.2,487.8 564.8,489.4 564.2,490.4 564.6,490.7 564.4,493.4 563.5,494.2 563.4,497.3 561.9,499.0 561.6,500.7 557.4,502.8 554.9,501.5 553.1,501.7 552.4,500.8 551.5,501.9 553.0,502.6 551.5,503.7 551.6,504.8 549.3,505.9 548.7,505.4 549.3,504.5 548.5,504.2 548.5,503.5 546.4,503.1 546.2,501.2 544.7,502.2 543.5,501.3 543.9,498.7 542.9,496.8 542.1,496.8 542.4,496.2 541.8,495.8 542.3,495.3 541.6,494.3 542.4,493.7 543.1,489.4 542.2,486.3 543.3,483.5 542.2,483.8 541.4,482.0 539.8,480.7 540.8,478.8 541.4,478.8 541.6,477.6 543.0,477.6 543.3,478.4 544.4,478.0 545.2,476.7 546.2,472.7 547.7,474.2 548.6,474.0 549.3,472.3 550.9,472.4 551.4,471.8 552.2,472.3 552.5,469.9 554.5,470.6 554.8,469.3 553.2,465.9 553.8,464.6Z","cx":552.5,"cy":485.7,"lon":136.113,"lat":35.234},{"n":"熊本","d":"M370.8,579.0 372.6,580.9 373.1,583.5 374.6,584.8 375.1,586.8 376.4,588.4 375.7,589.2 376.1,592.2 378.8,594.9 376.4,595.2 375.3,597.2 375.7,597.7 375.3,598.9 373.3,600.4 373.2,602.2 372.0,602.0 371.0,603.5 370.7,606.2 368.7,606.1 368.2,607.4 367.4,607.9 367.7,609.1 367.1,610.3 367.5,612.8 368.4,614.1 369.2,614.2 369.5,616.5 370.8,617.8 369.7,619.9 368.7,619.7 368.3,621.4 370.4,623.6 370.8,625.5 368.9,625.7 367.3,624.8 365.8,627.2 364.4,627.5 363.4,626.7 361.6,628.2 358.0,628.3 356.0,627.9 354.1,625.9 353.1,625.7 352.5,624.2 352.0,624.3 351.6,625.7 350.2,626.0 350.1,626.5 347.8,626.4 347.8,627.2 347.0,627.6 345.2,627.3 343.6,624.5 344.3,624.7 344.0,623.5 345.1,622.0 346.5,622.0 346.0,620.7 346.8,620.4 346.8,619.6 347.4,620.2 347.4,619.3 347.7,619.7 348.3,619.3 347.6,619.0 347.4,617.9 348.9,616.7 348.3,616.1 351.3,613.0 351.2,611.1 350.4,611.0 350.2,610.2 351.3,609.6 350.1,608.5 353.5,605.3 352.9,604.7 354.2,604.9 354.5,604.0 354.2,603.5 347.2,605.2 347.2,604.0 352.6,600.3 352.6,598.8 351.9,598.0 352.8,596.7 351.5,595.1 351.7,594.5 349.5,594.0 349.5,592.7 347.3,591.8 347.2,590.9 346.6,591.2 346.1,587.4 345.5,587.1 348.9,587.1 349.2,586.7 348.6,584.9 351.0,583.3 350.9,582.5 351.6,582.0 354.4,582.3 355.2,579.5 355.6,580.4 357.0,580.2 361.2,583.1 362.7,583.3 363.1,584.3 366.4,586.2 367.2,585.3 367.7,583.3 366.0,580.9 366.5,578.9 368.9,578.4 370.8,579.0ZM343.3,614.3 343.2,613.6 342.4,614.6 340.0,614.1 339.7,615.1 339.0,615.2 339.4,614.2 338.2,613.2 337.5,615.1 338.5,614.9 338.6,616.1 337.9,617.9 336.8,618.6 336.9,617.3 336.3,617.5 335.6,619.2 336.5,619.2 333.8,621.1 334.2,622.0 333.8,622.4 333.4,621.7 333.3,623.1 332.1,623.7 331.5,623.0 331.3,624.2 330.9,623.6 330.5,624.1 330.2,623.7 331.0,622.7 330.9,621.9 330.1,621.8 330.5,621.2 329.3,621.7 330.9,619.2 331.4,619.0 331.7,620.3 331.5,619.2 332.4,619.0 332.7,620.1 333.1,619.1 332.0,618.4 331.6,619.0 331.4,618.4 330.3,618.8 329.7,617.7 329.6,616.5 332.2,610.5 331.2,608.4 331.8,608.4 332.1,609.4 334.8,607.8 337.2,607.8 338.0,611.2 337.8,612.4 341.0,610.7 342.0,609.2 344.4,608.9 344.7,610.0 345.7,608.9 347.2,608.6 345.3,612.9 345.8,613.1 345.1,613.4 345.1,614.8 343.4,615.6 343.3,614.3ZM345.9,607.9 345.2,607.6 345.6,606.3 344.8,606.1 345.4,604.8 345.9,605.3 345.7,604.7 346.5,604.3 347.1,604.8 346.5,605.7 347.1,606.0 346.6,606.9 346.9,607.6 345.9,607.9Z","cx":358.5,"cy":605.3,"lon":130.77,"lat":32.604},{"n":"石川","d":"M587.8,384.2 589.1,383.1 594.7,381.2 597.2,382.0 597.0,383.3 597.8,384.9 594.0,385.8 593.3,388.5 593.8,389.4 594.4,389.2 593.8,389.9 594.4,390.1 593.6,391.5 593.1,391.3 593.2,391.9 590.1,391.5 590.2,392.0 588.3,392.7 587.2,395.5 585.6,396.1 585.9,396.5 585.0,397.1 582.7,395.6 583.4,394.7 581.9,394.8 582.2,395.4 581.3,395.5 582.0,396.4 581.3,396.2 580.0,398.9 581.0,399.2 580.8,400.4 579.5,400.6 580.0,401.5 579.5,402.1 582.3,401.5 583.6,403.3 584.8,402.8 585.8,400.6 586.7,400.5 586.4,403.7 586.7,406.9 584.1,406.9 583.7,408.0 582.1,407.7 580.9,408.8 579.4,412.7 579.1,416.4 577.0,418.2 578.0,419.1 578.3,420.4 576.8,422.9 577.1,425.0 578.0,425.8 577.2,427.8 577.3,430.7 576.3,431.6 577.2,432.7 577.7,434.6 576.8,435.3 577.1,437.3 577.9,438.8 579.3,439.6 577.3,443.0 576.2,443.6 576.6,444.8 575.7,447.0 572.8,447.8 568.4,443.8 566.8,444.2 566.1,443.7 564.3,444.6 563.2,443.1 560.8,443.0 560.4,440.5 559.3,439.1 558.0,438.8 557.2,437.5 559.2,434.9 561.0,434.2 563.5,431.8 569.2,424.2 572.7,419.0 575.7,412.3 576.2,409.9 575.5,408.6 576.2,407.1 576.2,405.4 575.3,404.9 575.4,404.1 574.6,402.9 574.8,399.3 574.1,398.7 573.2,399.3 572.7,398.7 573.0,396.1 575.0,392.4 574.7,390.5 575.8,388.9 578.9,387.2 581.9,387.5 587.8,384.2ZM582.7,401.3 581.1,398.5 582.0,398.9 581.9,399.5 582.5,398.8 583.8,399.1 583.5,398.4 584.9,399.2 586.0,397.8 586.6,398.6 586.1,400.1 584.5,400.0 582.7,401.3Z","cx":579.4,"cy":410.1,"lon":136.855,"lat":36.898},{"n":"神奈川","d":"M662.0,465.8 663.1,466.0 663.8,467.0 665.1,467.0 666.5,469.0 667.5,468.5 671.7,469.8 674.3,473.5 674.9,473.4 674.5,470.2 675.1,469.8 675.1,470.8 675.7,470.2 673.6,468.5 674.1,467.9 675.3,468.9 676.4,467.1 681.4,469.6 682.8,471.2 682.8,471.9 684.8,471.6 686.0,472.4 686.1,473.1 685.5,473.2 684.6,472.1 685.0,473.1 684.6,473.2 684.6,472.5 683.9,473.6 683.6,472.9 683.8,473.6 683.4,473.9 683.5,473.2 682.6,474.4 682.3,473.8 682.0,474.8 680.2,475.2 680.2,475.8 681.3,476.3 681.8,475.9 681.8,476.7 682.4,476.4 681.6,478.0 680.2,477.7 680.7,478.0 679.9,478.4 680.2,479.0 681.0,478.7 681.1,479.4 681.1,480.8 679.9,481.3 681.3,481.4 680.3,482.9 681.3,483.5 681.7,482.7 682.4,484.2 684.4,484.8 683.3,485.1 683.6,486.7 681.1,487.9 681.9,490.0 679.5,489.9 679.4,488.9 680.0,489.0 679.1,487.5 680.1,486.6 678.2,484.8 677.9,483.0 676.7,482.3 674.6,482.8 674.6,482.2 673.2,481.9 666.2,483.1 662.6,485.4 662.3,488.2 663.1,489.9 658.3,489.5 658.2,488.4 656.8,487.2 656.4,485.6 656.4,484.5 658.0,481.4 657.3,478.2 654.3,477.7 655.0,475.9 658.2,474.5 659.0,473.2 660.4,473.1 661.4,471.9 662.0,470.7 662.2,468.3 661.6,466.7 662.0,465.8Z","cx":674.6,"cy":477.1,"lon":139.478,"lat":35.423},{"n":"福井","d":"M557.2,437.5 558.0,438.8 559.3,439.1 560.4,440.5 560.5,442.5 561.4,443.4 563.2,443.1 564.9,444.7 566.1,443.7 566.8,444.2 568.4,443.8 572.0,446.7 572.5,447.8 575.7,447.0 576.1,447.8 575.0,448.7 574.7,451.1 575.6,451.3 575.7,452.9 577.1,453.3 576.8,454.3 578.2,455.6 578.4,457.8 577.5,458.0 577.0,460.0 574.6,459.6 572.3,460.7 571.8,459.7 570.9,460.6 570.1,460.1 569.1,461.0 567.4,460.5 566.7,462.2 566.0,461.1 564.1,461.1 562.1,460.2 560.3,461.1 560.1,463.8 558.9,465.0 559.2,465.5 558.5,466.4 555.1,464.4 553.8,464.6 553.2,465.9 554.8,469.3 554.5,470.6 552.5,469.9 552.2,472.3 551.4,471.8 550.9,472.4 549.3,472.3 548.6,474.0 547.7,474.2 546.2,472.7 545.2,476.7 544.4,478.0 543.3,478.4 543.0,477.6 541.6,477.6 541.4,478.8 540.8,478.8 540.0,480.2 537.5,480.7 535.4,479.7 531.2,479.1 531.1,477.2 530.1,477.0 528.7,475.1 529.3,474.1 529.3,473.3 528.4,472.6 528.9,471.3 529.7,471.0 529.1,472.3 529.6,472.1 529.5,472.6 530.5,472.0 530.2,471.2 530.8,471.4 530.5,473.5 531.4,474.1 533.0,473.9 536.0,471.5 536.3,472.5 534.9,472.6 535.4,473.3 534.8,474.1 533.1,474.1 538.1,474.3 539.8,472.0 538.1,472.7 538.1,471.8 537.1,471.4 537.9,470.5 539.2,470.6 539.6,471.7 540.0,471.5 539.8,471.0 541.0,472.5 542.3,472.0 541.1,470.4 542.5,470.8 543.1,469.5 542.3,468.9 542.5,468.1 541.6,467.2 542.7,467.5 543.5,468.7 547.6,467.7 547.8,467.2 547.0,466.5 547.5,464.7 547.3,464.0 546.7,464.4 546.7,463.6 549.0,461.6 549.9,464.3 549.3,465.4 549.9,466.4 551.0,466.2 552.0,461.0 550.9,458.9 548.2,456.0 548.2,453.8 546.8,451.7 548.8,449.3 549.4,446.5 551.8,443.8 552.4,441.6 553.1,442.2 552.8,439.6 554.6,439.4 557.2,437.5Z","cx":550.3,"cy":463.6,"lon":136.054,"lat":35.72},{"n":"福岡","d":"M354.9,545.5 355.9,544.6 357.7,545.3 357.8,544.3 358.4,544.2 358.4,545.0 357.8,545.3 359.8,545.0 360.1,546.2 357.8,547.4 357.5,546.9 357.4,547.5 359.6,546.8 359.5,547.5 360.4,545.5 361.6,545.0 361.4,545.7 362.1,545.5 361.3,546.1 362.2,545.7 362.6,546.1 361.9,546.6 362.7,546.3 362.4,546.8 362.9,546.9 364.3,546.0 365.5,543.5 367.5,543.5 367.6,544.4 366.9,545.2 367.4,545.5 366.4,546.4 367.0,546.7 366.1,547.9 366.7,547.9 366.6,548.6 365.3,549.5 365.6,550.5 366.8,550.2 366.2,551.6 366.7,551.1 366.5,552.1 367.2,551.9 366.9,553.2 367.4,553.1 368.3,555.9 368.8,555.9 370.2,558.9 371.5,558.6 373.5,559.3 373.1,560.6 373.6,562.4 372.8,563.3 373.2,564.2 367.9,563.7 365.9,564.3 363.0,567.0 362.7,570.0 361.9,570.1 360.8,571.7 361.6,572.4 361.9,574.0 361.4,574.6 362.0,575.1 360.6,575.6 360.5,576.5 361.7,576.8 360.9,577.7 362.7,578.8 361.5,582.3 358.5,581.6 357.0,580.2 355.6,580.4 355.2,579.5 354.4,582.3 351.6,582.0 350.9,582.5 351.0,583.3 348.6,584.9 349.2,586.7 348.9,587.1 344.9,587.3 345.8,586.7 345.3,586.6 346.0,585.7 345.9,584.9 345.4,583.3 344.6,583.0 344.9,582.4 344.0,581.8 344.1,580.9 343.4,580.9 342.8,578.0 344.2,577.3 344.0,576.2 344.5,576.3 344.7,575.5 345.6,575.8 346.2,574.0 346.8,575.2 347.5,574.2 347.1,573.6 348.2,573.1 347.9,572.2 350.0,571.7 350.0,567.4 348.5,567.1 345.4,569.3 345.6,568.6 344.9,567.8 343.4,567.6 340.6,565.5 332.2,566.0 332.1,564.7 334.1,563.8 334.9,564.1 335.0,563.4 336.0,562.9 336.5,561.8 334.7,562.4 335.3,561.5 334.1,561.6 333.7,560.7 335.8,560.2 336.2,558.7 337.7,558.1 338.1,557.0 339.1,557.7 338.9,559.2 340.4,559.5 340.4,560.8 344.1,559.8 344.5,560.3 344.7,559.6 345.0,560.0 345.1,559.2 345.5,559.2 345.3,558.1 345.8,557.9 345.2,557.6 346.3,557.2 346.1,556.0 343.9,557.0 343.4,558.0 341.2,557.1 341.0,556.1 342.2,557.3 344.9,556.1 347.5,553.0 347.5,551.7 346.8,551.6 346.6,550.2 347.7,550.1 347.8,548.3 349.3,548.2 349.5,546.8 353.6,547.0 354.7,546.5 354.4,545.9 354.9,545.5Z","cx":353.1,"cy":561.5,"lon":130.622,"lat":33.567},{"n":"福島","d":"M703.8,361.0 706.3,362.2 707.6,362.1 708.4,361.2 710.8,362.4 710.6,363.6 711.3,364.5 714.2,363.5 718.6,365.1 718.5,368.4 720.0,369.9 722.6,370.1 721.4,369.2 721.7,368.8 724.5,369.3 724.7,364.9 726.2,364.3 727.4,364.7 728.4,367.6 729.4,368.0 730.5,374.9 730.9,375.1 731.5,383.6 730.8,390.7 731.2,391.0 730.4,393.9 730.5,395.0 730.9,394.6 730.1,395.8 729.9,400.4 728.9,403.7 729.2,405.7 728.7,406.8 727.0,408.4 726.1,408.0 723.3,409.6 722.1,412.0 716.0,409.8 714.5,408.0 714.1,409.4 715.1,411.2 713.2,411.8 710.4,414.9 709.5,413.5 707.3,412.8 706.8,410.7 705.4,410.3 704.3,408.5 702.4,408.0 702.6,404.2 701.0,404.3 700.6,402.5 698.6,400.6 694.4,398.9 690.0,398.4 687.4,399.4 686.9,400.1 687.1,401.5 685.4,401.3 684.6,402.2 681.7,402.8 681.4,403.6 678.4,404.7 676.7,406.3 674.0,406.8 672.8,408.8 671.6,409.5 665.7,408.3 666.5,405.9 666.1,404.8 666.7,403.3 665.8,400.2 666.5,397.9 665.3,395.9 664.4,396.6 663.3,394.6 665.0,392.4 665.2,390.2 665.8,389.8 665.7,387.8 664.4,386.8 665.1,385.3 670.4,384.1 671.7,384.5 672.8,382.0 677.8,382.6 678.5,382.1 678.7,381.4 677.8,380.6 677.8,378.3 677.2,377.6 677.2,375.9 680.1,374.1 679.9,373.2 681.2,371.1 684.2,368.3 683.1,366.6 682.0,366.9 683.0,366.5 684.2,368.1 685.7,367.6 686.7,368.9 688.4,367.8 689.4,368.6 691.3,367.8 693.3,370.9 695.4,370.0 697.8,372.0 699.6,371.0 702.2,371.5 704.4,368.7 703.1,367.5 703.8,361.0Z","cx":697.9,"cy":387.1,"lon":140.119,"lat":37.403},{"n":"秋田","d":"M725.5,245.8 724.9,249.0 726.0,249.8 729.4,249.6 729.7,253.0 728.5,253.2 727.8,258.7 726.5,259.0 726.0,260.3 724.8,261.2 725.6,261.8 725.1,263.1 725.6,263.9 724.3,265.7 724.3,270.2 725.5,274.7 724.5,275.1 723.6,274.2 722.0,275.2 722.2,277.1 724.4,278.3 722.8,280.6 721.7,281.1 723.5,283.2 723.4,285.0 722.5,287.1 720.1,288.8 720.5,290.2 719.5,291.9 719.9,292.7 718.4,293.7 718.4,295.3 717.5,295.6 717.3,296.7 718.1,297.0 719.2,298.9 718.8,300.8 719.6,301.0 719.7,302.1 722.2,303.7 721.4,305.5 722.9,306.3 720.8,308.2 721.5,308.9 721.0,309.1 720.9,310.6 722.7,311.0 723.0,311.9 721.3,314.5 721.7,316.4 720.3,316.8 717.3,319.5 715.9,319.3 714.0,320.2 713.1,319.0 711.8,319.3 710.4,318.2 709.3,314.9 707.3,314.7 706.7,313.3 705.5,312.9 704.9,313.9 703.1,312.9 700.9,312.9 700.7,311.7 699.1,312.3 695.9,310.3 695.9,308.4 693.9,308.9 693.4,309.7 688.9,309.1 690.0,306.8 689.7,304.7 690.6,302.0 692.9,300.3 694.5,295.4 695.8,286.9 695.4,279.3 695.0,279.7 694.8,277.9 693.5,275.6 690.7,273.6 688.5,273.8 688.1,275.3 684.7,275.5 684.0,273.4 682.9,272.3 682.8,271.6 683.5,271.2 682.8,270.8 682.4,269.2 682.7,268.7 683.5,269.9 686.8,270.9 689.5,268.9 691.9,265.1 693.3,260.8 693.1,259.9 694.1,259.1 693.6,259.0 694.5,253.6 694.0,252.0 691.3,249.6 693.4,249.3 694.3,249.9 694.3,248.7 696.1,247.7 697.5,249.2 705.8,249.1 706.2,247.8 707.7,246.9 709.5,247.3 709.6,248.6 710.5,248.3 712.8,249.4 712.6,250.4 713.2,250.7 714.2,250.9 713.7,249.9 715.0,249.2 717.1,250.7 719.0,249.5 720.2,250.1 720.3,249.0 722.8,248.6 723.4,246.5 725.5,245.8Z","cx":709.2,"cy":279.8,"lon":140.431,"lat":39.764},{"n":"群馬","d":"M644.4,432.2 642.5,431.6 640.3,432.6 638.9,432.1 638.8,432.6 635.5,431.1 635.4,428.7 636.5,425.6 636.5,423.8 638.1,421.6 640.0,421.3 640.4,420.6 639.6,419.5 646.8,417.3 647.3,416.2 649.6,417.0 651.0,415.8 650.8,413.8 654.7,413.0 654.2,412.2 654.5,410.7 656.5,410.4 656.1,406.4 659.0,406.0 660.6,404.5 660.8,402.8 663.5,405.4 663.8,407.0 665.6,407.2 666.0,408.6 667.0,408.1 671.6,409.5 669.9,412.1 672.0,413.2 670.1,415.7 670.8,417.0 669.5,419.4 669.2,422.1 671.7,423.5 674.2,423.3 674.8,424.4 673.2,426.0 673.4,426.7 672.6,427.8 673.1,429.8 672.2,430.0 670.4,433.4 674.1,438.6 676.4,438.0 677.7,438.8 679.9,438.5 680.6,438.8 680.2,439.3 681.6,441.2 680.0,442.4 678.6,441.3 673.9,442.2 670.3,439.4 669.0,440.5 662.0,438.0 659.6,442.0 659.5,443.9 658.8,444.1 658.8,445.0 655.8,445.2 655.3,446.5 652.4,447.4 651.1,449.2 648.4,449.3 646.8,451.6 643.9,449.6 644.3,448.6 643.9,446.7 644.4,445.4 642.7,444.6 641.9,443.3 642.4,442.8 643.1,443.6 644.1,443.0 642.8,438.2 644.7,437.1 644.4,432.2Z","cx":657.8,"cy":429.1,"lon":139.013,"lat":36.479},{"n":"茨城","d":"M714.2,408.3 714.9,407.9 716.0,409.8 721.9,411.5 722.9,413.1 721.6,413.6 720.7,415.4 719.6,420.8 715.8,428.8 716.2,429.0 715.7,430.9 716.3,431.3 715.7,431.3 715.7,432.5 716.3,433.6 714.9,436.8 714.1,437.0 713.9,439.3 715.7,447.0 719.0,453.7 718.2,454.5 717.7,454.1 718.1,455.6 718.7,456.2 718.2,454.9 719.3,454.3 724.3,462.7 723.4,462.7 720.7,460.8 719.2,458.3 716.5,457.3 715.3,455.3 712.1,452.8 711.3,454.2 711.8,455.2 710.2,454.3 706.9,455.4 705.1,457.1 703.8,456.6 702.4,457.5 698.9,457.9 698.0,456.6 696.1,456.4 691.4,453.6 691.2,452.3 689.4,451.4 685.8,446.2 685.2,447.2 683.8,446.9 682.4,443.0 682.4,441.5 683.7,441.7 687.1,440.0 688.1,436.7 689.2,436.2 690.3,437.2 690.5,435.6 692.3,434.9 692.6,433.7 693.2,434.2 695.2,433.8 696.1,433.2 696.0,432.5 697.3,433.0 698.3,432.0 699.3,432.8 700.5,432.5 702.0,428.0 703.0,427.4 702.3,421.4 701.6,419.7 704.2,418.5 702.9,416.5 703.3,413.5 702.8,412.2 702.7,408.7 704.4,408.6 705.4,410.3 706.9,410.9 707.3,412.8 709.5,413.5 710.4,414.9 713.2,411.8 715.1,411.2 714.1,409.4 714.2,408.3Z","cx":706.2,"cy":435.5,"lon":140.348,"lat":36.339},{"n":"長崎","d":"M317.2,570.8 318.1,570.5 318.6,569.1 319.1,569.8 318.4,570.8 318.8,571.2 319.5,570.9 319.4,571.3 320.2,571.5 321.2,570.6 322.2,571.2 322.3,570.4 322.9,570.5 322.9,571.8 321.8,574.1 323.7,576.3 323.9,578.9 326.4,580.2 328.4,579.8 328.9,582.0 327.8,582.4 327.7,583.2 332.7,587.9 337.9,589.2 337.2,591.2 334.5,592.5 333.8,593.6 334.8,593.0 335.5,593.9 335.2,594.5 337.3,594.5 339.3,593.0 341.1,592.8 342.8,593.8 344.2,597.4 344.1,599.1 343.0,600.5 343.2,602.0 341.4,603.1 339.9,603.1 338.9,604.9 337.3,605.0 337.7,605.4 336.6,605.9 336.6,604.5 335.2,603.7 335.1,601.4 335.6,601.9 336.7,601.2 337.8,600.0 338.0,598.5 337.2,598.1 337.5,597.2 337.0,596.6 333.6,596.6 331.3,598.3 328.7,598.2 328.9,599.0 327.8,600.6 327.4,600.4 326.6,602.7 324.6,603.7 324.4,604.7 322.6,606.7 322.0,606.2 321.0,606.9 320.9,606.4 322.4,605.3 323.8,603.0 323.9,601.6 323.4,601.9 323.0,601.2 324.3,600.6 324.0,601.1 324.6,601.4 325.8,598.6 324.9,600.0 323.9,600.0 324.3,598.9 323.4,598.9 323.7,598.2 323.0,597.9 323.3,597.4 322.0,596.4 322.3,595.5 321.3,595.3 321.0,596.1 320.2,594.8 319.7,595.0 317.9,590.4 317.2,590.7 317.0,588.2 318.2,587.3 317.7,585.7 318.8,584.4 318.1,584.1 318.8,583.7 318.2,583.8 318.8,582.8 320.6,583.9 320.6,585.2 321.4,584.5 321.8,585.0 320.8,586.5 321.0,587.8 322.0,587.3 321.5,587.1 321.9,586.3 324.0,588.0 323.5,589.0 323.9,589.8 323.6,591.1 323.2,589.4 322.7,589.6 322.6,591.4 323.5,591.4 323.6,592.0 322.8,593.3 323.8,593.5 325.0,595.0 325.1,593.6 325.7,594.4 326.2,592.6 326.6,593.3 326.7,592.7 328.1,593.7 328.7,593.5 329.7,594.7 330.8,594.3 329.3,593.1 329.4,592.3 328.0,590.8 327.9,588.7 328.7,587.9 328.5,586.6 327.7,585.7 325.9,584.3 324.0,585.6 324.6,584.6 323.2,584.3 323.5,583.8 323.0,583.5 322.0,583.7 322.1,582.7 321.7,583.6 322.5,584.5 321.9,585.0 321.2,584.5 321.4,583.8 320.7,582.8 321.5,582.7 321.2,581.8 321.8,582.1 321.7,581.5 322.3,581.5 321.7,581.3 322.0,580.8 322.7,580.8 321.6,580.6 320.8,581.6 320.6,579.9 319.7,579.9 320.0,582.0 318.5,581.9 318.4,582.7 318.1,581.3 318.9,581.6 319.5,580.8 318.6,579.7 317.3,579.7 318.1,578.8 317.3,577.0 316.9,578.7 316.7,577.4 316.0,577.9 316.5,577.1 315.8,577.8 314.3,577.5 314.9,575.0 315.6,574.7 315.4,574.1 316.8,573.2 315.4,573.4 314.6,572.5 315.1,572.2 314.8,570.1 315.9,570.0 315.7,570.5 316.6,570.2 317.2,570.8ZM308.1,522.5 307.4,522.1 308.0,523.1 307.0,524.2 308.6,523.1 307.7,525.0 308.5,525.4 307.4,526.1 308.5,526.6 307.5,526.4 307.9,527.6 307.4,527.3 307.6,527.7 307.0,528.4 307.1,527.8 306.7,528.2 306.3,527.3 307.0,527.3 306.6,526.5 307.2,526.4 306.6,525.6 307.1,524.8 305.9,525.0 305.4,526.5 305.0,525.0 305.5,524.1 304.5,524.4 304.8,524.9 304.3,525.3 305.0,525.7 304.6,526.4 304.4,525.7 304.4,526.2 302.4,525.4 303.0,525.0 303.3,525.7 304.2,524.9 304.1,521.8 304.8,522.1 305.6,520.7 304.4,521.4 304.1,520.6 305.4,517.9 305.6,518.4 305.8,517.4 306.7,517.6 306.1,517.6 305.3,516.0 304.6,516.4 305.8,512.3 306.3,512.9 307.0,512.3 308.6,512.8 308.1,512.3 308.9,511.1 309.9,511.2 309.3,510.4 310.5,509.7 311.6,510.3 311.4,511.2 312.1,510.7 311.8,511.4 312.2,511.5 311.1,512.1 312.0,512.5 311.3,513.3 311.6,513.7 310.9,513.9 310.4,513.1 310.7,514.0 309.9,513.7 311.6,514.8 311.4,516.5 307.6,521.2 308.1,522.5ZM285.9,606.6 285.2,606.4 284.7,605.2 282.1,605.1 281.6,605.9 279.6,604.8 280.1,603.3 280.2,604.7 280.6,604.2 281.3,605.3 282.1,604.2 281.2,604.6 281.0,603.9 281.6,603.6 281.2,603.0 282.1,603.4 281.5,602.9 282.3,603.1 282.0,602.4 282.4,602.2 281.5,601.8 281.4,601.0 281.9,600.9 281.2,598.1 282.0,597.1 283.2,597.9 283.0,599.1 284.6,598.3 284.2,598.8 284.8,598.6 284.7,599.2 285.4,597.8 285.9,599.4 286.0,598.6 286.8,598.4 285.7,598.2 287.2,596.5 287.1,597.6 287.9,598.2 287.1,598.5 288.1,598.2 287.9,599.1 288.1,598.6 288.9,598.9 288.3,600.3 290.4,603.1 290.3,603.6 287.7,603.8 287.3,603.0 285.8,603.5 285.5,604.6 286.6,605.0 286.7,605.8 285.9,606.6ZM302.0,538.0 301.9,536.7 301.6,537.1 300.8,536.4 300.3,537.1 301.6,526.8 302.4,527.2 302.3,528.5 303.5,527.7 303.7,528.6 304.4,527.9 304.7,529.2 304.7,528.0 303.9,526.9 304.9,527.3 305.0,528.1 305.4,527.8 305.3,529.2 305.4,528.7 305.7,529.2 305.7,528.3 306.8,528.3 307.0,529.2 305.7,529.9 306.0,531.5 305.0,531.7 305.0,533.0 304.6,532.7 304.9,534.5 304.4,534.4 304.4,535.9 303.4,536.1 303.6,536.6 302.9,537.2 302.5,536.7 302.0,538.0ZM296.3,595.6 295.7,595.2 295.6,593.0 296.3,592.4 295.6,591.5 296.4,592.1 296.6,591.6 296.0,590.9 295.1,591.0 295.4,589.6 295.0,590.4 294.7,589.6 293.9,589.7 294.6,588.3 295.3,589.1 295.9,588.4 295.9,589.2 296.6,588.1 295.8,588.0 295.8,586.0 296.6,585.3 296.7,586.4 297.4,586.1 296.9,584.7 298.1,583.3 297.6,581.8 298.4,579.8 297.9,581.6 298.5,582.4 298.3,584.4 297.5,585.5 297.7,587.2 297.2,587.9 298.2,588.1 300.2,586.9 300.8,587.2 300.8,588.5 299.2,590.1 298.5,590.1 297.9,589.0 298.1,590.7 297.3,590.6 297.6,591.7 297.2,592.0 297.8,593.6 296.6,593.5 296.3,595.6ZM307.8,579.6 306.8,579.0 307.1,577.9 307.5,578.8 308.7,579.1 309.0,578.3 308.0,577.9 308.1,577.0 309.0,576.4 309.6,577.1 309.4,576.4 310.0,576.5 308.8,575.2 309.6,574.1 310.4,574.0 309.9,573.0 310.1,571.5 312.3,571.1 312.7,569.9 313.2,571.1 313.2,570.0 314.2,570.0 313.0,569.1 314.3,568.7 314.3,570.5 314.9,571.0 314.0,571.4 314.0,572.2 312.9,572.2 313.5,573.1 311.8,574.3 312.4,575.5 309.9,578.6 307.8,579.6ZM320.2,555.3 318.8,554.2 319.3,553.4 318.6,552.8 318.0,553.7 317.5,552.4 319.1,552.7 318.0,551.8 317.8,550.9 318.4,550.9 317.8,550.6 319.2,550.7 318.6,549.2 319.7,548.1 322.2,549.0 321.9,550.4 321.2,550.5 323.2,551.4 321.7,552.0 323.2,552.6 322.8,553.6 320.8,553.7 320.2,555.3ZM289.3,598.0 288.1,596.5 288.3,594.6 289.2,594.9 289.2,596.3 289.7,596.3 289.2,594.4 290.6,595.4 290.9,596.5 289.3,598.0ZM295.2,594.4 294.7,593.3 293.4,593.7 293.5,593.1 293.0,593.1 292.8,591.7 294.3,592.9 294.2,591.7 293.5,591.5 293.6,590.4 294.7,590.7 295.4,592.0 295.2,594.4ZM298.5,576.1 296.7,575.0 299.1,573.5 299.8,574.9 298.5,576.1ZM292.0,596.4 291.8,595.1 291.1,595.4 291.6,595.1 291.2,594.4 289.6,593.6 290.1,592.9 291.1,593.2 291.7,594.8 291.5,593.0 292.0,594.2 292.0,592.5 292.6,593.1 292.7,594.9 292.0,595.2 292.4,595.6 292.0,596.4ZM309.3,571.3 308.6,570.9 309.9,567.2 310.0,571.1 309.3,571.3ZM323.7,571.4 323.7,569.0 323.1,568.5 324.3,568.8 324.6,569.9 325.4,570.1 323.9,570.7 323.7,571.4ZM320.8,568.8 320.3,568.2 321.2,567.8 321.6,565.9 322.3,566.7 322.0,567.2 323.0,567.7 321.9,567.6 320.8,568.8ZM314.3,565.9 313.4,565.2 312.8,565.4 313.1,565.8 312.3,565.8 314.3,564.1 314.2,565.0 315.4,564.7 314.3,565.9ZM296.0,578.9 295.2,578.2 295.8,577.3 296.6,577.9 297.7,577.5 297.1,577.8 297.4,578.8 296.6,578.4 296.0,578.9Z","cx":324.7,"cy":588.2,"lon":129.84,"lat":32.979},{"n":"長野","d":"M640.0,404.0 641.5,404.5 642.3,406.0 642.4,409.3 646.1,411.9 645.7,413.5 646.2,414.2 645.3,415.6 646.2,417.3 643.1,418.8 640.7,418.9 639.6,419.5 640.4,420.6 640.0,421.3 637.6,422.1 636.5,423.8 636.5,425.6 635.6,427.2 635.5,431.1 637.6,431.8 637.7,432.5 639.3,432.0 640.3,432.6 642.5,431.6 644.5,432.3 644.7,437.1 642.8,438.2 644.1,443.0 643.1,443.6 642.4,442.8 641.9,443.3 642.7,444.6 644.4,445.4 643.9,446.7 644.3,448.6 643.9,449.6 646.8,451.6 647.8,453.7 647.4,455.0 646.1,455.5 645.5,456.8 643.5,456.8 643.0,456.3 643.2,455.0 642.4,454.5 639.5,454.4 638.8,455.6 637.5,455.4 637.3,453.3 634.4,452.2 631.3,457.3 629.6,456.2 627.7,460.2 629.5,461.9 627.5,464.0 628.9,467.1 627.9,470.0 626.9,469.9 626.1,471.1 626.8,471.6 626.0,472.6 626.1,473.6 626.9,473.9 626.8,475.0 625.3,476.0 626.5,478.3 626.1,479.5 624.1,481.0 623.0,480.7 621.7,482.7 618.4,483.8 618.0,484.8 617.2,484.6 616.3,486.4 612.9,487.1 612.2,486.3 609.4,485.7 608.0,486.9 605.7,487.3 604.5,484.8 605.4,483.5 604.9,482.3 606.6,481.1 606.4,479.2 605.5,478.2 607.7,478.1 606.2,476.0 607.6,475.0 607.6,473.2 605.5,471.6 605.4,469.8 604.2,469.8 603.3,468.8 604.5,466.8 602.8,465.1 601.3,461.7 599.1,461.1 598.5,459.9 596.9,460.1 596.5,459.3 596.8,458.0 597.8,457.8 598.5,455.8 600.4,455.2 602.0,455.7 604.4,451.7 606.3,450.3 606.9,447.4 604.7,445.9 604.8,444.5 606.3,443.1 605.5,440.9 608.4,437.1 608.1,435.4 606.0,434.0 606.0,433.2 606.7,431.8 607.7,431.5 609.0,427.7 610.3,427.3 610.4,426.5 609.5,426.4 609.7,425.3 611.9,424.1 611.7,422.8 612.3,420.7 612.0,416.7 614.8,414.1 616.5,411.5 616.0,410.3 616.2,409.2 621.5,409.8 622.1,411.0 621.1,413.3 622.9,414.5 625.2,412.2 627.0,412.5 628.7,411.3 630.2,411.3 630.8,412.6 631.5,412.4 631.8,409.4 633.4,409.0 635.3,405.6 640.0,404.0Z","cx":623.9,"cy":446.1,"lon":138.081,"lat":36.105},{"n":"青森","d":"M721.9,214.0 722.6,208.9 723.3,208.0 723.9,204.7 726.6,201.1 726.2,199.8 726.7,198.7 730.0,201.5 734.0,202.5 736.9,206.0 739.5,207.4 741.0,207.6 743.4,206.8 746.7,204.0 744.1,215.9 743.9,226.7 745.0,234.8 747.6,243.7 749.3,245.1 750.8,244.4 754.7,248.6 751.2,250.5 751.0,252.0 749.4,253.2 747.3,251.9 746.0,251.9 744.7,252.8 744.3,252.3 742.6,254.0 741.4,252.1 737.7,254.7 734.9,255.4 733.6,256.3 733.7,257.4 730.1,259.1 729.2,259.0 728.0,257.3 728.5,253.2 729.7,253.0 729.4,249.6 726.0,249.8 724.9,249.0 725.5,245.8 723.4,246.5 722.8,248.6 720.3,249.0 720.2,250.1 719.0,249.5 717.1,250.7 715.0,249.2 713.7,249.9 714.2,250.9 713.2,250.7 712.6,250.4 712.8,249.4 710.5,248.3 709.6,248.6 709.5,247.3 707.7,246.9 706.2,247.8 705.8,249.1 697.5,249.2 696.1,247.7 694.3,248.7 694.3,249.9 693.4,249.3 691.3,249.6 691.5,244.1 690.6,242.4 688.9,242.5 688.5,241.1 690.1,239.7 691.0,239.8 693.6,235.2 695.5,234.1 698.0,235.3 702.7,232.6 704.6,227.3 705.3,221.5 705.2,219.3 702.6,217.5 704.5,217.6 705.2,216.9 705.9,211.8 710.5,215.3 713.5,213.2 716.5,214.8 717.6,225.9 718.5,229.5 720.2,231.2 722.5,231.0 724.8,228.7 725.2,226.1 724.0,225.7 724.9,225.5 725.5,223.2 728.0,223.9 729.3,225.4 729.0,226.6 732.2,227.5 733.7,229.4 735.8,228.6 737.9,224.9 738.8,218.8 740.0,216.5 738.0,212.1 735.9,210.9 734.8,212.5 735.6,211.6 735.1,212.9 731.9,215.3 729.2,214.5 727.9,215.7 724.5,216.3 723.1,217.7 721.4,217.0 721.3,214.8 721.9,214.0Z","cx":722.9,"cy":233.0,"lon":140.807,"lat":40.793},{"n":"静岡","d":"M628.9,467.1 629.4,467.3 630.7,472.9 629.8,475.6 630.3,477.9 629.4,479.3 630.1,479.9 630.0,481.3 631.3,482.5 632.9,481.5 634.0,481.9 635.4,487.3 637.0,488.3 638.8,488.7 640.3,487.2 639.6,482.1 640.4,481.3 640.3,477.7 642.1,476.1 643.1,478.5 645.1,478.2 645.7,480.1 650.8,479.3 651.9,478.6 652.7,479.0 654.2,478.1 657.3,478.2 658.0,481.4 656.4,484.5 656.4,485.6 656.8,487.2 658.2,488.4 658.3,489.5 661.3,489.9 660.0,492.1 659.8,493.8 660.9,494.3 660.8,496.0 660.3,496.2 660.8,497.5 662.5,498.4 662.6,499.3 662.4,501.3 660.3,503.1 659.0,506.9 657.2,508.1 656.3,510.4 656.8,511.9 655.7,512.1 656.0,511.2 655.4,511.2 653.8,513.2 653.3,513.0 651.6,514.5 649.2,512.7 649.6,511.4 647.8,510.5 647.8,508.8 649.1,507.6 648.3,504.6 648.9,504.4 648.6,503.5 649.1,502.9 648.3,502.4 648.4,501.6 649.6,500.5 648.7,498.1 648.8,497.4 649.2,497.7 649.3,495.6 649.6,495.0 653.3,495.6 653.9,494.2 653.2,494.2 651.0,491.5 645.8,489.8 646.3,490.2 641.2,491.7 640.3,493.8 638.9,494.9 639.2,497.0 639.3,495.7 640.3,495.8 639.7,497.1 633.9,500.2 632.7,502.3 633.3,504.0 631.5,506.3 631.9,506.8 629.2,508.8 628.1,511.4 628.0,512.8 629.4,514.3 629.2,514.8 623.2,512.4 623.3,511.9 623.0,512.4 617.4,511.5 613.7,512.5 611.7,511.5 611.8,511.9 605.9,511.0 602.2,511.2 602.5,510.0 601.9,507.6 602.6,506.1 602.3,504.9 602.9,504.0 606.0,503.2 606.3,502.2 607.9,501.3 608.7,498.8 610.3,497.6 610.1,496.2 610.7,494.8 613.7,491.6 613.4,490.2 614.7,489.4 613.8,488.0 614.7,486.7 616.3,486.4 616.7,485.1 618.0,484.8 618.4,483.8 621.7,482.7 623.0,480.7 624.1,481.0 626.1,479.5 626.5,478.3 625.3,476.0 626.8,475.0 626.9,473.9 626.1,473.6 626.0,472.6 626.8,471.6 626.1,471.1 626.9,469.9 627.9,470.0 628.9,467.1Z","cx":636.5,"cy":493.8,"lon":138.428,"lat":35.057},{"n":"香川","d":"M480.6,534.9 480.2,536.4 477.6,536.5 475.6,538.5 474.7,538.5 473.5,536.6 469.7,537.4 469.2,538.5 467.7,538.3 465.9,539.8 465.6,540.8 464.1,541.3 461.1,539.8 462.2,539.4 462.4,538.6 463.0,533.0 459.7,529.9 460.8,530.0 462.0,531.1 463.8,530.6 463.9,531.7 466.2,529.9 466.0,529.1 467.5,528.7 467.1,528.2 467.7,528.7 467.8,527.7 468.2,528.4 468.1,527.8 469.5,527.1 469.2,525.8 469.9,525.4 469.5,526.2 470.5,525.6 469.7,527.0 471.6,526.3 471.9,524.4 472.9,524.6 473.1,524.1 475.8,525.9 477.9,526.0 478.3,525.4 478.2,526.0 478.5,525.4 478.6,526.0 479.1,524.3 480.2,525.4 480.1,523.7 480.6,523.6 481.6,524.3 481.3,526.2 481.7,527.0 482.6,526.7 482.3,525.8 483.5,525.9 483.4,525.0 484.2,526.5 484.8,525.8 485.4,526.5 484.7,527.8 485.3,529.0 486.9,529.2 488.2,530.3 489.4,529.9 491.7,532.4 490.9,534.7 488.4,533.4 488.2,534.0 486.5,534.2 485.2,533.5 482.0,533.8 480.6,534.9ZM487.8,516.2 489.0,516.3 488.2,517.0 488.8,517.7 488.0,522.1 487.3,521.0 485.8,521.5 486.2,520.8 487.2,520.9 487.1,520.1 486.5,520.0 485.4,520.6 484.2,523.0 484.3,521.9 483.9,521.9 484.5,521.0 484.0,520.0 482.8,519.8 481.3,520.9 480.9,520.5 481.4,519.4 482.3,519.7 481.4,518.9 482.0,517.8 482.5,518.4 485.3,516.7 487.8,516.2ZM478.6,520.9 477.0,519.9 478.7,519.1 479.5,519.5 478.6,520.9ZM464.8,525.8 464.3,525.2 465.3,523.6 465.9,524.9 464.8,525.8ZM475.4,521.7 474.6,520.1 476.2,521.2 475.4,521.7ZM467.2,525.0 466.7,523.7 468.3,524.1 467.2,525.0Z","cx":475.2,"cy":530.2,"lon":133.986,"lat":34.255},{"n":"高知","d":"M460.6,547.8 462.9,547.1 466.6,549.2 469.9,548.9 471.1,550.6 472.6,551.3 473.6,550.9 474.3,549.3 475.2,549.1 475.6,550.0 476.9,549.6 478.2,554.3 477.8,555.9 482.1,556.2 482.4,557.8 481.2,558.7 482.7,561.7 486.9,562.1 483.3,569.3 482.2,576.2 481.2,574.3 479.7,573.8 479.5,572.4 477.2,570.4 476.9,568.5 474.3,567.2 473.4,565.2 467.3,563.8 465.9,562.8 459.9,564.5 459.8,562.2 459.3,563.7 460.3,564.7 455.1,567.4 454.9,566.9 453.9,567.1 454.2,567.6 452.2,568.3 454.1,568.4 454.5,567.3 456.2,567.7 456.0,568.2 454.2,569.2 451.9,569.2 451.0,571.1 451.2,570.1 449.9,569.9 450.5,569.5 449.9,568.8 450.1,569.6 448.8,570.7 449.0,571.8 447.8,572.6 448.9,573.2 448.1,573.8 449.0,575.6 448.4,576.0 448.7,577.0 448.1,577.4 448.1,578.3 447.1,579.0 447.5,580.3 446.4,579.7 445.6,580.4 444.6,582.9 443.2,584.0 442.8,586.2 440.9,585.6 439.8,586.6 439.2,589.5 439.8,592.6 439.2,593.5 437.6,593.8 437.7,595.8 439.5,596.9 440.2,599.8 438.2,599.6 438.4,598.8 437.7,598.0 438.3,597.4 437.5,598.0 437.1,597.0 435.1,596.8 434.7,597.9 434.4,596.8 432.3,598.8 431.1,598.1 430.6,598.5 428.9,596.4 425.9,598.0 426.5,597.0 425.9,596.6 426.9,596.3 426.5,595.5 427.6,594.5 427.0,594.0 428.4,592.4 429.3,592.7 428.7,592.1 429.3,592.0 428.8,590.6 426.9,590.7 426.8,590.0 427.7,589.9 428.2,588.5 427.7,585.5 427.0,584.7 427.4,584.0 427.2,582.3 426.0,581.3 425.6,579.1 426.2,578.8 428.4,581.0 430.0,578.2 431.3,577.9 431.2,576.3 431.9,574.8 435.8,572.7 435.6,571.4 434.4,570.6 432.4,566.3 433.9,565.5 437.8,566.1 440.0,565.4 441.7,562.6 441.1,561.1 442.3,559.6 441.9,559.1 442.2,557.6 443.7,557.3 443.8,555.9 444.7,555.2 445.2,553.2 446.5,551.2 448.0,551.7 449.5,549.5 451.3,550.2 452.3,549.4 453.7,549.8 454.5,549.1 457.5,549.6 459.0,547.4 460.6,547.8Z","cx":448.2,"cy":573.5,"lon":133.241,"lat":33.303},{"n":"鳥取","d":"M489.2,468.4 491.0,470.8 490.7,472.9 491.4,473.5 491.7,476.2 493.2,477.0 492.9,479.2 494.4,480.3 494.0,481.6 494.4,483.7 492.5,485.6 491.5,485.9 490.0,484.9 487.4,487.2 485.9,487.4 485.2,486.8 482.0,488.6 481.3,487.5 481.6,485.9 480.7,485.5 481.2,484.6 480.8,483.7 479.3,482.5 476.1,482.4 475.7,482.1 476.3,480.4 473.3,481.2 473.0,482.4 470.8,483.0 470.8,483.9 469.6,485.0 468.4,483.0 466.5,481.8 464.1,481.9 461.1,480.7 459.7,485.2 457.8,486.0 458.5,488.0 457.6,487.6 455.8,488.5 453.8,488.1 454.1,491.2 451.1,492.1 450.3,491.6 450.0,493.1 449.2,493.7 448.4,492.8 444.4,493.2 444.9,489.9 446.5,488.6 446.0,487.2 445.0,487.1 445.0,486.4 450.7,484.2 450.0,481.8 450.1,480.6 451.2,479.3 451.1,477.9 450.4,476.6 447.5,474.5 446.6,472.4 447.3,471.5 449.1,471.3 448.3,472.0 449.0,473.7 450.8,475.0 453.7,475.7 454.9,475.4 455.6,473.9 460.0,472.2 467.5,473.6 473.4,473.0 476.0,471.9 476.4,472.7 478.6,472.6 484.7,471.3 486.5,469.5 489.2,468.4Z","cx":467.8,"cy":481.3,"lon":133.78,"lat":35.332},{"n":"鹿児島","d":"M352.0,624.3 352.7,624.3 353.1,625.7 354.1,625.9 354.3,626.6 356.7,628.2 356.0,630.1 358.7,632.1 359.5,635.0 362.0,635.8 363.1,637.9 363.7,637.9 362.3,639.9 362.3,641.1 364.3,642.5 366.3,642.8 366.0,644.0 367.3,644.2 367.7,647.9 368.8,649.4 369.7,648.2 371.5,649.7 372.8,649.1 373.6,649.9 374.2,651.9 373.7,652.9 374.0,654.8 373.0,655.5 372.6,657.2 370.8,656.6 368.8,658.1 367.5,660.4 367.4,662.0 370.7,663.2 369.5,664.9 369.7,665.8 371.2,665.2 371.4,665.7 369.2,667.8 367.4,667.8 366.3,670.0 366.6,670.5 365.9,670.6 366.0,671.3 365.4,672.0 362.2,673.9 357.6,675.4 354.5,678.5 355.1,675.8 354.2,675.0 357.6,671.8 358.3,670.0 357.9,668.6 359.2,666.7 359.6,662.9 358.0,659.0 355.8,657.2 355.8,653.0 353.6,653.4 352.0,651.5 353.3,650.0 355.1,649.6 356.5,650.8 356.6,652.7 356.1,652.9 358.3,652.6 360.4,648.4 359.3,646.3 357.3,646.1 357.0,645.3 355.5,644.8 353.3,645.8 352.6,647.2 353.0,648.3 350.9,651.1 350.8,653.4 350.4,653.2 349.7,654.4 349.8,655.2 349.3,655.3 349.9,655.4 349.8,656.2 349.2,655.7 349.1,656.5 349.8,656.8 349.1,657.1 349.6,659.4 350.7,660.7 350.2,660.7 351.2,663.9 353.1,665.7 354.7,666.1 354.1,667.2 354.3,668.3 353.4,668.6 353.7,669.5 352.1,670.1 351.8,671.1 350.6,670.1 349.4,670.7 348.9,670.1 348.9,668.5 347.3,666.8 343.3,666.8 341.1,666.0 340.6,667.0 339.1,666.4 338.3,666.9 338.8,666.0 338.3,665.8 338.8,665.4 337.8,665.4 337.7,664.7 338.6,664.1 336.8,663.5 338.1,662.4 335.3,659.5 334.4,659.5 334.6,659.0 335.4,659.4 336.2,658.2 336.7,659.1 337.3,659.6 337.5,658.7 337.5,659.6 338.7,660.1 340.4,658.8 342.6,653.0 341.9,648.3 341.3,648.1 340.5,646.1 339.7,646.0 339.7,645.0 338.2,643.9 337.3,644.2 336.5,642.1 338.6,636.8 337.8,633.4 336.8,633.1 338.0,630.1 337.5,628.9 336.8,629.2 336.9,628.0 338.6,626.9 340.2,626.9 341.7,627.8 343.3,626.6 343.6,625.1 345.2,627.3 347.0,627.6 347.8,627.2 347.8,626.4 350.1,626.5 350.2,626.0 351.6,625.7 352.0,624.3ZM365.0,694.8 364.6,693.2 366.1,690.7 366.5,690.7 366.9,688.0 368.8,685.5 369.8,688.0 369.6,692.0 368.6,694.2 368.8,696.1 365.4,701.8 366.1,705.6 365.6,705.7 365.6,706.7 364.6,706.6 362.2,708.0 361.4,702.4 362.2,702.5 364.2,698.9 365.0,697.0 365.0,694.8ZM336.3,628.7 334.5,627.0 334.7,625.6 333.8,624.6 334.9,623.6 334.4,623.0 335.5,623.0 336.2,623.9 335.8,622.9 336.1,622.4 336.4,623.1 336.8,622.3 337.8,623.8 337.2,625.3 337.9,625.0 338.1,625.7 336.7,626.6 336.9,627.4 336.3,628.7ZM320.1,649.9 319.8,649.3 319.2,649.9 318.4,649.4 318.1,648.3 318.9,648.0 319.9,645.3 322.3,644.5 322.8,643.2 322.6,642.2 323.2,642.5 323.3,643.6 322.1,645.8 321.0,646.2 321.2,647.0 320.5,647.7 321.0,648.4 320.1,649.9ZM325.8,641.8 325.9,640.9 325.3,640.9 325.6,640.3 324.9,640.5 324.8,639.6 325.6,639.1 325.0,639.3 324.8,638.7 324.5,640.1 324.0,639.8 324.5,638.1 327.2,639.9 327.2,638.7 328.0,638.9 327.9,640.9 327.0,640.7 325.8,641.8Z","cx":352.5,"cy":652.5,"lon":130.607,"lat":31.565}];
+
+const REGIONS = [
+  ['北海道', ['北海道']],
+  ['東北', ['青森','岩手','宮城','秋田','山形','福島']],
+  ['関東', ['茨城','栃木','群馬','埼玉','千葉','東京','神奈川']],
+  ['中部', ['新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知']],
+  ['近畿', ['三重','滋賀','京都','大阪','兵庫','奈良','和歌山']],
+  ['中国', ['鳥取','島根','岡山','広島','山口']],
+  ['四国', ['徳島','香川','愛媛','高知']],
+  ['九州沖縄', ['福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄']],
+];
+const RANKS = [[47,'日本制覇'],[40,'日本を知る者'],[30,'全国区'],[20,'そこそこ旅人'],
+               [10,'県外の民'],[3,'旅の入口'],[1,'まず一歩'],[0,'—']];
+
+const you = new Set(JSON.parse(localStorage.getItem('jp-visited') || '[]'));
+
+// 沖縄の別枠
+{
+  const box = document.createElementNS(NS, 'rect');
+  box.setAttribute('x', 42); box.setAttribute('y', 554);
+  box.setAttribute('width', 164); box.setAttribute('height', 144);
+  box.setAttribute('rx', 8);
+  box.setAttribute('fill', 'none');
+  box.setAttribute('stroke', 'rgba(96,102,88,.22)');
+  box.setAttribute('stroke-dasharray', '3 4');
+  svg.appendChild(box);
+}
+const gLand = document.createElementNS(NS, 'g');
+const gRoute = document.createElementNS(NS, 'g');
+const gText = document.createElementNS(NS, 'g');
+svg.appendChild(gLand); svg.appendChild(gRoute); svg.appendChild(gText);
+
+const nodes = GEO.map(o => {
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', o.d);
+  path.setAttribute('class', 'pref');
+  const t = document.createElementNS(NS, 'text');
+  t.setAttribute('x', o.cx); t.setAttribute('y', o.cy + 3);
+  t.textContent = o.n;
+  gLand.appendChild(path); gText.appendChild(t);
+  const hit = () => {
+    if (VIEW) return;                    // だれかの地図は塗れない
+    you.has(o.n) ? you.delete(o.n) : you.add(o.n);
+    localStorage.setItem('jp-visited', JSON.stringify([...you]));
+    blip(you.has(o.n) ? 880 + Math.random() * 120 : 420, .045, .09);
+    paint();
+  };
+  path.addEventListener('click', hit);
+  t.addEventListener('click', hit);
+  const tip = document.getElementById('tip');
+  const enter = e => {
+    t.classList.add('hov'); path.classList.add('hov');
+    const mine = MINE.has(o.n), yours = you.has(o.n);
+    tip.innerHTML = `${o.n}` +
+      (yours && mine ? '<em class="p">二人とも行った</em>'
+      : yours ? '<em class="p">あなたが行った</em>'
+      : mine ? '<em class="g">黄が行った</em>' : '<em class="n">まだ誰も</em>');
+    tip.classList.add('on');
+    tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
+  };
+  const leave = () => { t.classList.remove('hov'); path.classList.remove('hov'); tip.classList.remove('on'); };
+  path.addEventListener('pointerenter', enter);
+  path.addEventListener('pointermove', e => { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; });
+  path.addEventListener('pointerleave', leave);
+  t.addEventListener('pointerenter', enter);
+  t.addEventListener('pointerleave', leave);
+  return { o, path, t };
+});
+
+/* 選んだ県どうしが隣接していれば線で結ぶ = 旅の道筋になる */
+const LINKS = [];
+for (let a = 0; a < GEO.length; a++) for (let b = a + 1; b < GEO.length; b++) {
+  const A = GEO[a], B = GEO[b];
+  if ((A.n === '沖縄') !== (B.n === '沖縄')) continue;
+  const d = Math.hypot((A.lon - B.lon) * .79, A.lat - B.lat);
+  if (d < 1.5) LINKS.push([A, B]);
+}
+const routeEls = LINKS.map(([A, B]) => {
+  const l = document.createElementNS(NS, 'line');
+  l.setAttribute('class', 'route');
+  l.setAttribute('x1', A.cx); l.setAttribute('y1', A.cy);
+  l.setAttribute('x2', B.cx); l.setAttribute('y2', B.cy);
+  l.style.opacity = 0;
+  gRoute.appendChild(l);
+  return { l, A, B };
+});
+
+const regionsEl = document.getElementById('regions');
+const regionEls = REGIONS.map(([n]) => {
+  const e = document.createElement('span');
+  e.textContent = n;
+  regionsEl.appendChild(e);
+  return e;
+});
+
+/* ── 音と紙吹雪 ── */
+let actx = null;
+const audio = () => (actx ??= new (window.AudioContext || window.webkitAudioContext)());
+function blip(f, v = .06, d = .13, type = 'triangle') {
+  try {
+    const a = audio(), t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + .02);
+  } catch (e) {}
+}
+const chime = () => [784, 1047, 1319].forEach((f, i) => setTimeout(() => blip(f, .05, .5, 'sine'), i * 90));
+const fanfare = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => blip(f, .07, .6), i * 120));
+
+const cvs = document.getElementById('confetti');
+const cx2 = cvs.getContext('2d');
+let bits = [];
+// DPRは無制限にすると大きな窓で1000万画素超の2Dキャンバスになる。紙吹雪にそこまでの解像度は要らない
+const CDR = Math.min(devicePixelRatio || 1, 1.5);
+function sizeCvs() { cvs.width = innerWidth * CDR; cvs.height = innerHeight * CDR;
+  cx2.setTransform(CDR, 0, 0, CDR, 0, 0); }
+sizeCvs();
+addEventListener('resize', sizeCvs);
+function burst(n = 220) {
+  for (let i = 0; i < n; i++) bits.push({
+    x: innerWidth * (.3 + Math.random() * .4), y: innerHeight * .42,
+    vx: (Math.random() - .5) * 13, vy: -6 - Math.random() * 11,
+    r: 2.5 + Math.random() * 5, a: Math.random() * 6.3, va: (Math.random() - .5) * .35,
+    c: Math.random() > .45 ? '#7f8a6b' : Math.random() > .5 ? '#c48d7e' : '#9db3bf', life: 1,
+  });
+}
+(function tick() {
+  requestAnimationFrame(tick);
+  cx2.clearRect(0, 0, innerWidth, innerHeight);
+  if (!bits.length) return;
+  bits = bits.filter(b => b.life > 0);
+  for (const b of bits) {
+    b.vy += .34; b.x += b.vx; b.y += b.vy; b.vx *= .992; b.a += b.va;
+    if (b.y > innerHeight * .62) b.life -= .012;
+    cx2.save(); cx2.translate(b.x, b.y); cx2.rotate(b.a);
+    cx2.globalAlpha = Math.max(0, b.life); cx2.fillStyle = b.c;
+    cx2.fillRect(-b.r, -b.r * .45, b.r * 2, b.r * .9);
+    cx2.restore();
+  }
+})();
+
+let prevFull = new Set(), prevAll = false;
+function paint() {
+  for (const o of nodes) {
+    const mine = MINE.has(o.o.n), yours = you.has(o.o.n);
+    o.path.classList.toggle('mine', mine && !yours);
+    o.path.classList.toggle('yours', yours && !mine);
+    o.path.classList.toggle('both', yours && mine);
+    o.t.classList.toggle('lit', yours || mine);
+  }
+  for (const r of routeEls)
+    r.l.style.opacity = (you.has(r.A.n) && you.has(r.B.n)) ? .55 : 0;
+
+  const m = MINE.size, y = you.size;
+  document.getElementById('s-me').textContent = m;
+  document.getElementById('s-you').textContent = y;
+  document.getElementById('b-me').style.width = m / 47 * 100 + '%';
+  document.getElementById('b-you').style.width = y / 47 * 100 + '%';
+
+  regionEls.forEach((e, i) => {
+    const list = REGIONS[i][1];
+    const got = list.filter(n => you.has(n)).length;
+    const full = got === list.length;
+    e.className = full ? 'full' : got > 0 ? 'part' : '';
+    e.textContent = full ? REGIONS[i][0] : `${REGIONS[i][0]} ${got}/${list.length}`;
+    if (full && !prevFull.has(REGIONS[i][0])) {         // 地方を埋めた瞬間
+      e.classList.add('pop'); chime();
+      setTimeout(() => e.classList.remove('pop'), 700);
+    }
+  });
+  prevFull = new Set(REGIONS.filter(([, l]) => l.every(n => you.has(n))).map(([n]) => n));
+  if (y >= 47 && !prevAll) { prevAll = true; burst(); fanfare(); }
+  if (y < 47) prevAll = false;
+
+  const rk = RANKS.find(([t]) => y >= t)[1];
+  const rEl = document.getElementById('rank');
+  rEl.textContent = rk;
+  rEl.classList.toggle('done', y >= 47);
+
+  const both = [...you].filter(v => MINE.has(v)).length;
+  const only = y - both;
+  const v = document.getElementById('verdict');
+  if (y === 0) v.textContent = '';
+  else if (y >= 47) v.innerHTML = `<span style="color:#7f8a6b">47都道府県、全部。</span>もう行くところがありません。`;
+  else if (y > m) v.innerHTML = `<span style="color:#c48d7e">あなたの勝ちです。</span>${y - m}県ぶん負けました。黄が知らない土地が${only}。`;
+  else if (y === m) v.textContent = `まさかの引き分け。重なりは${both}県。`;
+  else v.innerHTML = `あと<span style="color:#c48d7e">${m - y}県</span>で追いつきます。` +
+       (only ? `黄が知らない土地が${only}。` : '');
+  if (VIEW) v.innerHTML = v.innerHTML.replace(/あなた/g, VIEW.name);
+}
+paint();
+document.getElementById('reset').addEventListener('click', () => {
+  if (VIEW) return;
+  you.clear(); localStorage.removeItem('jp-visited'); paint();
+});
+document.getElementById('w-reset').addEventListener('click', () => {
+  if (VIEW) return;
+  been.clear(); localStorage.removeItem('world-visited-2'); contDone.clear(); worldPaint();
+});
+
+/* ================================================================
+   ③ 共有 — DBなし。地図の状態をリンクの末尾(#s&…)に埋め込む
+   ・v=1 / n=名前 / c=行った国・地域のISO3をつなげたもの / p=47県のビット(6ビットずつ64文字で)
+   ・リンクを開いた人には「○○の地図」が読み取り専用で出る(塗れない・消せない)
+   ・開いたリンクはその人のブラウザに溜まり、「もらった地図」として点数順に並ぶ
+   ================================================================ */
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function encPrefs(set) {
+  let out = '';
+  for (let i = 0; i < PREFS.length; i += 6) {
+    let v = 0;
+    for (let b = 0; b < 6; b++) { const k = i + b; if (k < PREFS.length && set.has(PREFS[k][0])) v |= 1 << b; }
+    out += B64[v];
+  }
+  return out;
+}
+function decPrefs(str) {
+  const out = new Set();
+  for (let k = 0; k < str.length; k++) {
+    const v = B64.indexOf(str[k]); if (v < 0) continue;
+    for (let b = 0; b < 6; b++) { const i = k * 6 + b; if (i < PREFS.length && (v >> b) & 1) out.add(PREFS[i][0]); }
+  }
+  return out;
+}
+function shareHash(name, cSet, pSet) {
+  const q = new URLSearchParams();
+  q.set('v', '1'); q.set('n', name); q.set('c', [...cSet].join('')); q.set('p', encPrefs(pSet));
+  return '#s&' + q.toString();
+}
+function parseShare(hash) {
+  const h = (hash || '').replace(/^#/, '');
+  if (!h.startsWith('s&')) return null;
+  const q = new URLSearchParams(h.slice(2));
+  const name = (q.get('n') || '').trim().slice(0, 12) || 'だれか';
+  const iso = ((q.get('c') || '').match(/.{3}/g) || []).filter(i => byIso.has(i) && !byIso.get(i).x);
+  return { name, c: new Set(iso), p: decPrefs(q.get('p') || ''), hash: '#s&' + q.toString() };
+}
+/* もらった地図(このブラウザの中だけ) */
+const RECV_KEY = 'travel-shares';
+const loadRecv = () => { try { return JSON.parse(localStorage.getItem(RECV_KEY) || '[]'); } catch { return []; } };
+function rememberShare(v) {
+  const list = loadRecv().filter(r => r.n !== v.name);
+  list.unshift({ n: v.name, k: v.c.size, j: v.p.size, h: v.hash, t: Date.now() });
+  localStorage.setItem(RECV_KEY, JSON.stringify(list.slice(0, 30)));
+}
+const OWN = { k: been.size, j: you.size };   // 自分の地図(だれかの地図を見ていても順位に出す)
+function renderRecv() {
+  const list = loadRecv();
+  const box = document.getElementById('recv'), ol = document.getElementById('recv-list');
+  if (!list.length) { box.hidden = true; return; }
+  const rows = [{ n: '自分', k: OWN.k, j: OWN.j, me: true }, ...list]
+    .sort((a, b) => (b.k - a.k) || (b.j - a.j));
+  ol.innerHTML = rows.map((r, i) => `<li class="${r.me ? 'me' : ''}${VIEW && !r.me && r.n === VIEW.name ? ' now' : ''}">` +
+    `<button type="button" ${r.me ? '' : `data-h="${r.h.replace(/"/g, '&quot;')}"`}>` +
+    `<span class="rk">${i + 1}</span><b>${r.n.replace(/[<>&]/g, ch => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[ch]))}</b>` +
+    `<i>${r.k} · ${r.j}県</i></button></li>`).join('');
+  ol.querySelectorAll('button[data-h]').forEach(b => b.addEventListener('click', () => {
+    history.replaceState(null, '', location.pathname + b.dataset.h); location.reload();
+  }));
+  box.hidden = false;
+}
+/* だれかの地図を開いたとき: 自分の状態は触らず、画面の中身だけ入れ替える */
+VIEW = parseShare(location.hash);
+if (VIEW) {
+  rememberShare(VIEW);
+  been.clear(); for (const i of VIEW.c) been.add(i);
+  you.clear(); for (const n of VIEW.p) you.add(n);
+  prevFull = new Set(REGIONS.filter(([, l]) => l.every(n => you.has(n))).map(([n]) => n));
+  prevAll = you.size >= 47;
+  document.body.classList.add('viewing');
+  const who = document.getElementById('who'); who.textContent = `${VIEW.name}の地図`; who.hidden = false;
+  document.querySelector('#wscore .score-row em').textContent = `${VIEW.name}が行った国・地域`;
+  document.querySelector('.score .score-row.you em').textContent = VIEW.name;
+  document.querySelector('.jp-ui p').textContent = `桃色は黄が踏んだ土地。緑は${VIEW.name}の土地。`;
+  paint();
+}
+renderRecv();
+const goOwn = () => { history.replaceState(null, '', location.pathname); location.reload(); };
+document.getElementById('w-own').addEventListener('click', goOwn);
+document.getElementById('j-own').addEventListener('click', goOwn);
+
+/* 共有の小窓 */
+const sbox = document.getElementById('share-box'), sbName = document.getElementById('sb-name'),
+      sbOut = document.getElementById('sb-out'), sbLink = document.getElementById('sb-link'), sbMsg = document.getElementById('sb-msg');
+function openShare() {
+  if (VIEW) return;
+  sbName.value = localStorage.getItem('travel-share-name') || '';
+  sbOut.hidden = true; sbMsg.textContent = '';
+  sbox.classList.add('on'); setTimeout(() => sbName.focus(), 50);
+}
+document.getElementById('w-share').addEventListener('click', openShare);
+document.getElementById('j-share').addEventListener('click', openShare);
+document.getElementById('sb-close').addEventListener('click', () => sbox.classList.remove('on'));
+sbox.addEventListener('click', e => { if (e.target === sbox) sbox.classList.remove('on'); });
+document.getElementById('sb-make').addEventListener('click', () => {
+  const name = sbName.value.trim().slice(0, 12);
+  if (!name) { sbName.focus(); return; }
+  localStorage.setItem('travel-share-name', name);
+  sbLink.value = location.origin + location.pathname + shareHash(name, been, you);
+  sbOut.hidden = false; sbMsg.textContent = `${been.size}の国・地域と${you.size}県が入っています。`;
+});
+document.getElementById('sb-copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(sbLink.value); }
+  catch { sbLink.select(); document.execCommand('copy'); }
+  sbMsg.textContent = 'コピーしました。';
+});
+sbName.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('sb-make').click(); });
+
+worldPaint();
+window.__travel = { dive, paint, worldPaint, repaint, buildArcs, arcs, burst, fanfare, camera, globe, ll, MINE, you, been,
+  look: (lon, lat = 20, dist = null) => {   // 検証用: 指定の経度を正面に、任意で寄る
+    rot = -(lon + 90) * Math.PI / 180; tilt = lat * Math.PI / 180; spin = 0; targetRot = null;
+    if (dist) { camera.position.set(0, dist * .16, dist); camera.lookAt(0, 0, 0); } },
+  WORLD, PLAYABLE, SMALL, marks, byIso, countryAt, pickLatLon, mapCv, coastGeo,
+  VIEW, shareHash, parseShare, encPrefs, decPrefs, loadRecv, openShare,
+  toJapan: () => { mode = 'jp'; document.getElementById('jp').classList.add('on'); } };
+</script>
+</body>
+</html>

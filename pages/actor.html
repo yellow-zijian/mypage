@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>俳優 — 黄梓健</title>
+<style>
+  /* 身体ページの上段(役員紹介の体裁)と同じ作り。左は写真ではなく、オスカーをもらった動画 */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { min-height:100vh; overflow-x:hidden;
+    background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%);
+    font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .sec-profile { min-height:100vh; position:relative; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:12vh 6vw 16vh; }
+  .head { text-align:center; margin-bottom:clamp(30px, 6vh, 60px); }
+  .sec-profile .head { width:min(1080px, 94vw); text-align:left; }
+  h1 { font:800 clamp(22px, 2.8vw, 40px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .back { position:fixed; top:clamp(18px, 3.5vh, 40px); left:clamp(18px, 2.5vw, 40px); z-index:6;
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#6f6d62; text-decoration:none; border:1px solid rgba(96,102,88,.3); border-radius:999px;
+    padding:.9em 1.5em; transition: all .25s ease; background:rgba(255,255,255,.4); backdrop-filter:blur(6px); }
+  .back:hover { border-color:#7f8a6b; color:#4a4a43; box-shadow:0 0 20px rgba(96,102,88,.25); }
+  .bio { width:min(1080px, 94vw); display:grid; gap:clamp(24px, 3.4vw, 56px);
+    grid-template-columns:minmax(0, 300px) minmax(0, 1fr); align-items:start; }
+  @media (max-width: 860px) { .bio { grid-template-columns:1fr; justify-items:center; } .bio-photo { width:min(360px, 100%); } }
+  /* 左: 動画(写真と同じ縦長の額。中央を切り出す) */
+  .bio-photo { margin:0; }
+  .frame { position:relative; aspect-ratio:4/5; border:6px solid #efe9dc; border-radius:2px; overflow:hidden; background:#1a1710;
+    box-shadow:0 18px 46px rgba(80,80,60,.16); }
+  .frame { cursor:pointer; }
+  .frame img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%; display:block;
+    transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .frame:hover img { transform:scale(1.03); }
+  /* 再生の印(触れるものなので桃色)。押すと大きく開いて再生する */
+  .play { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%;
+    background:rgba(196,141,126,.92); box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 0 6px rgba(255,255,255,.45);
+    transition: transform .25s ease; }
+  .play::after { content:""; position:absolute; left:50%; top:50%; margin:-9px 0 0 -6px; border-style:solid; border-width:9px 0 9px 16px;
+    border-color:transparent transparent transparent #fff; }
+  .frame:hover .play { transform:scale(1.08); }
+  /* 拡大して見る窓 */
+  .lb { position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+    background:rgba(14,13,10,.86); backdrop-filter:blur(8px); }
+  .lb.on { display:flex; }
+  .lb video { width:min(92vw, calc((100vh - 120px) * 16 / 9)); aspect-ratio:16/9; background:#000; border-radius:6px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5); outline:none; }
+  .lb-close { position:fixed; right:clamp(16px, 2.5vw, 36px); top:clamp(16px, 3vh, 30px); width:46px; height:46px; border-radius:50%;
+    border:0; cursor:pointer; background:#c48d7e; color:#fff; font:300 26px/1 "Helvetica Neue", Arial, sans-serif;
+    box-shadow:0 8px 24px rgba(0,0,0,.35); transition:.25s ease; }
+  .lb-close:hover { background:#b57b6c; transform:rotate(90deg); }
+  .lb-cap { position:fixed; left:50%; bottom:clamp(18px, 3vh, 34px); transform:translateX(-50%); color:rgba(246,239,226,.8);
+    font:600 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em; white-space:nowrap; }
+  /* ── 下段: 出演作 ── */
+  .sec-films { position:relative; padding:clamp(40px, 8vh, 90px) 6vw clamp(80px, 14vh, 140px); display:flex; flex-direction:column; align-items:center; }
+  .sec-films .head { width:min(1080px, 94vw); text-align:left; margin-bottom:clamp(22px, 4vh, 40px); }
+  .sec-films h2 { font:800 clamp(20px, 2.4vw, 34px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .films { width:min(1080px, 94vw); display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:clamp(20px, 3vw, 44px); }
+  @media (max-width: 860px) { .films { grid-template-columns:1fr; } }
+  .film { cursor:pointer; }
+  .film .shot { position:relative; aspect-ratio:16/9; overflow:hidden; border-radius:4px; background:#1a1710;
+    border:6px solid #efe9dc; box-shadow:0 18px 46px rgba(80,80,60,.16); }
+  .film .shot img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .film:hover .shot img { transform:scale(1.03); }
+  .film .play { width:52px; height:52px; margin:-26px; }
+  .film .play::after { margin:-8px 0 0 -5px; border-width:8px 0 8px 14px; }
+  .film .len { position:absolute; right:10px; bottom:10px; padding:.4em .7em; border-radius:6px; background:rgba(20,18,14,.7); color:#f2efe6;
+    font:600 11px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing:.08em; }
+  .film .t { margin-top:1em; display:flex; align-items:baseline; gap:.8em; flex-wrap:wrap; }
+  .film .t b { font:800 clamp(16px, 1.5vw, 22px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .film .t span { font:600 clamp(10px, .85vw, 12px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.18em; color:#7f8a6b; }
+  .bio-photo figcaption { margin-top:1em; font:500 clamp(10px, .85vw, 12px)/1.7
+    "Hiragino Kaku Gothic ProN", sans-serif; color:#a5a398; }
+  .bio-photo figcaption span { color:#a5a398; }
+  /* 右: 肩書き・名前・経歴 */
+  .bio-role { font:600 clamp(11px, 1vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.24em; color:#7f8a6b; }
+  .bio-name { font:800 clamp(26px, 3vw, 46px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; margin:.45em 0 .1em; }
+  .bio-name small { font-size:.4em; font-weight:600; color:#a5a398; margin-left:.8em; letter-spacing:.06em; }
+  .bio-rows { margin-top:clamp(18px, 2.4vh, 32px); border-top:1px solid rgba(96,102,88,.16); }
+  .bio-row { display:flex; align-items:baseline; justify-content:space-between; gap:1.4em;
+    border-bottom:1px solid rgba(96,102,88,.16); padding:.95em .2em; }
+  .bio-row p { font:700 clamp(13px, 1.25vw, 19px)/1.6 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .tag { font:800 clamp(10px, .9vw, 13px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.14em; padding:.55em 1em; border-radius:999px; flex:none; }
+  .tag.lie { color:#a5a398; border:1px solid rgba(120,124,110,.4); }
+  .tag.tru { color:#ffffff; background:linear-gradient(135deg, #c48d7e, #c48d7e);
+    box-shadow:0 0 16px rgba(196,141,126,.35); }
+</style>
+</head>
+<body>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+
+<section class="sec-profile">
+  <div class="head">
+    <h1>俳優</h1>
+  </div>
+  <div class="bio">
+    <figure class="bio-photo">
+      <div class="frame" id="frame" role="button" aria-label="動画を大きく見る">
+        <img src="../assets/videos/oscar-poster.jpg" alt="" draggable="false">
+        <span class="play"></span>
+      </div>
+      <figcaption>2026年、ドルビー・シアター<br><span>※すべて本人の申告による</span></figcaption>
+    </figure>
+    <div class="bio-body">
+      <p class="bio-role">自称 俳優</p>
+      <h2 class="bio-name">黄 梓健<small>(こう しけん)</small></h2>
+      <div class="bio-rows">
+        <div class="bio-row"><p>アカデミー賞 主演男優賞を受賞。スピーチは踊りで済ませた</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>ハリウッド大作の主演。撮影は3日で終わった</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>代表作は『割って入る』(主演・監督・脚本)</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>セリフはすべてアドリブ。台本は一度も読んだことがない</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>AIをきっかけに、絵コンテやショット割りの設計を勉強し始めた</p><span class="tag tru">本当</span></div>
+        <div class="bio-row"><p>泣く演技は、3秒で涙が出る</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>座右の銘は「カット、もう一回」</p><span class="tag lie">嘘</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-films">
+  <div class="head">
+    <h2>出演作</h2>
+  </div>
+  <div class="films">
+    <div class="film" data-src="../assets/videos/film-1.mp4" data-poster="../assets/videos/film-1-poster.jpg" data-title="あの日のまま" role="button">
+      <div class="shot"><img src="../assets/videos/film-1-poster.jpg" alt="" draggable="false"><span class="play"></span><span class="len">1:01</span></div>
+      <div class="t"><b>『あの日のまま』</b><span>2026 · 短編 · 主演(父)</span></div>
+    </div>
+    <div class="film" data-src="../assets/videos/film-2.mp4" data-poster="../assets/videos/film-2-poster.jpg" data-title="一刀両断" role="button">
+      <div class="shot"><img src="../assets/videos/film-2-poster.jpg" alt="" draggable="false"><span class="play"></span><span class="len">1:06</span></div>
+      <div class="t"><b>『一刀両断』</b><span>2026 · 短編 · 主演(浪人)</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="lb" id="lb">
+  <button class="lb-close" id="lb-close" type="button" aria-label="閉じる">×</button>
+  <video id="oscar" poster="../assets/videos/oscar-poster.jpg" controls playsinline preload="none"></video>
+  <p class="lb-cap" id="lb-cap"></p>
+</div>
+<script>
+  // 額の中は静止画。押すと大きく開いて、そこで初めて再生する(音あり)
+  const lb = document.getElementById('lb'), v = document.getElementById('oscar'), cap = document.getElementById('lb-cap');
+  let cur = '';
+  function open(src, poster, title) {
+    if (cur !== src) { v.src = src; v.poster = poster || ''; cur = src; blobbed = false; }
+    cap.textContent = title || '';
+    lb.classList.add('on'); v.currentTime = 0; v.muted = false; v.volume = .85; v.play().catch(() => {});
+  }
+  document.querySelectorAll('.film').forEach(f => f.addEventListener('click', () => open(f.dataset.src, f.dataset.poster, `『${f.dataset.title}』`)));
+  // 途中の位置へ飛べないサーバー(Range 非対応)で開いたときは、丸ごと取ってから渡し直す。飛べるならそのまま
+  var blobbed = false;
+  v.addEventListener('loadedmetadata', () => {
+    if (blobbed || (v.seekable.length && v.seekable.end(0) > 1)) return;
+    blobbed = true;
+    const t = v.currentTime, src = v.currentSrc;
+    fetch(src).then(r => r.blob()).then(b => { v.src = URL.createObjectURL(b); v.load(); v.currentTime = t; if (lb.classList.contains('on')) v.play().catch(() => {}); }).catch(() => {});
+  });
+  function close() { lb.classList.remove('on'); v.pause(); }
+  document.getElementById('frame').addEventListener('click', () => open('../assets/videos/oscar.mp4', '../assets/videos/oscar-poster.jpg', '2026年、ドルビー・シアター'));
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('on')) close(); }, true);   // 動画の操作部が押されていても拾えるよう先取り
+</script>
+</body>
+</html>

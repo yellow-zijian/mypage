@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070d19">
+  <meta name="description" content="雨の街を、刀で駆け抜けろ。日本語対応の2Dサイバーパンク・アクションゲーム。">
+  <title>雨刃 — NEON RONIN</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="app">
+    <header class="topbar"><a class="wordmark" href="./" aria-label="雨刃 タイトルに戻る">雨刃 <span>NEON RONIN</span></a><div class="top-actions"><span class="chapter-label"><span id="chapter">第一章</span> <b id="chapter-name">雨の境界</b></span><button id="sound" class="icon-button" aria-label="音をオンにする" aria-pressed="false">音 OFF</button><button id="pause" class="icon-button" aria-label="一時停止" disabled>Ⅱ</button><button id="fullscreen" class="icon-button" aria-label="全画面表示">⛶</button></div></header>
+    <section id="stage" aria-label="雨刃 ゲーム画面">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="2D横スクロールゲーム。移動はAとD、ジャンプはW、急降下はS、斬撃はJ、回避はK、弾きはL、強攻撃はI、必殺はR。"></canvas>
+      <div id="hud" hidden><div class="vitals"><div class="hud-name">RONIN <span id="hptext">100 / 100</span></div><div class="health-track"><i id="health"></i></div><div class="dash-track"><i id="dashbar"></i></div><span class="dash-label" id="dashlabel">ダッシュ準備完了</span><div class="stamina-track"><i id="stamina"></i></div><span class="dash-label">気力 <b id="stamina-text">100</b></span></div><div class="objective"><span id="zone">裏路地</span><b id="mission">東の屋上へ向かえ</b><div id="progress"><i></i></div></div><div class="scorebox"><span>SCORE</span><b id="score">000000</b></div></div>
+      <div id="boss-hud" hidden><div><b id="boss-name">機動警備・黒鉄</b> <span id="bossphase">第一形態</span></div><div class="boss-track"><i id="bosshp"></i></div></div>
+      <div id="ability-hud" hidden><span>残心 <b id="focus-text">0%</b></span><div class="focus-track"><i id="focusbar"></i></div><span id="ultimate-label">R / 終ノ一閃</span><small id="shards-hud">記録片 0</small></div><div id="toast" role="status" aria-live="polite"></div>
+      <div id="title" class="overlay title-screen">
+        <div class="title-copy"><div class="eyebrow"><span></span> CYBERPUNK SWORD ACTION</div><h1>雨刃<span>NEON RONIN</span></h1><p class="story">奪われた記録を取り戻す。<br>街の記憶を、夜明けへ。</p><div class="start-actions"><button id="start" class="primary" disabled>素材を読み込み中… <span>→</span></button><button id="continue" class="secondary" hidden>チェックポイントから再開</button><div class="title-links"><button id="stage-select" class="text-button">チャプター選択</button><button id="settings-open" class="text-button">設定</button></div></div><div class="title-meta"><span>全三章 / CAMPAIGN</span><span>弾き・強攻撃・義体強化</span></div></div>
+        <div class="title-portrait" aria-hidden="true"></div><div class="title-side" aria-hidden="true">雨の中に、答えがある。</div>
+      </div>
+      <div id="pause-screen" class="overlay modal-screen" hidden><div class="modal"><span class="eyebrow">PAUSED</span><h2>少し、息を整える。</h2><p>J で連撃、I で強攻撃、L で弾き。<br>橙色の範囲攻撃は、跳躍かダッシュで回避。</p><button id="resume" class="primary">ゲームに戻る <span>→</span></button><button id="restart" class="secondary">チェックポイントからやり直す</button><button id="pause-settings" class="secondary">設定・操作変更</button><button id="quit" class="text-button">タイトルに戻る</button></div></div>
+      <div id="death-screen" class="overlay modal-screen" hidden><div class="modal"><span class="eyebrow danger">SIGNAL LOST</span><h2>まだ、終われない。</h2><p>記録はチェックポイントに残っている。<br>ダッシュ中は敵の攻撃をすり抜けられる。</p><button id="retry" class="primary">再挑戦 <span>→</span></button><button id="death-title" class="text-button">タイトルに戻る</button></div></div>
+      <div id="win-screen" class="overlay modal-screen" hidden><div class="modal win-modal"><span class="eyebrow">MISSION COMPLETE</span><h2 id="clear-title">章、完了。</h2><p id="clear-story"></p><div class="results"><div><span>評価</span><strong id="rank">A</strong></div><div><span>スコア</span><b id="final-score">0</b></div><div><span>時間</span><b id="final-time">00:00</b></div></div><p id="best" class="best"></p><div id="upgrade-shop"><div class="shop-heading">義体調整 <span id="shards-shop">記録片 0</span></div><div id="upgrade-list"></div></div><button id="next-stage" class="primary">次の章へ <span>→</span></button><button id="again" class="secondary">この章を再挑戦</button><button id="win-title" class="text-button">タイトルに戻る</button></div></div>
+      <div id="touch-controls" hidden><div class="touch-move"><button data-key="left" aria-label="左へ移動">◀</button><button data-key="right" aria-label="右へ移動">▶</button></div><div class="touch-actions"><div class="touch-extra"><button data-key="parry">弾く</button><button data-key="heavy">強撃</button><button data-key="ultimate">必殺</button></div><button data-key="dash">回避</button><button data-key="jump">跳ぶ</button><button data-key="attack" class="attack-button">斬る</button></div></div>
+    </section>
+    <footer class="controlbar"><div><kbd>A</kbd><kbd>D</kbd><span>移動</span><kbd>W</kbd><span>二段ジャンプ</span><kbd>S</kbd><span>急降下</span><kbd>J</kbd><span>斬撃</span><kbd>K</kbd><span>ダッシュ</span><kbd>L</kbd><span>弾き</span><kbd>I</kbd><span>強攻撃</span><kbd>R</kbd><span>必殺</span></div><button id="help" class="text-button">遊び方 <span>?</span></button></footer>
+    <dialog id="help-dialog"><button id="close-help" class="close" aria-label="閉じる">×</button><span class="eyebrow">HOW TO PLAY</span><h2>雨の街を、駆け抜けろ。</h2><dl><div><dt>移動</dt><dd>A / D（← / → も使用可能）</dd></div><div><dt>ジャンプ</dt><dd>W / SPACE / ↑ ・空中でもう一度</dd></div><div><dt>急降下</dt><dd>S / ↓ ・空中で押すと素早く着地</dd></div><div><dt>刀で攻撃</dt><dd>J / Z ・長押しでも三連撃</dd></div><div><dt>高速ダッシュ</dt><dd>K / X / SHIFT ・発動中は無敵</dd></div><div><dt>弾き・カウンター</dt><dd>L / C ・敵の攻撃直前に入力</dd></div><div><dt>強攻撃</dt><dd>I / V ・気力32で盾を崩す</dd></div><div><dt>終ノ一閃</dt><dd>R / O ・残心100%で発動</dd></div><div><dt>一時停止</dt><dd>ESC / P</dd></div></dl><p>赤い近接予兆は弾きで反撃。橙色の範囲は弾けないので回避。盾兵は強攻撃または背後から崩します。弾き成功後の一撃は威力1.5倍。敵弾は弾き返せます。青い端末で回復と保存。全3ステージのボスを倒すとエンディングです。</p><p class="small">ゲームパッド: 左スティック/十字キー=移動、A=跳躍、X=連撃、Y=強攻撃、B=回避、LB=弾き、RB=必殺、START=一時停止。設定でキーを変更できます。保存はこのブラウザ内です。</p></dialog>
+
+    <dialog id="chapters-dialog"><button id="close-chapters" class="close" aria-label="閉じる">×</button><span class="eyebrow">CHAPTERS</span><h2>夜明けへの道。</h2><div id="chapter-list"></div><p class="small">クリアすると次の章が解放されます。義体強化を引き継いで再挑戦できます。</p></dialog>
+    <dialog id="settings-dialog"><button id="close-settings" class="close" aria-label="閉じる">×</button><span class="eyebrow">SETTINGS</span><h2>あなたの戦い方で。</h2><div class="settings-grid"><label>難易度<select id="difficulty"><option value="story">物語 / 被ダメージ軽減</option><option value="standard">標準</option><option value="expert">修羅 / 高難度</option></select></label><label>効果音の音量<input type="range" id="volume" min="0" max="100" value="60"></label><label class="check-label"><input type="checkbox" id="reduce-motion">画面の揺れ・点滅を抑える</label><label class="check-label"><input type="checkbox" id="low-effects">軽量表示（雨・発光を削減）</label></div><p class="small">難易度は次回の章開始・再挑戦から適用されます。</p><h3>キー設定</h3><div id="keybind-list"></div><button id="reset-keys" class="secondary">キー設定を初期値に戻す</button><p id="binding-status" role="status" class="small"></p></dialog>
+    <noscript>このゲームを遊ぶにはJavaScriptを有効にしてください。</noscript>
+  </main>
+  <script src="./content.js"></script><script src="./engine.js"></script><script src="./game.js"></script>
+</body>
+</html>

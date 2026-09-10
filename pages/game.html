@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ゲーム — 黄梓健</title>
+<style>
+  /* ================================================================
+     ゲーム — 古いテレビの画面の中で遊ぶ
+     ・テレビは CSS だけで描く(木目の台・クリーム色の筐体・黒い縁・つまみ・スピーカー)
+     ・画面の中は iframe(games/neon-ronin/)。走査線と反射は上に重ねるだけで、操作は素通し
+     ・電源のつまみで点けたり消したりできる。点けるとブラウン管の起動(白い線→広がる→砂嵐)
+     ・?embed=1 で landing のポップアップ用(背景は透明、「閉じる」で親に知らせる)
+     ================================================================ */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%);
+    font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  body.embed { background:transparent; }
+
+  .back { position:fixed; z-index:20; left:clamp(18px, 2.5vw, 40px); top:clamp(18px, 3vh, 34px);
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#7a786e; text-decoration:none; border:1px solid rgba(96,102,88,.3); border-radius:999px;
+    padding:.85em 1.4em; background:rgba(255,255,255,.55); backdrop-filter:blur(6px); transition:.25s ease; }
+  .back:hover { border-color:#7f8a6b; color:#4a4a43; }
+  body.embed .back { display:none; }
+  .close { display:none; position:fixed; z-index:20; right:clamp(16px, 2.5vw, 36px); top:clamp(16px, 3vh, 30px);
+    width:46px; height:46px; border-radius:50%; border:0; cursor:pointer; background:#c48d7e; color:#fff;
+    font:300 26px/1 "Helvetica Neue", Arial, sans-serif; box-shadow:0 8px 24px rgba(0,0,0,.25); transition:.25s ease; }
+  .close:hover { background:#b57b6c; transform:rotate(90deg); }
+  body.embed .close { display:block; }
+
+  /* ── テレビ ── */
+  .tv { --w: min(94vw, calc((100vh - 110px) * 1.46)); width:var(--w); position:relative;
+    filter: drop-shadow(0 30px 40px rgba(60,55,40,.28)); }
+  body.embed .tv { --w: min(94vw, calc((100vh - 90px) * 1.46)); }
+  .body { display:grid; grid-template-columns: 1fr clamp(92px, 21%, 190px); gap: clamp(10px, 2.2%, 26px);
+    padding: clamp(12px, 2.6%, 30px); border-radius: clamp(14px, 2.4vw, 30px);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 30%),
+      linear-gradient(135deg, #ebe2d0 0%, #dfd4bf 55%, #d3c6ad 100%);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(120,100,70,.25); }
+  /* 木目の台座 */
+  .base { height: clamp(14px, 2.2vw, 26px); margin: 0 3%; border-radius: 0 0 10px 10px;
+    background: repeating-linear-gradient(90deg, #c9b995 0 7px, #bfae88 7px 9px, #c4b48f 9px 18px, #b8a67f 18px 20px);
+    box-shadow: inset 0 3px 0 rgba(255,255,255,.25), inset 0 -4px 0 rgba(80,65,40,.25); }
+  .feet { display:flex; justify-content:space-between; padding: 0 8%; }
+  .feet i { width: clamp(28px, 5%, 60px); height: clamp(8px, 1.1vw, 14px); background:#6f6d62; border-radius:0 0 6px 6px; }
+
+  /* 画面: 黒い縁 → 少し丸いガラス */
+  .bezel { padding: clamp(10px, 2.2%, 24px); border-radius: clamp(10px, 1.8vw, 22px);
+    background: linear-gradient(160deg, #46453f, #2f2e2a 60%, #24231f);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), inset 0 2px 6px rgba(0,0,0,.5); }
+  .screen { position:relative; aspect-ratio: 4 / 3; overflow:hidden; background:#06090f;
+    border-radius: clamp(8px, 1.6vw, 20px) / clamp(10px, 2vw, 26px);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.9); }
+  .screen iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:#070d19; display:block; }
+  /* 走査線・周辺減光・ガラスの反射。操作は下の iframe へ素通し */
+  .crt { position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px),
+      radial-gradient(120% 110% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);
+    mix-blend-mode: multiply; }
+  .glass { position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background: linear-gradient(115deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.05) 18%, transparent 30%, transparent 70%, rgba(255,255,255,.04) 100%); }
+  /* 消えている画面: 暗いガラスに部屋の光が映る */
+  .off { position:absolute; inset:0; border-radius:inherit; transition: opacity .35s ease;
+    background:
+      linear-gradient(115deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 22%, transparent 34%),
+      radial-gradient(90% 70% at 50% 45%, #2a2d32 0%, #15171a 60%, #0b0c0e 100%); }
+  .tv.on .off { opacity:0; pointer-events:none; }
+  /* 起動: 白い線が縦に広がり、砂嵐がひとつ入って消える */
+  .boot { position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; }
+  .boot i { position:absolute; left:0; right:0; top:50%; height:2px; background:#fff; transform:translateY(-50%) scaleX(0);
+    box-shadow:0 0 18px 6px rgba(255,255,255,.9); }
+  .boot b { position:absolute; inset:0; opacity:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.15) 0 1px, transparent 1px 2px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.25) 0 1px, transparent 1px 3px),
+      radial-gradient(circle at 30% 40%, #cfd4c3, #6f6d62 40%, #2a2a26 100%); }
+  .tv.booting .boot { opacity:1; }
+  .tv.booting .boot i { animation: bootLine 1.25s cubic-bezier(.2,.8,.2,1) forwards; }
+  .tv.booting .boot b { animation: bootNoise 1.25s linear forwards; }
+  @keyframes bootLine {
+    0%   { transform:translateY(-50%) scaleX(0); height:2px; }
+    35%  { transform:translateY(-50%) scaleX(1); height:2px; }
+    60%  { transform:translateY(-50%) scaleX(1); height:140%; opacity:1; }
+    100% { transform:translateY(-50%) scaleX(1); height:140%; opacity:0; } }
+  @keyframes bootNoise {
+    0%, 45% { opacity:0; } 55% { opacity:.9; } 70% { opacity:.6; } 85% { opacity:.25; } 100% { opacity:0; } }
+
+  /* ── 右のパネル: 銘板・つまみ・スピーカー ── */
+  .panel { display:grid; grid-template-rows: auto auto auto 1fr auto; gap: clamp(8px, 1.6vw, 18px); align-items:start; justify-items:center;
+    padding-top: clamp(4px, .8vw, 10px); }
+  .brand { font:800 clamp(10px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.3em; color:#7a786e;
+    text-shadow:0 1px 0 rgba(255,255,255,.7); }
+  .knob { display:grid; justify-items:center; gap:.45em; cursor:pointer; user-select:none; }
+  .knob i { display:block; width: clamp(34px, 3.6vw, 56px); height: clamp(34px, 3.6vw, 56px); border-radius:50%; position:relative;
+    background: radial-gradient(circle at 35% 30%, #5d5b53, #2e2d29 65%, #1c1b18 100%);
+    box-shadow: 0 3px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.18), 0 6px 14px rgba(60,50,30,.3);
+    transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  .knob i::after { content:""; position:absolute; left:50%; top:9%; width:3px; height:30%; margin-left:-1.5px; border-radius:2px; background:#e6dccb; }
+  .knob.small i { width: clamp(26px, 2.6vw, 42px); height: clamp(26px, 2.6vw, 42px); }
+  .knob em { font-style:normal; font:700 clamp(8px, .7vw, 11px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.2em; color:#8a8676; }
+  .knob.power:hover i { transform:scale(1.05); }
+  .tv.on .knob.power i { transform:rotate(90deg); }
+  .tv.on .knob.power:hover i { transform:rotate(90deg) scale(1.05); }
+  .led { width:9px; height:9px; border-radius:50%; background:#8a8676; box-shadow: inset 0 1px 2px rgba(0,0,0,.4); transition:.3s ease; }
+  .tv.on .led { background:#c48d7e; box-shadow: 0 0 10px 2px rgba(196,141,126,.75); }
+  .speaker { width:100%; align-self:end; height: clamp(50px, 9vw, 120px); border-radius:8px;
+    background: repeating-linear-gradient(0deg, #c9bfa9 0 2px, transparent 2px 6px);
+    -webkit-mask: radial-gradient(120% 90% at 50% 50%, #000 60%, transparent 100%); mask: radial-gradient(120% 90% at 50% 50%, #000 60%, transparent 100%); }
+
+  /* 縦画面: パネルを画面の下に横並び */
+  @media (max-width: 860px), (max-aspect-ratio: 1/1) {
+    .tv { --w: min(96vw, calc((100vh - 130px) * 1.05)); }
+    body.embed .tv { --w: min(96vw, calc((100vh - 110px) * 1.05)); }
+    .body { grid-template-columns: 1fr; gap: 10px; }
+    .panel { grid-template-rows: none; grid-template-columns: auto auto auto 1fr auto; align-items:center; padding-top:0; }
+    .speaker { height: 34px; }
+    .brand { display:none; }
+  }
+</style>
+</head>
+<body>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+<button class="close" id="close" aria-label="閉じる">×</button>
+
+<div class="tv on" id="tv">
+  <div class="body">
+    <div class="bezel">
+      <div class="screen" id="screen">
+        <iframe id="game" title="雨刃 — NEON RONIN" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+        <div class="crt"></div>
+        <div class="glass"></div>
+        <div class="boot" id="boot"><b></b><i></i></div>
+        <div class="off"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="brand">黄電機</div>
+      <div class="knob power" id="power"><i></i><em>電源</em></div>
+      <div class="knob small" id="dial"><i></i><em>チャンネル</em></div>
+      <div class="speaker"></div>
+      <div class="led" id="led"></div>
+    </div>
+  </div>
+  <div class="base"></div>
+  <div class="feet"><i></i><i></i></div>
+</div>
+
+<script>
+(() => {
+  const EMBED = new URLSearchParams(location.search).has('embed');
+  if (EMBED) document.body.classList.add('embed');
+  const tv = document.getElementById('tv');
+  const frame = document.getElementById('game');
+  const boot = document.getElementById('boot');
+  const SRC = '../games/neon-ronin/index.html';
+  let on = false, bootTimer = 0;
+
+  function powerOn() {
+    if (on) return; on = true;
+    tv.classList.add('on', 'booting');
+    // 起動の白い線のあいだに読み込む(砂嵐が消えるころにゲームの題名画面が出る)
+    if (!frame.src || frame.src.endsWith('about:blank')) frame.src = SRC;
+    clearTimeout(bootTimer);
+    bootTimer = setTimeout(() => { tv.classList.remove('booting'); frame.focus(); }, 1300);
+  }
+  function powerOff() {
+    if (!on) return; on = false;
+    clearTimeout(bootTimer);
+    tv.classList.remove('on', 'booting');
+    frame.src = 'about:blank';   // 消したら音も止める
+  }
+  document.getElementById('power').addEventListener('click', () => on ? powerOff() : powerOn());
+  // チャンネルのつまみは回るだけ(遊び)
+  let dial = 0;
+  document.getElementById('dial').addEventListener('click', e => { dial += 45; e.currentTarget.querySelector('i').style.transform = `rotate(${dial}deg)`; });
+
+  // 親(landing のポップアップ)に閉じるを伝える
+  const close = () => { if (EMBED) parent.postMessage({ type: 'tv:close' }, '*'); };
+  document.getElementById('close').addEventListener('click', close);
+  addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  // 開いたら点ける
+  tv.classList.remove('on');
+  setTimeout(powerOn, EMBED ? 250 : 350);
+  window.__tv = { powerOn, powerOff, get on() { return on; }, frame };
+})();
+</script>
+</body>
+</html>

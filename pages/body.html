@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ボディビルダー — 黄梓健</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { min-height:100vh; overflow-x:hidden;
+    background: radial-gradient(120% 100% at 50% 20%, #f7f4ed 0%, #efece3 60%, #e4e2d6 100%);
+    font-family:"Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  /* ── 上段: 経歴紹介 ── */
+  .sec-profile { min-height:100vh; position:relative; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:12vh 6vw 16vh; }
+  .head { text-align:center; margin-bottom:clamp(30px, 6vh, 60px); }
+  .sec-profile .head { width:min(1080px, 94vw); text-align:left; }
+  .eyebrow { font:600 clamp(11px, 1.05vw, 16px)/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing:.4em; color:#7f8a6b; margin-bottom:1em; }
+  h1 { font:800 clamp(22px, 2.8vw, 40px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .back { position:fixed; top:clamp(18px, 3.5vh, 40px); left:clamp(18px, 2.5vw, 40px); z-index:6;
+    font:700 clamp(12px, 1vw, 15px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.12em;
+    color:#6f6d62; text-decoration:none; border:1px solid rgba(96,102,88,.3); border-radius:999px;
+    padding:.9em 1.5em; transition: all .25s ease; background:rgba(255,255,255,.4); backdrop-filter:blur(6px); }
+  .back:hover { border-color:#7f8a6b; color:#4a4a43; box-shadow:0 0 20px rgba(96,102,88,.25); }
+  /* 役員紹介ページの体裁を借りた自己紹介(左=写真、右=肩書き・名前・経歴) */
+  .bio { width:min(1080px, 94vw); display:grid; gap:clamp(24px, 3.4vw, 56px);
+    grid-template-columns:minmax(0, 300px) minmax(0, 1fr); align-items:start; }
+  @media (max-width: 860px) { .bio { grid-template-columns:1fr; justify-items:center; } }
+  .bio-photo { margin:0; }
+  .bio-photo.none img { display:none; }
+  .bio-photo.none::before { content:"PHOTO"; display:flex; align-items:center; justify-content:center;
+    aspect-ratio:4/5; border:1px dashed rgba(96,102,88,.3); border-radius:4px; color:#c9c7bd;
+    font:700 12px/1 "Helvetica Neue", sans-serif; letter-spacing:.4em; }
+  .bio-photo img { width:100%; aspect-ratio:4/5; object-fit:cover; display:block;
+    filter:grayscale(1) contrast(1.06); border:6px solid #efe9dc; border-radius:2px;
+    box-shadow:0 18px 46px rgba(80,80,60,.16); }
+  .bio-photo figcaption { margin-top:1em; font:500 clamp(10px, .85vw, 12px)/1.7
+    "Hiragino Kaku Gothic ProN", sans-serif; color:#a5a398; }
+  .bio-photo figcaption span { color:#a5a398; }
+  .bio-role { font:600 clamp(11px, 1vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.24em; color:#7f8a6b; }
+  .bio-name { font:800 clamp(26px, 3vw, 46px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; margin:.45em 0 .1em; }
+  .bio-name small { font-size:.4em; font-weight:600; color:#a5a398; margin-left:.8em; letter-spacing:.06em; }
+  .bio-rows { margin-top:clamp(18px, 2.4vh, 32px); border-top:1px solid rgba(96,102,88,.16); }
+  .bio-row { display:flex; align-items:baseline; justify-content:space-between; gap:1.4em;
+    border-bottom:1px solid rgba(96,102,88,.16); padding:.95em .2em; }
+  .bio-row p { font:700 clamp(13px, 1.25vw, 19px)/1.6 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .tag { font:800 clamp(10px, .9vw, 13px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.14em; padding:.55em 1em; border-radius:999px; flex:none; }
+  .tag.lie { color:#a5a398; border:1px solid rgba(120,124,110,.4); }
+  .tag.tru { color:#ffffff; background:linear-gradient(135deg, #c48d7e, #c48d7e);
+    box-shadow:0 0 16px rgba(196,141,126,.35); }
+  .tag.maybe { color:#c48d7e; border:1px solid rgba(196,141,126,.55); }
+  /* ── 下段: 3D遊び場 ── */
+  .sec-stage { position:relative; height:100vh; }
+  #stage { position:absolute; inset:0; }
+  .loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font:600 clamp(12px, 1.1vw, 16px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#a5a398; letter-spacing:.2em; pointer-events:none; transition:opacity .5s ease; }
+  .rightcol { position:absolute; right:clamp(16px, 2.5vw, 44px); top:50%; transform:translateY(-50%);
+    width:clamp(280px, 24vw, 380px); z-index:5; display:flex; flex-direction:column;
+    gap:clamp(10px, 1.4vh, 18px);
+    transition: opacity .45s ease, transform .45s cubic-bezier(.22,.9,.3,1); }
+  .rightcol.away { opacity:0; transform:translateY(-50%) translateX(46px); pointer-events:none; }
+  .panel { width:100%;
+    background:rgba(255,255,255,.78); border:1px solid rgba(96,102,88,.22); border-radius:18px;
+    padding:clamp(16px, 1.6vw, 26px); backdrop-filter: blur(10px); }
+  .go { text-align:center; }
+  .go span { display:block; font:600 clamp(10px, .85vw, 13px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.22em; color:#a5a398; margin-bottom:.75em; }
+  .rank-label { font:600 clamp(10px, .85vw, 13px)/1 "Helvetica Neue", sans-serif;
+    letter-spacing:.3em; color:#7f8a6b; }
+  .rank-val { display:flex; align-items:baseline; gap:.5em; margin:.5em 0 .3em; }
+  .rank-val b { font:800 clamp(22px, 2vw, 34px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; white-space:nowrap; transition: color .35s ease, text-shadow .35s ease; }
+  .rank-val b.gold { color:#c48d7e; text-shadow:0 0 22px rgba(196,141,126,.65); }
+  .rank-bar { height:6px; border-radius:3px; background:rgba(96,102,88,.14); overflow:hidden; margin:.9em 0 0; }
+  .rank-bar i { display:block; height:100%; width:50%; border-radius:3px;
+    background:linear-gradient(90deg, #a9b394, #c48d7e); transition: width .3s ease; }
+  hr { border:none; border-top:1px solid rgba(96,102,88,.16); margin:clamp(12px, 1.3vh, 18px) 0; }
+  .m-name { font:800 clamp(18px, 1.7vw, 26px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:#ff6b5e; }
+  .m-en { font:600 clamp(10px, .85vw, 13px)/1 "Helvetica Neue", sans-serif; letter-spacing:.2em;
+    color:#a5a398; margin:.3em 0 .8em; }
+  .m-desc { font:500 clamp(12px, 1vw, 15px)/1.8 "Hiragino Kaku Gothic ProN", sans-serif; color:#6f6d62; }
+  .m-sub { font:600 clamp(10px, .85vw, 13px)/1 sans-serif; letter-spacing:.24em; color:#7f8a6b;
+    margin:1.2em 0 .7em; }
+  .ex { display:flex; align-items:center; gap:.9em; padding:.55em 0; }
+  .ex svg { width:clamp(24px, 2vw, 30px); height:clamp(24px, 2vw, 30px); flex:none;
+    stroke:#c48d7e; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .ex b { display:block; font:700 clamp(13px, 1.05vw, 16px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; }
+  .ex span { display:block; font:500 clamp(10px, .85vw, 13px)/1.5 sans-serif; color:#a5a398; }
+  .size-row { display:flex; align-items:center; gap:.8em; margin-top:.4em; }
+  input[type=range] { flex:1; appearance:none; height:6px; border-radius:3px;
+    background:linear-gradient(90deg, #cfd4c3, #c48d7e); outline:none; }
+  input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20px; border-radius:50%;
+    background:linear-gradient(135deg, #c48d7e, #c48d7e); border:2px solid #ffffff; cursor:pointer;
+    box-shadow:0 0 12px rgba(196,141,126,.5); }
+  .size-val { font:800 clamp(11px, .95vw, 14px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#c48d7e; width:7.6em; text-align:right; white-space:nowrap; }
+  .rank-body { display:flex; align-items:baseline; gap:.45em; margin-top:.85em;
+    font:700 clamp(11px, .95vw, 14px)/1 "Helvetica Neue", sans-serif; color:#a5a398; }
+  .rank-body b { font:800 clamp(17px, 1.5vw, 24px)/1 "Helvetica Neue", sans-serif; color:#c48d7e;
+    margin-left:auto; transition: color .3s ease; }
+  .rank-body i { font-style:normal; font-size:.8em; }
+  .rank-body.warn b { color:#ff9d3c; }
+  .rank-body.over b { color:#ff5546; }
+  #btn-contest { width:100%; padding:1.05em 0; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(196,141,126,.6); background:linear-gradient(180deg, rgba(196,141,126,.28), rgba(196,141,126,.1));
+    color:#c48d7e; font:800 clamp(13px, 1.15vw, 18px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    letter-spacing:.1em; transition: background .25s ease, box-shadow .25s ease, transform .12s ease; }
+  #btn-contest:hover { background:linear-gradient(180deg, rgba(196,141,126,.46), rgba(196,141,126,.2));
+    box-shadow:0 0 34px rgba(196,141,126,.42); }
+  #btn-contest:active { transform:scale(.97); }
+
+  /* ── 大会モード ── */
+  .contest { position:absolute; inset:0; z-index:8; pointer-events:none; opacity:0;
+    transition: opacity .5s ease; background:radial-gradient(120% 90% at 50% 55%, transparent 30%, rgba(255,255,255,.82) 100%); }
+  .contest.on { opacity:1; pointer-events:auto; }
+  .ct-panel { position:absolute; left:clamp(20px, 5vw, 78px); top:clamp(52px, 9vh, 108px);
+    width:clamp(260px, 30vw, 430px); }
+  .ct-en { font:700 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", sans-serif; letter-spacing:.34em;
+    color:#7f8a6b; opacity:0; transform:translateX(-14px); transition:.5s cubic-bezier(.22,.9,.3,1); }
+  .ct-name { font:800 clamp(22px, 2.3vw, 40px)/1.2 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43;
+    margin:.25em 0 .35em; opacity:0; transform:translateX(-22px); transition:.55s cubic-bezier(.22,.9,.3,1) .07s; }
+  .ct-rule { font:500 clamp(11px, .95vw, 14px)/1.75 "Hiragino Kaku Gothic ProN", sans-serif; color:#6f6d62;
+    opacity:0; transform:translateX(-18px); transition:.55s cubic-bezier(.22,.9,.3,1) .14s; }
+  .ct-spec { font:700 clamp(11px, .95vw, 14px)/1 "Helvetica Neue", sans-serif; color:#a5a398;
+    margin:.9em 0 .2em; letter-spacing:.08em; opacity:0; transition:.5s ease .2s; }
+  .ct-panel.in .ct-en, .ct-panel.in .ct-name, .ct-panel.in .ct-rule, .ct-panel.in .ct-spec {
+    opacity:1; transform:none; }
+  .ct-pose { height:1.9em; margin-top:.5em; font:700 clamp(12px, 1.1vw, 17px)/1.9 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#c48d7e; letter-spacing:.04em; }
+  .ct-pose span { display:inline-block; opacity:0; transform:translateY(7px);
+    animation: poseIn .4s cubic-bezier(.22,.9,.3,1) forwards; }
+  @keyframes poseIn { to { opacity:1; transform:none; } }
+  .ct-items { margin-top:.9em; }
+  .ct-item { display:grid; grid-template-columns:1fr auto; gap:.12em .9em; padding:.6em 0;
+    border-bottom:1px solid rgba(96,102,88,.13);
+    opacity:0; transform:translateX(-16px); animation: ctIn .45s cubic-bezier(.22,.9,.3,1) forwards; }
+  @keyframes ctIn { to { opacity:1; transform:none; } }
+  .ct-item .l { grid-column:1; grid-row:1;
+    font:700 clamp(12px, 1.05vw, 16px)/1.35 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .ct-item .v { grid-column:1; grid-row:2;
+    font:500 clamp(10px, .85vw, 13px)/1.4 "Hiragino Kaku Gothic ProN", sans-serif; color:#7a786e; }
+  .ct-item .g { grid-column:2; grid-row:1 / span 2; align-self:center; white-space:nowrap;
+    font:800 clamp(15px, 1.35vw, 22px)/1 "Helvetica Neue", sans-serif; color:#c48d7e; }
+  .ct-item .g small { font-size:.58em; color:#a5a398; margin-left:.1em; }
+  .ct-item .bar { grid-column:1 / -1; grid-row:3; height:3px; border-radius:2px;
+    background:rgba(96,102,88,.14); overflow:hidden; margin-top:.5em; }
+  .ct-item .bar i { display:block; height:100%; width:0; border-radius:2px;
+    background:linear-gradient(90deg, #a9b394, #c48d7e); transition: width .7s cubic-bezier(.22,.9,.3,1); }
+  .ct-item.minus .l, .ct-item.minus .g { color:#ff6b5e; }
+  .ct-item.minus .bar i { background:linear-gradient(90deg, #6b2a2a, #ff5546); }
+  .ct-verdict { margin-top:1.1em; display:flex; align-items:baseline; gap:.7em; }
+  .ct-verdict b { font:800 clamp(26px, 2.6vw, 46px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:#c48d7e;
+    opacity:0; transform:scale(2.4) rotate(-9deg); }
+  .ct-verdict.hit b { animation: stamp .5s cubic-bezier(.2,1.5,.35,1) forwards; }
+  @keyframes stamp { 0% { opacity:0; transform:scale(2.4) rotate(-9deg); }
+    60% { opacity:1; transform:scale(.92) rotate(1.5deg); } 100% { opacity:1; transform:none; } }
+  .ct-verdict.dq b { color:#ff5546; text-shadow:0 0 22px rgba(255,60,45,.55); }
+  .ct-verdict span { font:800 clamp(13px, 1.2vw, 19px)/1 "Helvetica Neue", sans-serif; color:#7f8a6b;
+    opacity:0; transition: opacity .4s ease .35s; }
+  .ct-verdict.hit span { opacity:1; }
+  /* 最終結果: 3種目の採点明細と早見表を画面に残す */
+  .ct-final { position:fixed; inset:0; z-index:9; overflow-y:auto; overscroll-behavior:contain;
+    background:rgba(255,255,255,.9);
+    backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition: opacity .6s ease; }
+  .ct-final.on { opacity:1; pointer-events:auto; }
+  .ct-fin-in { min-height:100%; display:flex; flex-direction:column; align-items:center;
+    padding:clamp(26px, 5vh, 60px) clamp(16px, 3vw, 48px) clamp(30px, 6vh, 70px); }
+  .ct-fin-head { text-align:center; }
+  .ct-fin-label { font:700 clamp(10px, .85vw, 13px)/1 "Helvetica Neue", sans-serif; letter-spacing:.4em; color:#7f8a6b; }
+  .ct-fin-score { display:flex; align-items:baseline; justify-content:center; gap:.35em; }
+  .ct-fin-score b { font:800 clamp(48px, 6.5vw, 104px)/1.05 "Helvetica Neue", sans-serif; color:#c48d7e;
+    text-shadow:0 0 46px rgba(196,141,126,.45); }
+  .ct-fin-score small { font:700 clamp(13px, 1.3vw, 20px)/1 "Helvetica Neue", sans-serif; color:#a5a398; }
+  .ct-fin-title { font:800 clamp(17px, 1.9vw, 32px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .ct-fin-spec { font:600 clamp(10px, .9vw, 13px)/1 "Helvetica Neue", sans-serif; color:#a5a398;
+    letter-spacing:.08em; margin-top:.7em; }
+  /* 3種目の採点明細 */
+  .ct-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(10px, 1.2vw, 20px);
+    width:100%; max-width:1280px; margin-top:clamp(20px, 3vh, 38px); }
+  @media (max-width: 900px) { .ct-cards { grid-template-columns:1fr; } }
+  .ct-card { border:1px solid rgba(96,102,88,.2); border-radius:15px; background:rgba(255,255,255,.72);
+    padding:clamp(12px, 1.2vw, 20px); }
+  .ct-card.dq { border-color:rgba(255,85,70,.4); }
+  .ct-card > em { display:block; font:700 clamp(8px, .68vw, 10px)/1 "Helvetica Neue", sans-serif;
+    letter-spacing:.24em; color:#7f8a6b; font-style:normal; }
+  .ct-card > h4 { font:800 clamp(13px, 1.15vw, 18px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; margin:.35em 0 .5em; }
+  .ct-card-grade { display:flex; align-items:baseline; gap:.5em; padding-bottom:.55em;
+    border-bottom:1px solid rgba(96,102,88,.16); }
+  .ct-card-grade b { font:800 clamp(16px, 1.5vw, 24px)/1 "Hiragino Kaku Gothic ProN", sans-serif; color:#c48d7e; }
+  .ct-card.dq .ct-card-grade b { color:#ff5546; }
+  .ct-card-grade i { font-style:normal; font:800 clamp(10px, .9vw, 13px)/1 "Helvetica Neue", sans-serif; color:#7f8a6b; }
+  .ct-card-cap { font:600 clamp(9px, .78vw, 12px)/1.5 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#a5a398; margin:.55em 0 .2em; }
+  .ct-card ul { list-style:none; }
+  .ct-card li { display:flex; align-items:baseline; gap:.6em; padding:.45em 0;
+    border-bottom:1px solid rgba(96,102,88,.09); }
+  .ct-card li span { flex:1; font:700 clamp(10px, .85vw, 13px)/1.4 "Hiragino Kaku Gothic ProN", sans-serif; color:#5a5a52; }
+  .ct-card li span em { display:block; font-style:normal; font-weight:500; color:#a5a398;
+    font-size:.86em; margin-top:.2em; }
+  .ct-card li b { font:800 clamp(11px, .95vw, 15px)/1 "Helvetica Neue", sans-serif; color:#c48d7e; white-space:nowrap; }
+  .ct-card li b small { font-size:.62em; color:#a5a398; }
+  .ct-card li.minus span, .ct-card li.minus b { color:#ff6b5e; }
+  /* 3種目のちがい */
+  .ct-diff { width:100%; max-width:1280px; margin-top:clamp(18px, 2.6vh, 34px); }
+  .ct-diff-h { font:700 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", sans-serif; letter-spacing:.3em;
+    color:#7f8a6b; margin-bottom:.9em; }
+  .ct-diff-list { display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(10px, 1.2vw, 20px); }
+  @media (max-width: 900px) { .ct-diff-list { grid-template-columns:1fr; } }
+  .ct-diff-list div { border-left:2px solid rgba(196,141,126,.5); padding:.1em 0 .1em .9em; }
+  .ct-diff-list h5 { font:800 clamp(11px, .95vw, 14px)/1.3 "Hiragino Kaku Gothic ProN", sans-serif; color:#4a4a43; }
+  .ct-diff-list i { display:block; font-style:normal; font:700 clamp(10px, .85vw, 13px)/1.6
+    "Helvetica Neue", sans-serif; color:#c48d7e; margin:.25em 0 .4em; }
+  .ct-diff-list p { font:500 clamp(10px, .85vw, 13px)/1.75 "Hiragino Kaku Gothic ProN", sans-serif; color:#b9b0da; }
+  .ct-diff-list p b { color:#4a4a43; font-weight:700; }
+  #ct-again { margin-top:clamp(20px, 3vh, 40px); padding:.9em 2.4em; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(196,141,126,.5); background:rgba(196,141,126,.13); color:#c48d7e;
+    font:800 clamp(12px, 1.05vw, 16px)/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.1em; }
+  #ct-again:hover { background:rgba(196,141,126,.26); box-shadow:0 0 26px rgba(196,141,126,.3); }
+  .ct-skip { position:absolute; right:clamp(16px, 2.5vw, 44px); bottom:clamp(16px, 2.5vh, 38px);
+    font:700 clamp(9px, .8vw, 12px)/1 "Helvetica Neue", sans-serif; letter-spacing:.3em; color:#6b5f96;
+    cursor:pointer; transition: color .25s ease; }
+  .ct-skip:hover { color:#c48d7e; }
+
+  /* 詳細パネル: 選択で右から滑り込み、中身が順に立ち上がる */
+  .panel { transition: box-shadow .5s ease, border-color .5s ease; }
+  .panel.focused { border-color:rgba(232,41,28,.35); box-shadow:0 0 40px rgba(232,41,28,.14); }
+  #muscle-info { max-height:0; opacity:0; overflow:hidden;
+    transition: max-height .55s cubic-bezier(.22,.9,.3,1), opacity .4s ease; }
+  #muscle-info.on { max-height:min(42vh, 400px); opacity:1; overflow-y:auto; padding-right:9px; }
+  #muscle-info::-webkit-scrollbar { width:5px; }
+  #muscle-info::-webkit-scrollbar-track { background:transparent; }
+  #muscle-info::-webkit-scrollbar-thumb { background:rgba(96,102,88,.28); border-radius:3px; }
+  #muscle-info > * { opacity:0; transform:translateX(14px);
+    transition: opacity .45s ease, transform .55s cubic-bezier(.22,.9,.3,1); }
+  #muscle-info.on > * { opacity:1; transform:none; }
+  #muscle-info.on > *:nth-child(1) { transition-delay:.05s; }
+  #muscle-info.on > *:nth-child(2) { transition-delay:.09s; }
+  #muscle-info.on > *:nth-child(3) { transition-delay:.13s; }
+  #muscle-info.on > *:nth-child(4) { transition-delay:.17s; }
+  #muscle-info.on > *:nth-child(5) { transition-delay:.21s; }
+  #muscle-info.on > *:nth-child(6) { transition-delay:.25s; }
+  #muscle-info.on > *:nth-child(7) { transition-delay:.29s; }
+  #muscle-info.on > *:nth-child(8) { transition-delay:.33s; }
+  .ex { opacity:0; transform:translateX(10px);
+    transition: opacity .4s ease, transform .5s cubic-bezier(.22,.9,.3,1); }
+  #muscle-info.on .ex { opacity:1; transform:none; }
+  #muscle-info.on .ex:nth-child(1) { transition-delay:.24s; }
+  #muscle-info.on .ex:nth-child(2) { transition-delay:.30s; }
+  #muscle-info.on .ex:nth-child(3) { transition-delay:.36s; }
+  /* 部位リスト(3Dが分かりにくくてもここから選べる) */
+  .plist { display:flex; flex-wrap:wrap; gap:.4em; margin-top:1.1em; }
+  .plist button { font:700 clamp(10px, .85vw, 13px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#e8c58a; background:rgba(196,141,126,.12); border:1px solid rgba(196,141,126,.3);
+    border-radius:999px; padding:.6em .9em; cursor:pointer; transition:all .18s ease; }
+  .plist button:hover { background:rgba(196,141,126,.28); color:#4a4a43; }
+  .plist button.on { background:#e8291c; border-color:#ff6b5e; color:#4a4a43;
+    box-shadow:0 0 14px rgba(232,41,28,.5); }
+  /* 3Dに浮かぶ選択中ラベル */
+  #tag3d { position:absolute; z-index:4; pointer-events:none; transform:translate(-50%,-50%);
+    font:800 clamp(13px, 1.15vw, 17px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#4a4a43; background:rgba(232,41,28,.92); border-radius:999px; padding:.6em 1.1em;
+    white-space:nowrap; box-shadow:0 0 22px rgba(232,41,28,.55); opacity:0; transition:opacity .2s ease; }
+  #tag3d.on { opacity:1; }
+  .allrow { display:flex; gap:.6em; margin-top:1.1em; }
+  .allrow button { flex:1; font:700 clamp(11px, .95vw, 14px)/1 "Hiragino Kaku Gothic ProN", sans-serif;
+    color:#6f6d62; background:rgba(96,102,88,.1); border:1px solid rgba(96,102,88,.25);
+    border-radius:999px; padding:.85em .4em; cursor:pointer; transition:all .2s ease; }
+  .allrow button:hover { border-color:#7f8a6b; color:#4a4a43; background:rgba(96,102,88,.2); }
+  body.hovering { cursor:pointer; }
+</style>
+</head>
+<body>
+<a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
+
+<section class="sec-profile">
+  <div class="head">
+    <h1>ボディビルダー</h1>
+  </div>
+  <div class="bio">
+    <figure class="bio-photo">
+      <img src="../assets/body-legend.jpg" alt="" onerror="this.closest('figure').classList.add('none')">
+      <figcaption>1974年、ゴールドジム・ヴェニス<br><span>※すべて本人の申告による</span></figcaption>
+    </figure>
+    <div class="bio-body">
+      <p class="bio-role">自称 ボディビルダー</p>
+      <h2 class="bio-name">黄 梓健<small>(こう しけん)</small></h2>
+      <div class="bio-rows">
+        <div class="bio-row"><p>史上最年長でミスター・オリンピアに迫った男</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>現在は全国のジムから指導を請われる立場</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>ミスター地球代表 3年連続ファイナリスト</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>ベンチプレスの自己ベストは200kg</p><span class="tag lie">嘘</span></div>
+        <div class="bio-row"><p>プロテインは毎日80g飲んでいる</p><span class="tag tru">本当</span></div>
+        <div class="bio-row"><p>体脂肪率18%(自己申告)</p><span class="tag maybe">本当?</span></div>
+        <div class="bio-row"><p>座右の銘は「筋肉は裏切らない」</p><span class="tag lie">嘘</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-stage">
+<canvas id="stage"></canvas>
+<div class="loading" id="loading">BUILDING BODY…</div>
+<div id="tag3d"></div>
+
+<div class="rightcol">
+<div class="panel">
+  <div>
+    <div class="rank-label">MUSCLE LEVEL</div>
+    <div class="rank-val"><b id="rank-title">普通</b></div>
+    <div class="rank-bar"><i id="rank-bar"></i></div>
+    <div class="rank-body"><span>178<i>cm</i></span><b id="rank-kg">70.0</b><i>kg</i></div>
+    <div class="plist" id="plist"></div>
+    <div class="allrow">
+      <button id="btn-all-up">全部盛る</button>
+      <button id="btn-reset">リセット</button>
+    </div>
+  </div>
+  <div id="muscle-info">
+    <hr>
+    <div class="m-name" id="m-name"></div>
+    <div class="m-en" id="m-en"></div>
+    <div class="m-desc" id="m-desc"></div>
+    <div class="m-sub">SIZE</div>
+    <div class="size-row">
+      <input type="range" id="m-size" min="0" max="6" step="1" value="1">
+      <div class="size-val" id="m-size-val">普通</div>
+    </div>
+    <div class="m-sub">TRAINING</div>
+    <div id="m-ex"></div>
+  </div>
+</div>
+<div class="go">
+  <span>準備できたら</span>
+  <button id="btn-contest">この体で大会に出る</button>
+</div>
+</div>
+<div class="contest" id="contest">
+  <div class="ct-panel">
+    <div class="ct-en" id="ct-en"></div>
+    <div class="ct-name" id="ct-name"></div>
+    <div class="ct-rule" id="ct-rule"></div>
+    <div class="ct-spec" id="ct-spec"></div>
+    <div class="ct-pose" id="ct-pose"></div>
+    <div class="ct-items" id="ct-items"></div>
+    <div class="ct-verdict" id="ct-verdict"><b id="ct-grade"></b><span id="ct-pt"></span></div>
+  </div>
+  <div class="ct-final" id="ct-final">
+    <div class="ct-fin-in">
+      <div class="ct-fin-head">
+        <div class="ct-fin-label">TOTAL</div>
+        <div class="ct-fin-score"><b id="ct-total">0</b><small>/ 300</small></div>
+        <div class="ct-fin-title" id="ct-fin-title"></div>
+        <div class="ct-fin-spec" id="ct-fin-spec"></div>
+      </div>
+      <div class="ct-cards" id="ct-fin-list"></div>
+      <div class="ct-diff">
+        <div class="ct-diff-h">3種目のちがい</div>
+        <div class="ct-diff-list" id="ct-diff-list"></div>
+      </div>
+      <button id="ct-again">もう一度いじる</button>
+    </div>
+  </div>
+  <div class="ct-skip" id="ct-skip">SKIP</div>
+</div>
+</section>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-barbell" viewBox="0 0 32 32">
+    <line x1="6" y1="16" x2="26" y2="16"/>
+    <rect x="3" y="10" width="3" height="12" rx="1"/>
+    <rect x="26" y="10" width="3" height="12" rx="1"/>
+    <rect x="8" y="12" width="2.5" height="8" rx="1"/>
+    <rect x="21.5" y="12" width="2.5" height="8" rx="1"/>
+  </symbol>
+  <symbol id="i-dumbbell" viewBox="0 0 32 32">
+    <line x1="12" y1="16" x2="20" y2="16"/>
+    <rect x="7" y="11" width="4" height="10" rx="1.5"/>
+    <rect x="21" y="11" width="4" height="10" rx="1.5"/>
+  </symbol>
+  <symbol id="i-pullup" viewBox="0 0 32 32">
+    <line x1="4" y1="6" x2="28" y2="6"/>
+    <circle cx="16" cy="13" r="3"/>
+    <path d="M11 8 L11 11 M21 8 L21 11 M11 11 Q16 16 21 11 M16 16 L16 22 M16 22 L12 28 M16 22 L20 28"/>
+  </symbol>
+  <symbol id="i-body" viewBox="0 0 32 32">
+    <circle cx="16" cy="7" r="3.2"/>
+    <path d="M16 10.5 L16 20 M16 13 L9 17 M16 13 L23 17 M16 20 L11 27 M16 20 L21 27"/>
+  </symbol>
+  <symbol id="i-machine" viewBox="0 0 32 32">
+    <path d="M6 27 L6 9 M6 12 L18 12 M18 12 L18 27"/>
+    <rect x="4" y="5" width="4" height="4" rx="1"/>
+    <path d="M10 27 L26 27 M22 27 L22 18 L27 15"/>
+  </symbol>
+</svg>
+
+<script type="importmap">
+{ "imports": { "three": "../assets/vendor/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../assets/vendor/loaders/GLTFLoader.js';
+
+/* ================================================================
+   筋肉データ(11部位)
+   ================================================================ */
+const MUSCLES = {
+  pecs:   { name: '大胸筋', en: 'PECTORALIS MAJOR',
+    desc: '胸の主役。Tシャツを最初に張らせる係であり、ベンチプレスの数字は男の名刺。',
+    ex: [['barbell', 'ベンチプレス', '胸トレの王様。重量はロマン'],
+         ['dumbbell', 'ダンベルフライ', '大きく開いて胸をストレッチ'],
+         ['body', '腕立て伏せ', 'どこでもできる原点にして頂点']] },
+  delts:  { name: '三角筋', en: 'DELTOID',
+    desc: '肩の丸み。ここが育つと肩幅が広がり、何を着てもシルエットが変わる。',
+    ex: [['barbell', 'ショルダープレス', '頭上に押し上げる基本種目'],
+         ['dumbbell', 'サイドレイズ', '軽い重量で丁寧に効かせる'],
+         ['body', 'パイクプッシュアップ', '自重で肩を追い込む']] },
+  traps:  { name: '僧帽筋', en: 'TRAPEZIUS',
+    desc: '首から肩へ続く盛り上がり。育つと後ろ姿に「強さ」が宿る。',
+    ex: [['dumbbell', 'シュラッグ', '肩をすくめるだけ。されど効く'],
+         ['barbell', 'アップライトロー', '肘から引き上げる'],
+         ['machine', 'フェイスプル', '顔に向かって引く。姿勢改善にも']] },
+  biceps: { name: '上腕二頭筋', en: 'BICEPS BRACHII',
+    desc: '「力こぶ」の正体。腕まくりの説得力はここで決まる。',
+    ex: [['barbell', 'バーベルカール', '二頭筋の王道'],
+         ['dumbbell', 'ダンベルカール', 'ひねりを加えてピークを作る'],
+         ['pullup', '懸垂(逆手)', '背中と一緒に鍛える欲張り種目']] },
+  triceps: { name: '上腕三頭筋', en: 'TRICEPS BRACHII',
+    desc: '腕の太さの3分の2はこっち。太い腕が欲しければ実は二頭筋より重要。',
+    ex: [['barbell', 'ナローベンチプレス', '手幅を狭めて三頭に集中'],
+         ['dumbbell', 'キックバック', '後ろに蹴り出すように絞る'],
+         ['body', 'ディップス', '自重で腕と胸の下部を焼く']] },
+  abs:    { name: '腹直筋', en: 'RECTUS ABDOMINIS',
+    desc: '割れて見えるかは体脂肪率次第——18%(自己申告)からが本当の勝負。',
+    ex: [['body', 'クランチ', '上体を丸めて縮める基本'],
+         ['body', 'レッグレイズ', '下腹部に効かせる'],
+         ['body', 'プランク', '静かに耐える。体幹の要']] },
+  lats:   { name: '広背筋', en: 'LATISSIMUS DORSI',
+    desc: '背中の翼。育つと逆三角形のシルエットになり、後ろ姿で語れるようになる。',
+    ex: [['pullup', '懸垂', '背中トレの王様'],
+         ['machine', 'ラットプルダウン', '懸垂への近道マシン'],
+         ['barbell', 'ベントオーバーロー', '前傾して引く。腰は大切に']] },
+  glutes: { name: '大臀筋', en: 'GLUTEUS MAXIMUS',
+    desc: '人体で最大の筋肉。歩く・走る・跳ぶの全部の土台で、実は最重要部位。',
+    ex: [['barbell', 'ヒップスラスト', 'お尻で重量を突き上げる'],
+         ['dumbbell', 'ブルガリアンスクワット', '片脚ずつ。翌日を覚悟'],
+         ['body', 'ヒップブリッジ', '寝たまま始められる入門']] },
+  quads:  { name: '大腿四頭筋', en: 'QUADRICEPS',
+    desc: '前ももの4兄弟。「脚の日」の主役で、鍛えた翌日は階段が敵になる。',
+    ex: [['barbell', 'スクワット', '全種目の王。逃げてはいけない'],
+         ['machine', 'レッグプレス', '安全に高重量を踏む'],
+         ['dumbbell', 'ランジ', '一歩ずつ前へ。バランスも鍛わる']] },
+  hams:   { name: 'ハムストリング', en: 'HAMSTRINGS',
+    desc: '裏もも。見えない場所こそ差がつく——スプリンターの脚の秘密はここ。',
+    ex: [['barbell', 'デッドリフト', '床から引く全身種目'],
+         ['machine', 'レッグカール', '膝を曲げて裏ももを絞る'],
+         ['body', 'ヒップヒンジ', 'お辞儀の動きを体に覚えさせる']] },
+  calves: { name: '腓腹筋', en: 'GASTROCNEMIUS',
+    desc: 'ふくらはぎ。「第二の心臓」であり、最後まで頑固に育たないツンデレ。',
+    ex: [['body', 'カーフレイズ', 'かかとを上げ下げ。段差があれば十分'],
+         ['machine', 'シーテッドカーフ', '座って深部のヒラメ筋へ'],
+         ['body', '縄跳び', '弾む動きで全体を刺激']] },
+  forearms: { name: '前腕筋群', en: 'FOREARM MUSCLES',
+    desc: '握力と血管の担当。半袖から覗く場所なので、育つと一番「効いている」ように見える。',
+    ex: [['barbell', 'リストカール', '手首を巻き上げて前腕を焼く'],
+         ['dumbbell', 'ハンマーカール', '腕橈骨筋ごと太くする'],
+         ['body', 'デッドハング', 'ぶら下がるだけ。握力の原点']] },
+  feet:   { name: '足底筋群', en: 'PLANTAR MUSCLES',
+    desc: '地面と接する最後の砦。ここが育つと、立っているだけで説得力が出る(出ない)。',
+    ex: [['body', 'つま先立ち', '土踏まずのアーチを支える'],
+         ['body', 'タオルギャザー', '足の指でタオルを手繰る地味な行'],
+         ['body', '裸足歩き', '足裏の感覚を取り戻す']] },
+};
+/* 大きさは%ではなく「称号」で選ぶ。最後のミスター黄だけがゲーム的な誇張で、
+   そこまでは実在の体格に合わせた膨らみ方をする。 */
+const TIERS = [
+  { n:'とても少ない', s:0.62, m:0.60 },
+  { n:'少ない',       s:0.80, m:0.80 },
+  { n:'普通',         s:1.00, m:1.00 },
+  { n:'やや多い',     s:1.28, m:1.35 },
+  { n:'多い',         s:1.62, m:1.75 },
+  { n:'特に多い',     s:2.05, m:2.30 },
+  { n:'ミスター黄',   s:3.30, m:4.00 },
+];
+const TIER_MAX = TIERS.length - 1;
+const tierIndex = sc => {          // 一番近い段階を返す
+  let bi = 0, bd = 9e9;
+  TIERS.forEach((t, i) => { const d = Math.abs(t.s - sc); if (d < bd) { bd = d; bi = i; } });
+  return bi;
+};
+
+/* 部位の影響範囲(楕円体)。本物の筋肉モデル(muscles.glb)の実測から自動算出。
+   身長=1・足元y=0・左右中心x=0 の正規化座標。左右で1組ずつ */
+const REGIONS = [
+  { k:'pecs',    c:[ .050, .757, .038], r:[.052, .042, .034] },
+  { k:'pecs',    c:[-.050, .757, .038], r:[.052, .042, .034] },
+  { k:'delts',   c:[ .118, .778,-.020], r:[.046, .046, .050] },
+  { k:'delts',   c:[-.118, .778,-.020], r:[.046, .046, .050] },
+  { k:'traps',   c:[ .048, .812,-.042], r:[.062, .046, .040] },
+  { k:'traps',   c:[-.048, .812,-.042], r:[.062, .046, .040] },
+  { k:'biceps',  c:[ .134, .672,-.030], r:[.034, .058, .030] },
+  { k:'biceps',  c:[-.134, .672,-.030], r:[.034, .058, .030] },
+  { k:'triceps', c:[ .140, .672,-.072], r:[.034, .058, .030] },
+  { k:'triceps', c:[-.140, .672,-.072], r:[.034, .058, .030] },
+  { k:'abs',     c:[ .030, .645, .046], r:[.042, .062, .032] },
+  { k:'abs',     c:[-.030, .645, .046], r:[.042, .062, .032] },
+  { k:'lats',    c:[ .082, .700,-.040], r:[.042, .060, .046] },
+  { k:'lats',    c:[-.082, .700,-.040], r:[.042, .060, .046] },
+  { k:'glutes',  c:[ .052, .495,-.055], r:[.052, .048, .040] },
+  { k:'glutes',  c:[-.052, .495,-.055], r:[.052, .048, .040] },
+  { k:'quads',   c:[ .054, .390, .012], r:[.048, .070, .038] },
+  { k:'quads',   c:[-.054, .390, .012], r:[.048, .070, .038] },
+  { k:'hams',    c:[ .054, .390,-.040], r:[.044, .070, .032] },
+  { k:'hams',    c:[-.054, .390,-.040], r:[.044, .070, .032] },
+  { k:'calves',  c:[ .068, .215,-.048], r:[.038, .058, .036] },
+  { k:'calves',  c:[-.068, .215,-.048], r:[.038, .058, .036] },
+  { k:'forearms',c:[ .164, .562,-.014], r:[.033, .058, .033] },
+  { k:'forearms',c:[-.164, .562,-.014], r:[.033, .058, .033] },
+  { k:'feet',    c:[ .070, .028, .004], r:[.050, .038, .058] },
+  { k:'feet',    c:[-.070, .028, .004], r:[.050, .038, .058] },
+];
+// 部位に属さない場所(ここに吸い寄せられた頂点は無色のまま)
+const NONE_ZONES = [
+  { c:[ .000, .945, .000], r:[.055, .060, .060] },   // 頭
+  { c:[ .000, .855, .000], r:[.030, .030, .030] },   // 首
+];
+// 繋ぎ目(前腕・膝・骨盤)。ここは色は付けないが、少しだけ一緒に太る。
+// 完全に止めると、風船のような塊が細い棒に刺さった見た目になる。
+const LINK_ZONES = [
+  { c:[ .170, .470, .000], r:[.040, .050, .040] },   // 手
+  { c:[-.170, .470, .000], r:[.040, .050, .040] },
+  { c:[ .058, .295,-.010], r:[.035, .035, .035] },   // 膝
+  { c:[-.058, .295,-.010], r:[.035, .035, .035] },
+  { c:[ .000, .560,-.010], r:[.060, .050, .050] },   // 骨盤
+];
+const KEYS = [...new Set(REGIONS.map(r => r.k))];
+// 膨らむ方向の比率 [左右, 上下, 前後]。手足は幅方向に太くなる
+/* 筋肉ごとの形状関数 sf(u,v,d) — u=縦(-1下/+1上), v=内側→外側, d=深部→体表。
+   戻り値 0=平ら/溝, 1〜1.3=最も盛り上がる。
+   「溝の線までの距離」で作るので、腱画・白線・筋間の溝が線として彫られ、
+   その間が平らなブロック(腹筋なら6パック)になる。 */
+const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const near = (x, ...gs) => Math.min(...gs.map(g => Math.abs(x - g)));
+
+/* ══ 筋肉ごとの肥大プロファイル ══
+   11部位それぞれの「肥大したときの形」を解剖学から設計(サブエージェント11体で調査・
+   敵対的検証・統合)。u=縦(-1遠位/+1近位), v=内側→外側, d=深部→体表。
+   戻り値 -0.25(溝を彫る) 〜 1.4(最も盛り上がる)。
+   腹直筋の腱画3本と白線、三角筋の3頭の境、上腕三頭筋の馬蹄、大胸筋の下縁シェルフ、
+   腓腹筋のダイヤ形など、各筋の固有の凹凸がここに入っている。
+   GROW_AXIS は膨らむ方向の比率 [左右, 上下, 前後]。 */
+const gr = (x, c, w) => ss(0, w, Math.abs(x - c));   // 溝: 中心で0、幅wで1に戻る
+
+const SF = {
+  // 大胸筋: 下部胸肋部が最も厚く、下縁は崖(シェルフ)。胸骨側=内側縁に乳間溝、
+  //         鎖骨部との境に斜めの浅い溝、外側は腋窩腱へ収束
+  pecs: (u, v, d) => (0.62 + 0.62 * Math.exp(-Math.pow((u + .35) / .8, 2)))
+    * ss(0, .20, u + 1.02) * gr(v, -1.02, .26)
+    * (0.55 + 0.45 * gr(u, .52 - .24 * v, .16))
+    * (1 - 0.5 * ss(.72, 1.15, v)),
+  // 腹直筋: 腱画3本(等間隔ではない)+ 内側縁の白線 + 外側の半月線 → 6〜8パック
+  abs: (u, v, d) => (0.80 + 0.35 * ss(-.9, .6, u))
+    * gr(u, .76, .17) * gr(u, .34, .17) * gr(u, -.14, .18)
+    * gr(v, -1.0, .30) * gr(v, 1.05, .22),
+  // 三角筋: 前部・中部・後部の3頭。中部が最も高い。境に縦溝、下端は粗面へV字収束
+  delts: (u, v, d) => (0.22 + 1.0 * Math.exp(-Math.pow((u - .28) / .72, 2)))
+    * (0.45 + 0.55 * gr(d, .42, .22) * gr(d, -.42, .24))
+    * (1 + 0.25 * Math.exp(-Math.pow(d / .35, 2)))
+    * (1 - 0.25 * ss(.8, 1.05, u)),
+  // 僧帽筋: 上部が斜めのロープ状隆起。正中に棘突起の溝、C7〜T3の腱膜は平坦
+  traps: (u, v, d) => (0.30 + 0.95 * Math.exp(-Math.pow((u - .55 + .26 * v) / .55, 2)))
+    * gr(v, -.92, .26)
+    * (1 - 0.32 * Math.exp(-Math.pow((u - .26) / .32, 2) - Math.pow((v + .7) / .45, 2)))
+    * (1 - 0.3 * ss(.76, 1.05, v)),
+  // 上腕二頭筋: 長頭(外側)が中央やや上でピーク。両頭の間に縦溝、両端は腱で細く
+  biceps: (u, v, d) => (0.42 + 1.0 * Math.exp(-Math.pow((u - (.12 + .2 * v)) / .58, 2)))
+    * (0.62 + 0.38 * gr(v, -.06, .22))
+    * (1 - 0.55 * Math.exp(-Math.pow((u + 1.02) / .45, 2)))
+    * (1 - 0.3 * Math.exp(-Math.pow((u - 1.06) / .45, 2))),
+  // 上腕三頭筋: 馬蹄形。遠位中央の共同腱が平ら、長頭と外側頭の境は斜めの溝
+  triceps: (u, v, d) => (0.55
+      + 0.55 * Math.exp(-Math.pow((v + .5) / .6, 2) - Math.pow((u - .15) / .7, 2))
+      + 0.5 * Math.exp(-Math.pow((v - .62) / .55, 2) - Math.pow((u - .42) / .65, 2)))
+    * ss(0, .20 + .22 * Math.max(0, -u), Math.abs(v))
+    * (0.55 + 0.45 * gr(v, .06 + .28 * u, .20))
+    * (1 - 0.45 * Math.exp(-Math.pow((u + 1.1) / .45, 2))),
+  // 広背筋: 腋窩直下の外側縁が最も厚い翼。下方へV字に絞る。正中は棘突起の溝
+  lats: (u, v, d) => (0.35 + 0.95 * Math.exp(-Math.pow((u - .35) / .75, 2) - Math.pow((v - .5) / .9, 2)))
+    * gr(v, -.95, .24) * (0.55 + 0.45 * ss(-1, .2, u)),
+  // 大臀筋: 丸い山。下端は臀溝で切れ、上端は腸骨稜で平ら
+  glutes: (u, v, d) => ss(0, .28, u + 1.02) * (1.25 - 0.35 * ss(.25, 1, u))
+    * (0.75 + 0.25 * Math.exp(-Math.pow(u / .8, 2))),
+  // 大腿四頭筋: 中央の大腿直筋・外側広筋のスイープ・内側広筋(膝上内側のティアドロップ)
+  quads: (u, v, d) => (0.5
+      + 0.45 * Math.exp(-Math.pow(v / .32, 2) - Math.pow((u - .25) / .8, 2))
+      + 0.5 * Math.exp(-Math.pow((v - .72) / .45, 2) - Math.pow((u - .05) / .8, 2))
+      + 0.6 * Math.exp(-Math.pow((v + .62) / .42, 2) - Math.pow((u + .6) / .38, 2)))
+    * (0.6 + 0.4 * gr(v, -.34, .18) * gr(v, .38, .18))
+    * (1 - 0.4 * Math.exp(-Math.pow((u + 1.05) / .35, 2))),
+  // ハムストリング: 外側(大腿二頭筋)と内側(半腱・半膜)の2つ。膝裏は腱で細く
+  hams: (u, v, d) => (0.45 + 0.85 * ss(-.9, .3, u))
+    * (0.5 + 0.5 * gr(v, 0, .26))
+    * (1 - 0.5 * Math.exp(-Math.pow((u + 1.05) / .4, 2))),
+  // 腓腹筋: 内側頭が低く大きい/外側頭が高い のダイヤ形。間に溝、下はアキレス腱
+  calves: (u, v, d) => (0.3 + 1.0 * Math.exp(-Math.pow((u - (v < 0 ? -.12 : .3)) / .62, 2)))
+    * (0.55 + 0.45 * gr(v, 0, .24))
+    * ss(0, .45, u + 1.0),
+  // 前腕: 肘寄り(腕橈骨筋・屈筋群)が太く、手首へ向かって腱で急に細くなる
+  forearms: (u, v, d) => (0.32 + 1.0 * Math.exp(-Math.pow((u - .42) / .70, 2)))
+    * (0.60 + 0.40 * gr(v, -.10, .28))
+    * (1 - 0.55 * Math.exp(-Math.pow((u + 1.05) / .48, 2))),
+  // 足: 骨と腱しかない部位なので、起伏を彫らずに足全体を一回り大きくする。
+  //     母趾球と踵だけわずかに厚く、土踏まずは浅くえぐる
+  feet: (u, v, d) => (0.72
+      + 0.22 * Math.exp(-Math.pow((d - .35) / .45, 2))
+      + 0.20 * Math.exp(-Math.pow((d + .70) / .45, 2)))
+    * (1 - 0.18 * Math.exp(-Math.pow(d / .45, 2) - Math.pow((v + .55) / .55, 2))),
+};
+
+/* 部位の中でも「絶対に太らせない場所」。形状関数(SF)は起伏の差しか作れないので、
+   指のように伸ばすと熊手状に開いてしまう先端は、こちらで重み自体を落とす。 */
+const WMASK = {
+  feet: (u, v, d) => 1 - 0.95 * ss(.30, .90, d),   // つま先(伸ばすと熊手になる)
+};
+
+// 部位ごとの効き具合。足は骨と腱ばかりなので、他と同じだけ膨らませると形が壊れる
+const GAIN = { feet: 0.55 };
+
+// 膨らむ方向の比率 [左右, 上下, 前後]。実際の筋肉が張り出す向きに合わせてある
+const GROW_AXIS = {
+  pecs:   [1.0, 0.8, 1.75],
+  abs:    [0.8, 0.5, 1.5],
+  delts:  [1.5, 1.0, 1.3],
+  traps:  [0.9, 1.25, 1.2],
+  biceps: [1.0, 0.4, 1.6],
+  triceps:[1.25, 0.4, 1.5],
+  lats:   [1.65, 0.65, 1.1],
+  glutes: [1.05, 0.85, 1.7],
+  quads:  [1.4, 0.45, 1.5],
+  hams:   [1.3, 0.45, 1.45],
+  calves: [1.45, 0.4, 1.45],
+  forearms:[1.35, 0.4, 1.35],
+  feet:   [0.95, 0.80, 0.75],
+};
+
+/* ================================================================
+   体格モデルと採点(身長178cm固定)
+   ---------------------------------------------------------------
+   部位ごとの筋肉量を実際の人体の比率で置き、「量」の段階から体重を出す。
+   採点は IFBB の公式規則・採点基準に基づく:
+     ・メンズフィジーク  … 身長別の体重上限 91.6kg(178cm=5'10"クラス)。超過は失格。
+                           ボードショーツで太ももは隠れる。細い腰と広い肩のV字。
+                           公式に「過剰なバルク」「寸胴の腰」「僧帽筋の詰まり」は
+                           報われない(DON'T REWARD)と明記されている
+     ・クラシックフィジーク… 身長別の体重上限 96.2kg(178cm=5'10"クラス)。超過は失格。
+                           プロポーションとシンメトリー、バキュームで腰の細さを見る
+     ・オープンボディビル … 無差別級で上限なし。サイズが支配するが
+                           BALANCE=全筋群の均等な発達も見る
+   ================================================================ */
+const HEIGHT_CM = 178;
+const BASE_KG = 46.9;                      // 骨・内臓・脂肪など筋肉以外
+const MUSCLE_KG = {                        // 「普通」のときの左右合計[kg]
+  quads: 4.0, glutes: 3.4, hams: 2.3, calves: 1.5, feet: 0.3,
+  lats: 2.2, pecs: 2.0, delts: 1.7, traps: 1.4, triceps: 1.4,
+  forearms: 1.1, biceps: 0.9, abs: 0.9,
+};
+const MUSCLE_BASE = Object.values(MUSCLE_KG).reduce((a, b) => a + b, 0);
+const UPPER = new Set(['pecs', 'delts', 'traps', 'biceps', 'triceps', 'abs', 'lats', 'forearms']);
+// 弱点として審査される部位(足底筋群はステージで見られないので除く)
+const CORE = ['pecs','delts','traps','biceps','triceps','abs','lats','glutes','quads','hams','calves','forearms'];
+/* IFBBプロリーグ公式の身長別・体重上限表(ifbbpro.com/rules)そのまま。
+   kgの数字も公式表に併記されているものを使っている(独自換算ではない)。
+   178cm は 5'10"(177.8cm)クラスとして扱う。
+     メンズフィジーク       5'10" → 202 lbs / 91.6 kg
+     クラシックフィジーク   5'10" → 212 lbs / 96.2 kg
+     オープン・ボディビル   上限なし(無差別級) */
+const HEIGHT_CLASS = '5\'10"';
+const PHYSIQUE_CAP = 91.6;
+const CLASSIC_CAP  = 96.2;
+const cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+
+function stats() {
+  const f = {};
+  let up = 0, low = 0;
+  for (const k of KEYS) {
+    f[k] = TIERS[tierIndex(groups[k].scale)].m;
+    const w = MUSCLE_KG[k] * f[k];
+    if (UPPER.has(k)) up += w; else low += w;
+  }
+  const muscle = up + low;
+  // 肩幅と胴回りの指標(1.00 = 普通の体型)
+  const shoulder = (f.delts * 1.7 + f.lats * 2.2 + f.traps * 1.4) / 5.3;
+  const waist = f.abs * 0.55 + (muscle / MUSCLE_BASE) * 0.45;
+  return {
+    f, muscle, weight: BASE_KG + muscle, upper: up, lower: low,
+    shoulder, waist, vTaper: shoulder / waist, balance: up / low,
+    weakest: Math.min(...CORE.map(k => f[k])),
+  };
+}
+
+/* 格付けはプロの大会での「順位」で表す。
+   (現実では「プロ」=アマ全国優勝でプロカードを得た人=IFBBプロ で同じ意味なので、
+    その2つを段階として並べるのは誤りだった) */
+const GRADES = [                                    // 下から順に。pが持ち点
+  { n: '失格',     p: 0   },
+  { n: '予選落ち', p: 10, min: -999 },
+  { n: '入賞',     p: 25, min: 35 },
+  { n: 'トップ5',  p: 45, min: 55 },
+  { n: '表彰台',   p: 70, min: 72 },
+  { n: '優勝',     p: 100, min: 88 },
+];
+const gradeOf = (score, dq) => dq ? GRADES[0]
+  : GRADES.slice(1).reverse().find(g => score >= g.min);
+
+/* ══ 3種目(すべて IFBB プロリーグ基準) ══
+   ・共通の審査文言(プロリーグ公式): 「Judges will score competitors according to the
+     "total package", which is a balance of size, symmetry and muscularity.」
+   ・体重上限は ifbbpro.com/rules の身長別表(178cm = 5'11"以下のクラス)。
+   ・規定ポーズと審査の回り方も同規則書の記載どおり。骨のないモデルなので
+     ポーズはカメラの回り込みで表現し、名前だけ正式名称で出す。 */
+const CONTESTS = [
+  {
+    id: 'physique', name: 'メンズフィジーク', en: "MEN'S PHYSIQUE",
+    cap: () => `体重上限 ${PHYSIQUE_CAP}kg(${HEIGHT_CLASS}クラス)`,
+    gist: '3種目で最も軽い。<b>V字(広い肩と細い腰)がほぼすべて</b>。ボードショーツで太ももは審査されず、見えるのはふくらはぎだけ。公式に「ボディビルのような筋量は求めない」とあり、<b>大きすぎると減点</b>される。',
+    rule: `体重上限 ${PHYSIQUE_CAP}kg(178cm=${HEIGHT_CLASS}クラス)。審査は front and back turns のみ、太ももはボードショーツで隠れる。求められるのは healthy and fit な体で、ボディビルのような筋量・ハードさは求められない。`,
+    shorts: true,
+    views: [[0, 'フロントターン', 745], [Math.PI, 'バックターン', 745]],
+    judge(s) {
+      const T = k => tierIndex(groups[k].scale);
+      if (s.weight > PHYSIQUE_CAP) return { dq: true, items: [],
+        pen: [[`体重超過 ${(s.weight - PHYSIQUE_CAP).toFixed(1)}kg オーバー(上限 ${PHYSIQUE_CAP}kg)`, 0]] };
+      const items = [
+        ['V字 — 広い肩と細い腰', `肩÷腰 = ${s.vTaper.toFixed(2)}`, cl((s.vTaper - 1.00) / 0.55) * 40, 40],
+        ['肩の広がり(正面)', `三角筋 ${TIERS[T('delts')].n}`, cl((s.f.delts - 0.9) / 1.3) * 15, 15],
+        ['背中の広がり(背面)', `広背筋 ${TIERS[T('lats')].n}`, cl((s.f.lats - 0.9) / 1.3) * 15, 15],
+        ['胸の形', `大胸筋 ${TIERS[T('pecs')].n}`, cl((s.f.pecs - 0.9) / 1.2) * 10, 10],
+        ['腕の形', `二頭・三頭 ${TIERS[Math.round((T('biceps') + T('triceps')) / 2)].n}`,
+          cl(((s.f.biceps + s.f.triceps) / 2 - 0.9) / 1.2) * 8, 8],
+        ['腰の細さ', `腹直筋 ${TIERS[T('abs')].n}(太いと胴が寸胴になる)`,
+          (1 - cl((s.f.abs - 1.0) / 1.3)) * 12, 12],
+      ];
+      const pen = [];
+      const over = Math.max(0, s.weight - 84);
+      if (over > 0) pen.push([`筋量過多 — この種目が求める体ではない(${s.weight.toFixed(1)}kg)`, Math.min(38, over * 3.0)]);
+      if (T('traps') >= 5) pen.push(['僧帽筋が張りすぎて肩のラインが出ない', (T('traps') - 4) * 11]);
+      return { items, pen };
+    },
+  },
+  {
+    id: 'classic', name: 'クラシックフィジーク', en: 'CLASSIC PHYSIQUE',
+    cap: () => `体重上限 ${CLASSIC_CAP}kg(${HEIGHT_CLASS}クラス)`,
+    gist: 'フィジークより4.6kg重い枠。<b>上限ギリギリまで詰めるほど有利</b>だが、超えたら失格。全身が見られるので上下の釣り合いと弱点のなさが効く。腰の太さはバキュームポーズで露呈する。',
+    rule: `体重上限 ${CLASSIC_CAP}kg(178cm=${HEIGHT_CLASS}クラス)。規定ポーズは5つで、モストマスキュラーは禁止。上限の枠の中で size・symmetry・muscularity の釣り合いを競う。`,
+    views: [[0, 'フロントダブルバイセップス', 745], [-Math.PI / 2, 'サイドチェスト', 700],
+            [Math.PI, 'バックダブルバイセップス', 745], [0, 'アブドミナル&サイ', 700],
+            [-Math.PI / 5, '得意のクラシックポーズ', 720]],
+    judge(s) {
+      const T = k => tierIndex(groups[k].scale);
+      if (s.weight > CLASSIC_CAP) return { dq: true, items: [],
+        pen: [[`体重超過 ${(s.weight - CLASSIC_CAP).toFixed(1)}kg オーバー(上限 ${CLASSIC_CAP}kg)`, 0]] };
+      const bal = Math.abs(Math.log(s.balance));
+      const items = [
+        ['SIZE — 上限の使い切り', `${s.weight.toFixed(1)} / ${CLASSIC_CAP}kg`,
+          cl((s.weight - 82) / (CLASSIC_CAP - 2.5 - 82)) * 30, 30],
+        ['SYMMETRY — 上下の釣り合い', `上半身 ${s.upper.toFixed(1)}kg / 下半身 ${s.lower.toFixed(1)}kg`,
+          (1 - cl(bal / 0.45)) * 22, 22],
+        ['SYMMETRY — 黄金比', `肩÷腰 = ${s.vTaper.toFixed(2)}`, cl((s.vTaper - 1.00) / 0.50) * 18, 18],
+        ['MUSCULARITY — 弱点のなさ', `最も薄い部位 ${TIERS[Math.min(...CORE.map(T))].n}`,
+          cl((s.weakest - 0.8) / 0.95) * 30, 30],
+      ];
+      const pen = [];
+      if (T('abs') >= 5) pen.push(['腰が太くバキュームポーズが決まらない', (T('abs') - 4) * 10]);
+      return { items, pen };
+    },
+  },
+  {
+    id: 'open', name: 'オープン・ボディビル', en: 'OPEN BODYBUILDING',
+    cap: () => '体重無制限(無差別級)',
+    gist: '<b>上限なし。とにかく大きいほど強い</b>。ただし審査は total package なので、1部位でも薄いと総合では上に行けない。ここだけは全部盛りが有効。',
+    rule: '無差別級で体重上限なし。規定ポーズは8つ、モストマスキュラーまで見せる。size が支配するが、審査は total package なので弱点があれば上には行けない。',
+    views: [[0, 'フロントダブルバイセップス', 745], [0, 'フロントラットスプレッド', 720],
+            [-Math.PI / 2, 'サイドチェスト', 700], [Math.PI, 'バックダブルバイセップス', 745],
+            [Math.PI, 'バックラットスプレッド', 720], [Math.PI / 2, 'サイドトライセプス', 700],
+            [0, 'アブドミナル&サイ', 700], [0, 'モストマスキュラー', 640]],
+    judge(s) {
+      const T = k => tierIndex(groups[k].scale);
+      const bal = Math.abs(Math.log(s.balance));
+      const items = [
+        ['SIZE — 総筋肉量', `${s.muscle.toFixed(1)}kg(体重 ${s.weight.toFixed(1)}kg)`,
+          cl((s.muscle - 23) / (46 - 23)) * 45, 45],
+        ['MUSCULARITY — 弱点のなさ', `最も薄い部位 ${TIERS[Math.min(...CORE.map(T))].n}`,
+          cl((s.weakest - 0.9) / 1.1) * 35, 35],
+        ['SYMMETRY — 上下の釣り合い', `上半身 ${s.upper.toFixed(1)}kg / 下半身 ${s.lower.toFixed(1)}kg`,
+          (1 - cl(bal / 0.50)) * 20, 20],
+      ];
+      return { items, pen: [] };
+    },
+  },
+];
+/* 3種目とも上位を取るのは相当難しい(数値検証で到達上限は約210点)。
+   全部盛りは2種目失格で100点にしかならない。到達上限は約185点。 */
+/* 各大会の格付けは「その大会での順位」、合計の称号は「どこまで通用する体か」。
+   同じ言葉を2つの意味で使わないよう、語彙をはっきり分けてある。 */
+const FINAL_TITLE = [
+  [180, '三冠王 ミスター黄'], [150, '世界レベル'], [120, '全国レベル'],
+  [85, '地方レベル'], [50, 'ジムレベル'], [-1, '観客席へどうぞ'],
+];
+
+const SKIN = [.74, .52, .46];    // 体の基本色(エコルシェの自然な色)
+// 部位ごとの色(解剖チャート風。選択すると鮮烈に光る)
+const ZONE = {
+  pecs:    [.95, .26, .24],
+  delts:   [.98, .58, .16],
+  traps:   [.95, .82, .22],
+  biceps:  [.45, .85, .32],
+  lats:    [.62, .40, .95],
+  triceps: [.20, .78, .78],
+  abs:     [.30, .58, .96],
+  glutes:  [.95, .35, .72],
+  quads:   [.40, .88, .62],
+  hams:    [.95, .48, .30],
+  calves:  [.35, .72, .95],
+  forearms:[.72, .90, .38],
+  feet:    [.88, .62, .95],
+};
+
+/* ================================================================
+   3Dステージ
+   ================================================================ */
+const cv = document.getElementById('stage');
+const DR = Math.min(devicePixelRatio || 1, 1.5);
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+renderer.setPixelRatio(DR);
+renderer.setSize(innerWidth, innerHeight);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 10, 3000);
+camera.position.set(62, 205, 780);
+camera.lookAt(62, 180, 0);
+/* カメラ演出: 選択部位を画面中央(パネルを避けた左寄り)へ寄せる。
+   ease-out相当のフレーム補間(NN/g推奨の 400-800ms 感) */
+const IDLE_CAM = { pos: new THREE.Vector3(62, 205, 780), look: new THREE.Vector3(62, 180, 0) };
+const camPos = IDLE_CAM.pos.clone();
+const camLook = IDLE_CAM.look.clone();
+const wantPos = IDLE_CAM.pos.clone();
+const wantLook = IDLE_CAM.look.clone();
+let wantRotY = null;          // 選択時に体を回して部位を正面へ
+let focusEase = 0;            // 0=通常 1=フォーカス中
+scene.add(new THREE.AmbientLight(0xffffff, 1.05));
+const keyL = new THREE.DirectionalLight(0xfff2dd, .55);
+keyL.position.set(280, 430, 400);
+scene.add(keyL);
+const fillL = new THREE.DirectionalLight(0xcfd4c3, .35);
+fillL.position.set(-320, 220, -280);
+scene.add(fillL);
+const rimL = new THREE.PointLight(0xff7a5a, 200000);
+rimL.position.set(120, 120, -320);
+scene.add(rimL);
+
+const root = new THREE.Group();
+scene.add(root);
+{
+  const pod = new THREE.Mesh(new THREE.CylinderGeometry(140, 150, 16, 44),
+    new THREE.MeshStandardMaterial({ color: 0xe4e1d5, roughness: .85 }));
+  pod.position.y = -66;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(140, 2.4, 10, 64),
+    new THREE.MeshStandardMaterial({ color: 0xc48d7e, roughness: .4, metalness: .3,
+      emissive: 0xc48d7e, emissiveIntensity: .12 }));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = -58;
+  root.add(pod, ring);
+}
+let aura;
+{
+  const N = 300;
+  const pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const a = Math.random() * Math.PI * 2, r2 = 110 + Math.random() * 60;
+    pos[i*3] = Math.cos(a) * r2;
+    pos[i*3+1] = -40 + Math.random() * 400;
+    pos[i*3+2] = Math.sin(a) * r2;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  aura = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xc48d7e, size: 2.6 * DR,
+    sizeAttenuation: false, transparent: true, opacity: .85, depthWrite: false,
+    blending: THREE.NormalBlending }));
+  aura.visible = false;
+  root.add(aura);
+}
+
+/* ================================================================
+   体: ユーザー制作のリグ付きモデル(assets/models/athlete.glb)
+   ・12組の筋肉モーフ(Chest…Calves)で部位ごとに太らせる
+   ・8本の動き(Idle/Walk/Flex/BicepsCurl/Squat/BenchPress/OverheadPress/Row)
+   ・頂点がどの部位かは「そのモーフで動く量」から決める(実測ではなくモデル自身の定義)
+   ================================================================ */
+const H = 400;                       // 表示上の身長(単位)
+const MODEL_H = 1.75;                // glb の身長(m)
+const MS = H / MODEL_H;              // m → 表示単位
+const parts = [];                    // { mesh, geo, mem:{key→Float32Array}, skin }
+const groups = {};                   // key -> { scale, w, wv, beat }
+for (const k of KEYS) groups[k] = { scale: 1, w: 0, wv: 0, verts: [], amp: 0, beat: 0 };
+let ready = false;
+/* 部位 → モーフターゲット。足底筋群だけは対応するモーフが無い(点数にだけ効く) */
+const MORPH = { pecs:'Chest', delts:'Shoulders', traps:'UpperBack', biceps:'Biceps', triceps:'Triceps', abs:'Abs',
+                lats:'Lats', glutes:'Glutes', quads:'Quads', hams:'Hamstrings', calves:'Calves', forearms:'Forearms' };
+/* 部位を選んだときに見せる動き(その筋肉を使う種目) */
+const MOVE = { pecs:'Flex', delts:'OverheadPress', traps:'Row', biceps:'BicepsCurl', triceps:'OverheadPress', abs:'Flex',
+               lats:'Row', glutes:'Squat', quads:'Squat', hams:'Squat', calves:'Walk', forearms:'BicepsCurl', feet:'Walk' };
+/* 段階 → モーフの強さ。「とても少ない」0、「普通」で少し、「ミスター黄」で1(極限) */
+const morphOf = sc => { const t = Math.max(0, Math.min(1, (sc - TIERS[0].s) / (TIERS[TIER_MAX].s - TIERS[0].s))); return Math.pow(t, .85); };
+const holder = new THREE.Group();
+holder.position.y = -58;
+root.add(holder);
+let mixer = null, activeAct = null, moveTimer = 0;
+const actions = {};
+const centers = {}, radii = {};      // 部位の中心と広がり(モデル座標・m)
+const anchors = {};                  // 部位 → { bone, local }: 動いても部位を追えるように骨に結びつける
+const _aw = new THREE.Vector3();
+function anchorWorld(k) {            // 部位の今の位置(世界座標)。root の回転も含む
+  const a = anchors[k];
+  if (!a) { const c = centers[k] || [0, .9, 0]; return _aw.set(c[0] * MS, c[1] * MS - 58, c[2] * MS).applyMatrix4(root.matrixWorld); }
+  return a.bone.localToWorld(_aw.copy(a.local));
+}
+
+new GLTFLoader().load('../assets/models/athlete.glb', gltf => {
+  const src = gltf.scene;
+  src.scale.setScalar(MS);
+  holder.add(src);
+  src.traverse(o => {
+    if (!o.isMesh) return;
+    o.frustumCulled = false;                       // 動きと筋肉で境界箱が変わるので切らない
+    const m = o.material;
+    m.vertexColors = true; m.metalness = 0;
+    m.roughness = m.name === 'Eyes' || m.name === 'Pupils' ? .25 : m.name === 'Skin' || m.name === 'Nails' ? .72 : .9;
+    const n = o.geometry.attributes.position.count;
+    o.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3));
+    // 頂点→部位の重み: そのモーフでどれだけ動くか(最大を1に正規化)
+    const dict = o.morphTargetDictionary || {};
+    const mp = o.geometry.morphAttributes.position || [];
+    const mem = {};
+    for (const k of KEYS) {
+      const ti = dict[MORPH[k]]; if (ti === undefined) continue;
+      const at = mp[ti]; if (!at) continue;
+      const w = new Float32Array(n); let mx = 0;
+      for (let i = 0; i < n; i++) { const d = Math.hypot(at.getX(i), at.getY(i), at.getZ(i)); w[i] = d; if (d > mx) mx = d; }
+      if (mx > 0) for (let i = 0; i < n; i++) w[i] /= mx;
+      mem[k] = w;
+    }
+    parts.push({ mesh: o, geo: o.geometry, mem, skin: m.name === 'Skin' || m.name === 'Nails' });
+  });
+  // 部位の中心と広がり(右側 x>0 を代表にする。左右対称)
+  for (const k of KEYS) {
+    let sx = 0, sy = 0, sz = 0, sw = 0;
+    for (const p of parts) {
+      const w = p.mem[k]; if (!w || !p.skin) continue;
+      const pos = p.geo.attributes.position;
+      for (let i = 0; i < w.length; i++) {
+        if (w[i] < .35 || pos.getX(i) < 0) continue;
+        sx += pos.getX(i) * w[i]; sy += pos.getY(i) * w[i]; sz += pos.getZ(i) * w[i]; sw += w[i];
+      }
+    }
+    if (!sw) continue;
+    const c = [sx / sw, sy / sw, sz / sw];
+    let r = 0;
+    for (const p of parts) {
+      const w = p.mem[k]; if (!w || !p.skin) continue;
+      const pos = p.geo.attributes.position;
+      for (let i = 0; i < w.length; i++) if (w[i] >= .35 && pos.getX(i) >= 0) r = Math.max(r, Math.hypot(pos.getX(i) - c[0], pos.getY(i) - c[1], pos.getZ(i) - c[2]));
+    }
+    centers[k] = c; radii[k] = r;
+  }
+  centers.feet = centers.feet || [.09, .07, .06]; radii.feet = radii.feet || .13;   // 足底筋群はモーフが無いので足の位置
+  // 部位の中心を一番近い主要な骨に結びつける(手足の指は除く)
+  {
+    src.updateMatrixWorld(true);
+    const bones = [];
+    src.traverse(o => { if (o.isBone && !/Thumb|Index|Middle|Ring|Little|Toes|Neck|Head/.test(o.name)) bones.push(o); });
+    const bp = new THREE.Vector3();
+    for (const k of KEYS) {
+      const c = centers[k]; if (!c) continue;
+      const cw = new THREE.Vector3(c[0] * MS, c[1] * MS - 58, c[2] * MS).applyMatrix4(root.matrixWorld);
+      let best = null, bd = 1e9;
+      for (const b of bones) { b.getWorldPosition(bp); const d = bp.distanceTo(cw); if (d < bd) { bd = d; best = b; } }
+      if (best) anchors[k] = { bone: best, local: best.worldToLocal(cw.clone()) };
+    }
+  }
+  // 動き
+  mixer = new THREE.AnimationMixer(src);
+  for (const c of gltf.animations) actions[c.name] = mixer.clipAction(c);
+  playMove('Idle');
+  ready = true;
+  document.getElementById('loading').style.opacity = 0;
+  paint(); deform(); updateRank();
+}, undefined, e => {
+  console.error(e);
+  document.getElementById('loading').textContent = 'モデルを読み込めませんでした';
+});
+
+/* 動きを切り替える。once なら2周見せてから Idle に戻る */
+function playMove(name, once = false) {
+  const next = actions[name]; if (!next || !mixer) return;
+  clearTimeout(moveTimer);
+  if (activeAct !== next) {
+    if (activeAct) activeAct.fadeOut(.3);
+    next.reset().setLoop(THREE.LoopRepeat, Infinity).fadeIn(.3).play();
+    activeAct = next;
+  }
+  if (once) moveTimer = setTimeout(() => playMove('Idle'), next.getClip().duration * 2000 + 200);
+}
+
+/* ── 色: 全身は素の色。選択=赤、ホバー=琥珀(頂点色を掛けて色を変える) ── */
+let shortsOn = false;                  // 短パンはモデル側に付いているので描き分けは不要
+function paint() {
+  if (!ready) return;
+  for (const p of parts) {
+    const col = p.geo.attributes.color.array;
+    col.fill(1);
+    if (p.skin) for (const k of KEYS) {
+      const isSel = k === selected, isHov = k === hovered;
+      if (!isSel && !isHov) continue;
+      const w = p.mem[k]; if (!w) continue;
+      const c = isSel ? [1.45, .28, .22] : [1.4, 1.25, .5];
+      for (let i = 0; i < w.length; i++) {
+        const t = Math.min(1, w[i] * 1.7); if (t < .08) continue;
+        col[i*3] += (c[0] - 1) * t; col[i*3+1] += (c[1] - 1) * t; col[i*3+2] += (c[2] - 1) * t;
+      }
+    }
+    p.geo.attributes.color.needsUpdate = true;
+  }
+}
+
+/* ── 変形: 部位ごとのモーフの強さ(成長 + 揺れ + 鼓動) ── */
+function deform() {
+  if (!ready) return;
+  for (const p of parts) {
+    const dict = p.mesh.morphTargetDictionary, inf = p.mesh.morphTargetInfluences;
+    if (!dict || !inf) continue;
+    for (const k of KEYS) {
+      const ti = dict[MORPH[k]]; if (ti === undefined) continue;
+      const g = groups[k];
+      inf[ti] = Math.max(0, Math.min(1.25, morphOf(g.scale) + (g.w + g.beat) * .45));
+    }
+  }
+  forceNormals = false;
+}
+let normalTick = 0, forceNormals = false;
+
+/* ── ぷりぷり物理(バネ+減衰。大きいほどよく揺れる) ── */
+function impulse(k, power) {
+  const g = groups[k];
+  g.wv += power * .35 * Math.max(.15, Math.min(1.4, g.scale - .7));
+}
+function impulseAll(power) {
+  for (const k of KEYS) impulse(k, power * (.7 + Math.random() * .6));
+}
+let beatT = 0;
+function stepJiggle(dt) {
+  let moving = false;
+  beatT += dt;
+  for (const k of KEYS) {
+    const g = groups[k];
+    // 選択中の筋肉は常にゆっくり鼓動して「これを選んでいる」と示す
+    const target = k === selected ? .16 : k === hovered ? .09 : 0;
+    if (target > 0 || g.beat !== 0) {
+      const amp = target * (0.5 + 0.5 * Math.sin(beatT * 4.2));
+      if (Math.abs(amp - g.beat) > .0005) moving = true;
+      g.beat += (amp - g.beat) * Math.min(1, dt * 12);
+    }
+    g.wv += (-60 * g.w - 7.5 * g.wv) * dt;
+    g.w += g.wv * dt;
+    if (Math.abs(g.w) > .0015 || Math.abs(g.wv) > .01) moving = true;
+    else { g.w = 0; g.wv = 0; }
+  }
+  return moving;
+}
+
+/* ================================================================
+   操作
+   ================================================================ */
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2();
+let selected = null, hovered = null;
+let dragging = false, dragMoved = 0, lastX = 0, spinV = 0, prevSpin = 0;
+
+function pick(e) {
+  if (!ready) return null;
+  const rc = cv.getBoundingClientRect();
+  ptr.set(((e.clientX - rc.left) / rc.width) * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(parts.filter(p => p.skin).map(p => p.mesh), false)[0];
+  if (!hit || !hit.face) return null;
+  const p = parts.find(q => q.mesh === hit.object);
+  const { a, b, c } = hit.face;
+  let bestK = null, bestW = .25;
+  for (const k of KEYS) {
+    const w = p.mem[k]; if (!w) continue;
+    const v = (w[a] + w[b] + w[c]) / 3;
+    if (v > bestW) { bestW = v; bestK = k; }
+  }
+  return bestK;
+}
+let pickAt = 0;
+cv.addEventListener('pointerdown', e => { dragging = true; dragMoved = 0; lastX = e.clientX; });
+addEventListener('pointerup', () => { dragging = false; });
+cv.addEventListener('pointermove', e => {
+  if (dragging) {
+    const dx = e.clientX - lastX;
+    lastX = e.clientX;
+    dragMoved += Math.abs(dx);
+    root.rotation.y += dx * .008;
+    spinV = dx * .008;
+  } else {
+    const now = performance.now();
+    if (now - pickAt < 70) return;                 // スキンメッシュの当たり判定は重いので間引く
+    pickAt = now;
+    const k = pick(e);
+    if (k !== hovered) { hovered = k; paint(); }
+    document.body.classList.toggle('hovering', !!hovered);
+  }
+});
+cv.addEventListener('click', e => {
+  if (dragMoved > 6) return;
+  const k = pick(e);
+  if (!k) {                                   // 何もない所をクリック=選択解除
+    if (selected) {
+      selected = null; paint(); focusOn(null);
+      document.getElementById('muscle-info').classList.remove('on');
+      document.querySelector('.panel').classList.remove('focused');
+      [...plist.children].forEach(b => b.classList.remove('on'));
+    }
+    return;
+  }
+  if (selected === k) { impulse(k, 7); blip(280 + Math.random() * 100); }
+  else { selectMuscle(k); impulse(k, 4); }
+});
+
+const $ = s => document.querySelector(s);
+
+/* 部位ボタン一覧(3Dが分かりにくくてもここから確実に選べる) */
+const plist = $('#plist');
+for (const k of KEYS) {
+  const b = document.createElement('button');
+  b.textContent = MUSCLES[k].name;
+  b.dataset.k = k;
+  b.addEventListener('click', () => { selectMuscle(k); impulse(k, 5); });
+  b.addEventListener('pointerenter', () => { hovered = k; paint(); });
+  b.addEventListener('pointerleave', () => { hovered = null; paint(); });
+  plist.appendChild(b);
+}
+let focusDist = 400;
+function focusOn(k) {
+  if (!k) { wantPos.copy(IDLE_CAM.pos); wantLook.copy(IDLE_CAM.look); wantRotY = null; playMove('Idle'); return; }
+  const c = centers[k] || [0, .9, 0];
+  const lx = c[0] * MS, ly = c[1] * MS - 58, lz = c[2] * MS;
+  wantRotY = -Math.atan2(lx, lz);                       // その筋肉が正面を向くように体を回す
+  const rad = Math.hypot(lx, lz);
+  const size = (radii[k] || .1) * MS;
+  focusDist = 330 + size * 5.5;                         // 以後は毎フレーム、骨の位置を追って寄る
+  const dist = 330 + size * 5.5;                        // 部位が小さいほど寄る
+  const offX = 58;                                      // 右パネルを避けて少し左に置く
+  wantLook.set(offX, ly, rad);
+  wantPos.set(offX, ly + 26, rad + dist);
+}
+
+function selectMuscle(k) {
+  selected = k;
+  focusOn(k);
+  playMove(MOVE[k] || 'Idle', true);              // その筋肉を使う種目を2周
+  paint();
+  showInfo(k);
+  blip(880 + Math.random() * 200);
+  [...plist.children].forEach(b => b.classList.toggle('on', b.dataset.k === k));
+}
+
+/* 選択中の筋肉に浮かぶラベル(3D位置に追従) */
+const tag3d = $('#tag3d');
+const tagPos = new THREE.Vector3();
+function updateTag() {
+  if (!ready || !selected) { tag3d.classList.remove('on'); return; }
+  tagPos.copy(anchorWorld(selected));
+  tagPos.z += (radii[selected] || .1) * MS;
+  tagPos.project(camera);
+  const rc = cv.getBoundingClientRect();
+  tag3d.style.left = ((tagPos.x * .5 + .5) * rc.width) + 'px';
+  tag3d.style.top = ((-tagPos.y * .5 + .5) * rc.height) + 'px';
+  tag3d.textContent = MUSCLES[selected].name;
+  tag3d.classList.toggle('on', tagPos.z < 1);
+}
+
+function showInfo(k) {
+  const d = MUSCLES[k];
+  const info = $('#muscle-info');
+  info.classList.remove('on');                 // 一度戻してモーションを最初から再生
+  document.querySelector('.panel').classList.add('focused');
+  requestAnimationFrame(() => requestAnimationFrame(() => info.classList.add('on')));
+  $('#m-name').textContent = d.name;
+  $('#m-en').textContent = d.en;
+  $('#m-desc').textContent = d.desc;
+  $('#m-ex').innerHTML = d.ex.map(([ic, nm, tip]) =>
+    `<div class="ex"><svg><use href="#i-${ic}"/></svg><div><b>${nm}</b><span>${tip}</span></div></div>`).join('');
+  const sl = $('#m-size');
+  const ti = tierIndex(groups[k].scale);
+  sl.value = ti;
+  $('#m-size-val').textContent = TIERS[ti].n;
+}
+$('#m-size').addEventListener('input', e => {
+  if (!selected) return;
+  const g = groups[selected];
+  const t = TIERS[+e.target.value];
+  impulse(selected, (t.s - g.scale) * 22);
+  g.scale = t.s;
+  $('#m-size-val').textContent = t.n;
+  forceNormals = true; deform();
+  updateRank();
+});
+function setAllTier(i, power, cheer) {
+  for (const k of KEYS) groups[k].scale = TIERS[i].s;
+  if (selected) { $('#m-size').value = i; $('#m-size-val').textContent = TIERS[i].n; }
+  impulseAll(power); if (cheer) fanfare();
+  forceNormals = true; deform(); updateRank();
+}
+$('#btn-all-up').addEventListener('click', () => setAllTier(TIER_MAX, 9, true));
+$('#btn-reset').addEventListener('click', () => setAllTier(1, 4, false));
+
+function updateRank() {
+  const vals = KEYS.map(k => groups[k].scale);
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const ti = tierIndex(avg);
+  const title = TIERS[ti].n;
+  $('#rank-bar').style.width = Math.min(100, ti / TIER_MAX * 100) + '%';
+  const el = $('#rank-title');
+  const wasGold = el.classList.contains('gold');
+  el.textContent = title;
+  const isGold = ti === TIER_MAX;
+  el.classList.toggle('gold', isGold);
+  aura.visible = isGold;
+  const st = stats();
+  $('#rank-kg').textContent = st.weight.toFixed(1);
+  $('.rank-body').classList.toggle('warn', st.weight > PHYSIQUE_CAP);
+  $('.rank-body').classList.toggle('over', st.weight > CLASSIC_CAP);
+  if (isGold && !wasGold) { fanfare(); impulseAll(6); }
+}
+
+/* ══ 大会モード ══
+   骨のないモデルなので「規定ポーズ」はカメラの回り込みとライティングで表現する。
+   採点は staggered reveal(1項目ずつバーが伸びる)→ 格付けが判子のように着地、
+   という段取り。ゲームのリザルト画面の定石に合わせてある。 */
+const ct = $('#contest'), ctPanel = document.querySelector('.ct-panel');
+let contesting = false, skipReq = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function wait(ms) {                        // クリック/SKIPで早送りできる
+  ms *= (window.__ctSpeed || 1);           // 検証用のスローモーション
+  return new Promise(res => {
+    let done = false;
+    const fin = () => {
+      if (done) return;
+      if (window.__ctHold) { setTimeout(fin, 100); return; }   // 検証用の一時停止
+      done = true; clearTimeout(tm); ct.removeEventListener('click', fin); res();
+    };
+    const tm = setTimeout(fin, ms);
+    ct.addEventListener('click', fin);
+  });
+}
+function stageLight(on) {                     // 舞台に上がったら照明を上げる
+  keyL.intensity = on ? 1.05 : .55;
+  rimL.intensity = on ? 420000 : 200000;
+  fillL.intensity = on ? .42 : .25;
+}
+function ctView(rotY, dist = 760, y = 150) {
+  wantRotY = rotY;
+  wantLook.set(0, y, 0);
+  wantPos.set(0, y + 40, dist);
+}
+function ctItem(label, value, got, max, minus) {
+  const d = document.createElement('div');
+  d.className = 'ct-item' + (minus ? ' minus' : '');
+  d.innerHTML = `<div class="l">${label}</div><div class="g">${minus ? '−' : ''}${Math.round(got)}` +
+    (minus ? '' : `<small>/${max}</small>`) + `</div><div class="v">${value}</div>` +
+    `<div class="bar"><i></i></div>`;
+  $('#ct-items').appendChild(d);
+  requestAnimationFrame(() => { d.querySelector('.bar i').style.width = (minus ? 100 : got / max * 100) + '%'; });
+}
+async function runContest() {
+  if (contesting || !ready) return;
+  contesting = true; skipReq = false;
+  selected = null; hovered = null;
+  [...plist.children].forEach(b => b.classList.remove('on'));
+  $('#muscle-info').classList.remove('on');
+  document.querySelector('.panel').classList.remove('focused');
+  document.querySelector('.rightcol').classList.add('away');
+  $('#ct-final').classList.remove('on');
+  ct.classList.add('on');
+  stageLight(true);
+  playMove('Flex');                                // 舞台では最初から最後までポーズ
+  const s = stats();
+  const results = [];
+  for (const c of CONTESTS) {
+    ctPanel.classList.remove('in');
+    $('#ct-items').innerHTML = '';
+    $('#ct-verdict').className = 'ct-verdict';
+    $('#ct-grade').textContent = ''; $('#ct-pt').textContent = '';
+    shortsOn = !!c.shorts; paint();
+    await sleep(60);
+    $('#ct-en').textContent = c.en;
+    $('#ct-name').textContent = c.name;
+    $('#ct-rule').textContent = c.rule;
+    $('#ct-spec').textContent = `${HEIGHT_CM}cm / ${s.weight.toFixed(1)}kg / 筋肉 ${s.muscle.toFixed(1)}kg`;
+    $('#ct-pose').innerHTML = '';
+    ctView(c.views[0][0], c.views[0][2]);
+    requestAnimationFrame(() => ctPanel.classList.add('in'));
+    blip(620); await wait(1400);
+    // 規定ポーズ(IFBBプロ規則の正式な構成)を順に見せる
+    for (const [rot, label, dist] of c.views) {
+      ctView(rot, dist);
+      $('#ct-pose').innerHTML = `<span>${label}</span>`;
+      blip(520 + Math.random() * 90);
+      await wait(c.views.length > 5 ? 950 : 1250);
+    }
+    $('#ct-pose').innerHTML = '';
+    ctView(c.views[0][0], c.views[0][2]); await wait(600);
+    const r = c.judge(s);
+    for (const [l, v, g, mx] of r.items) { ctItem(l, v, g, mx, false); blip(760 + Math.random() * 160); await wait(620); }
+    for (const [l, g] of r.pen) { ctItem(l, '', g, 0, true); blip(240); await wait(620); }
+    const score = r.items.reduce((a, i) => a + i[2], 0) - r.pen.reduce((a, i) => a + i[1], 0);
+    const grade = gradeOf(Math.max(0, score), r.dq);
+    await wait(520);
+    $('#ct-grade').textContent = grade.n;
+    $('#ct-pt').textContent = `+${grade.p}`;
+    $('#ct-verdict').className = 'ct-verdict hit' + (r.dq ? ' dq' : '');
+    if (r.dq) { blip(180); setTimeout(() => blip(140), 150); }
+    else if (grade.p >= 70) fanfare(); else blip(980);
+    results.push({ c, grade, r, score: Math.max(0, score) });
+    await wait(2100);
+  }
+  shortsOn = false; paint();
+  ctPanel.classList.remove('in');
+  $('#ct-items').innerHTML = '';
+  $('#ct-verdict').className = 'ct-verdict';
+  $('#ct-grade').textContent = ''; $('#ct-pt').textContent = ''; $('#ct-pose').innerHTML = '';
+  const total = results.reduce((a, r) => a + r.grade.p, 0);
+  $('#ct-fin-title').textContent = FINAL_TITLE.find(([t]) => total >= t || t === -1)[1];
+  $('#ct-fin-spec').textContent = `${HEIGHT_CM}cm / ${s.weight.toFixed(1)}kg / 筋肉 ${s.muscle.toFixed(1)}kg`;
+  // 3種目の採点明細をそのまま残す(ゆっくり読めるように)
+  $('#ct-fin-list').innerHTML = results.map(res => {
+    const rows = res.r.items.map(([l, v, g, mx]) =>
+        `<li><span>${l}${v ? `<em>${v}</em>` : ''}</span><b>${Math.round(g)}<small>/${mx}</small></b></li>`).join('')
+      + res.r.pen.map(([l, g]) =>
+        `<li class="minus"><span>${l}</span><b>${g ? '−' + Math.round(g) : '失格'}</b></li>`).join('');
+    return `<div class="ct-card${res.grade.p === 0 ? ' dq' : ''}">
+      <em>${res.c.en}</em><h4>${res.c.name}</h4>
+      <div class="ct-card-grade"><b>${res.grade.n}</b><i>${res.grade.p} pt</i></div>
+      <div class="ct-card-cap">${res.c.cap()}</div><ul>${rows}</ul></div>`;
+  }).join('');
+  // 種目のちがい(読んでからもう一度挑戦できるように)
+  $('#ct-diff-list').innerHTML = CONTESTS.map(c =>
+    `<div><h5>${c.name}</h5><i>${c.cap()}</i><p>${c.gist}</p></div>`).join('');
+  ctView(0, 830, 150);
+  $('#ct-final').scrollTop = 0;
+  $('#ct-final').classList.add('on');
+  // 合計点をカウントアップ(最後にドンと決める)
+  const el = $('#ct-total'); const t0 = performance.now(), dur = 1100;
+  (function up(now) {
+    const k = Math.min(1, ((now || performance.now()) - t0) / dur);
+    el.textContent = Math.round(total * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(up); else { fanfare(); impulseAll(5); }
+  })(t0);
+  contesting = false;
+}
+$('#btn-contest').addEventListener('click', runContest);
+$('#ct-skip').addEventListener('click', e => { e.stopPropagation(); ct.click(); });
+$('#ct-again').addEventListener('click', e => {
+  e.stopPropagation();
+  $('#ct-final').classList.remove('on');
+  ct.classList.remove('on');
+  stageLight(false);
+  document.querySelector('.rightcol').classList.remove('away');
+  focusOn(null);
+  playMove('Idle');
+});
+
+/* 効果音 */
+let actx = null;
+const audio = () => (actx ??= new (window.AudioContext || window.webkitAudioContext)());
+function blip(f) {
+  const a = audio(), t = a.currentTime;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = 'triangle'; o.frequency.value = f;
+  g.gain.setValueAtTime(.08, t);
+  g.gain.exponentialRampToValueAtTime(.001, t + .12);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + .13);
+}
+function fanfare() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f), i * 110)); }
+
+/* ループ */
+let lastT = 0, fc = 0, needDeform = false;
+(function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) return;      // 裏のタブで回し続けない(発熱・電池対策)
+  const t = now / 1000;
+  const dt = Math.min(.05, (now - lastT) / 1000 || .016);
+  lastT = now;
+  // カメラ: 目標へ ease-out で寄せる(dt基準なのでFPSに依存しない)
+  const kEase = 1 - Math.exp(-dt * 3.4);
+  camPos.lerp(wantPos, kEase);
+  camLook.lerp(wantLook, kEase);
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+  focusEase += ((selected ? 1 : 0) - focusEase) * kEase;
+  if (dragging) { wantRotY = null; }                    // ドラッグしたら自動の向き合わせは解除
+  if (wantRotY !== null && !dragging) {
+    let d2 = ((wantRotY - root.rotation.y + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    root.rotation.y += d2 * kEase;
+    spinV = 0;
+  } else if (!dragging) { spinV *= .95; root.rotation.y += spinV + (selected ? 0 : .0012); }
+  const acc = Math.abs(spinV - prevSpin);
+  prevSpin = spinV;
+  if (ready && acc > .012) impulseAll(Math.min(1.6, acc * 45));
+  if (ready) {
+    if (mixer) mixer.update(dt);
+    if (selected && !contesting) {                      // 動きで部位が移動しても追い続ける
+      const p = anchorWorld(selected);
+      wantLook.set(58, p.y, p.z);
+      wantPos.set(58, p.y + 26, p.z + focusDist);
+    }
+    const moving = stepJiggle(dt);
+    if (moving || needDeform) { deform(); needDeform = moving; }
+    updateTag();
+  }
+  if (aura.visible) aura.rotation.y = t * .5;
+  renderer.render(scene, camera);
+})(0);
+
+window.__body = { setRot: v => { root.rotation.y = v; }, setTier: i => setAllTier(i, 0, false),
+                  cam: (p, l) => { wantPos.set(...p); wantLook.set(...l); wantRotY = null; },
+                  runContest, stats, CONTESTS, gradeOf, tierIndex, MUSCLE_KG, CLASSIC_CAP,
+                  setBuild: b => { for (const k in b) groups[k].scale = TIERS[b[k]].s;
+                                   forceNormals = true; deform(); paint(); updateRank(); },
+                  groups, REGIONS, parts, KEYS, SKIN, TIERS, playMove, centers, radii, get actions() { return actions; },
+                  camera, root, get want() { return { pos: wantPos.toArray(), look: wantLook.toArray(), rot: wantRotY }; } };
+
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>
