@@ -176,6 +176,7 @@
     .tick { gap:8px; padding:.45em .8em; } .tick .tk em { font-size:10px; }
   }
 </style>
+<script src="../assets/analytics.js?v=1"></script>
 </head>
 <body>
 <canvas id="stage"></canvas>
@@ -2812,6 +2813,7 @@ function nextQuestion() {
 }
 
 function finish() {
+  window.__count && window.__count('estate-finish');
   stopStage();                     // 終わったら演出の扇や小人を片付ける
   document.body.classList.remove('staging', 'verdicting');
   el('qhead').classList.remove('on');

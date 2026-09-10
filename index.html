@@ -428,6 +428,7 @@
 <script type="importmap">
 { "imports": { "three": "./assets/vendor/three.module.js" } }
 </script>
+<script src="assets/analytics.js?v=1"></script>
 </head>
 <body>
 
@@ -2991,6 +2992,7 @@ initWeather();
   let tvOpen = false;
   function openTV() {
     if (tvOpen) return; tvOpen = true;
+    window.__count && window.__count('tv-open');
     pop.hidden = false;
     tvFrame.src = `pages/game.html?embed=1&v=${ASSET_V}`;
     requestAnimationFrame(() => pop.classList.add('on'));

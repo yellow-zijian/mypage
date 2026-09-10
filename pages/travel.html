@@ -220,6 +220,7 @@
     .back { padding:.75em 1.1em; }
   }
 </style>
+<script src="../assets/analytics.js?v=1"></script>
 </head>
 <body>
 <canvas id="stage"></canvas>
@@ -1359,6 +1360,7 @@ document.getElementById('sb-make').addEventListener('click', () => {
   const name = sbName.value.trim().slice(0, 12);
   if (!name) { sbName.focus(); return; }
   localStorage.setItem('travel-share-name', name);
+  window.__count && window.__count('travel-share');
   sbLink.value = location.origin + location.pathname + shareHash(name, been, you);
   sbOut.hidden = false; sbMsg.textContent = `${been.size}の国・地域と${you.size}県が入っています。`;
 });

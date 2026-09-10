@@ -87,6 +87,7 @@
   .tag.tru { color:#ffffff; background:linear-gradient(135deg, #c48d7e, #c48d7e);
     box-shadow:0 0 16px rgba(196,141,126,.35); }
 </style>
+<script src="../assets/analytics.js?v=1"></script>
 </head>
 <body>
 <a class="back" href="../index.html?reveal=1">← ホームへ戻る</a>
@@ -147,6 +148,7 @@
   function open(src, poster, title) {
     if (cur !== src) { v.src = src; v.poster = poster || ''; cur = src; blobbed = false; }
     cap.textContent = title || '';
+    window.__count && window.__count('actor-play');
     lb.classList.add('on'); v.currentTime = 0; v.muted = false; v.volume = .85; v.play().catch(() => {});
   }
   document.querySelectorAll('.film').forEach(f => f.addEventListener('click', () => open(f.dataset.src, f.dataset.poster, `『${f.dataset.title}』`)));
