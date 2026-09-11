@@ -54,6 +54,7 @@
     mask-image: radial-gradient(circle at calc(var(--lx) - var(--ox)) calc(var(--ly) - var(--oy)),
       #000 0, #000 calc(var(--r) * .45), rgba(0,0,0,calc(1 - var(--dark) * .55)) calc(var(--r) * .8), rgba(0,0,0,calc(1 - var(--dark))) calc(var(--r) * 1.35)); }
   .back, h1, .lead, .row em, .note { user-select:none; }
+  @media (max-width: 767px) { .row em, .row button { font-size:11px; } }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>

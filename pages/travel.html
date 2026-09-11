@@ -219,6 +219,16 @@
     .wscore .recv { margin-top:.6em; padding-top:.5em; } .wscore .recv ol { max-height:5.2em; }
     .back { padding:.75em 1.1em; }
   }
+  /* ── スマホ(幅767以下): 地球を上の空きに、成績パネルは高さを抑えて中をスクロール ── */
+  @media (max-width: 767px) {
+    .wscore { max-height:42vh; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    .score { max-height:46vh; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    .score-row em, .title-row em, .recv em { font-size:11px; }
+    .regions span, .wscore .regions span { font-size:11px; padding:.4em .6em; }
+    .reset, .share, .back-own, .wscore .reset { font-size:12px; }
+    .jp svg { top:12%; height:40%; }
+    #jpsvg text { font-size:15px; }
+  }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>
@@ -342,9 +352,12 @@ renderer.setSize(innerWidth, innerHeight);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, .01, 100);
 const aspBack = () => { const a = innerWidth / innerHeight;
-  return a >= 1.6 ? 1 : a >= 1 ? 1 + (1.6 - a) * .30 : 1.10 + (1 - a) * .52; };
+  return a >= 1.6 ? 1 : a >= 1 ? 1 + (1.6 - a) * .30 : Math.max(1.10 + (1 - a) * .52, .894 / a); };   // 縦長では地球が画面幅に収まる距離まで引く
 camera.position.set(0, .55 * aspBack(), 3.9 * aspBack());
 camera.lookAt(0, 0, 0);
+// スマホ縦: 地球を下の成績パネルの上の空きに収めるため、描画を少し上へずらす(パソコンは従来どおり)
+const fitView = () => { if (innerWidth <= 767 && innerWidth < innerHeight) camera.setViewOffset(innerWidth, innerHeight, 0, innerHeight * .15, innerWidth, innerHeight); else camera.clearViewOffset(); camera.updateProjectionMatrix(); };
+fitView();
 const globe = new THREE.Group();
 scene.add(globe);
 const WORLD_V = 5;        // assets/world.json を作り直したら+1(キャッシュ避け)
@@ -1047,7 +1060,7 @@ addEventListener('resize', () => {
   renderer.setPixelRatio(pixRatio());   // 窓の大きさで上限が変わるので取り直す
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
+  camera.updateProjectionMatrix(); fitView();
   if (!diving) { camera.position.set(0, .55 * aspBack(), 3.9 * aspBack()); camera.lookAt(0, 0, 0); }
 });
 

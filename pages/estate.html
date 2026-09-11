@@ -175,6 +175,12 @@
     .vbtn { padding:.6em 1.1em; font-size:11px; }
     .tick { gap:8px; padding:.45em .8em; } .tick .tk em { font-size:10px; }
   }
+  /* スマホ(幅767以下): 小さすぎる文字を読める大きさに */
+  @media (max-width: 767px) {
+    .eyebrow, .intro-label { font-size:11px; }
+    .tick i { font-size:10.5px; }
+    #tick-a, #tick-b, #tick-t { font-size:11px; }
+  }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>

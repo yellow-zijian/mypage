@@ -18,6 +18,11 @@
   body.embed .card { display:none; }
   body.embed .bar { left:auto; right:calc(clamp(16px, 2.5vw, 40px) + clamp(40px, 3.4vw, 54px)); transform:none; }
   body.embed .bubble { z-index:14; }
+  /* スマホの埋め込み: 下はトップ側の説明カードが重なるので、操作ボタンと音を上へ */
+  @media (max-width: 767px) {
+    body.embed .bar { top:calc(12px + env(safe-area-inset-top)); bottom:auto; right:12px; }
+    body.embed #mute { top:calc(12px + env(safe-area-inset-top)); bottom:auto; right:auto; left:12px; }
+  }
   #paper { position:fixed; inset:0; pointer-events:none; z-index:2;
     background: radial-gradient(90% 80% at 50% 45%, rgba(255,255,255,0) 55%, rgba(96,102,88,.10) 100%); }
 
@@ -255,7 +260,7 @@ fitCamera(); placeCamera();
    landing page では左に文章が載るので、家全体(2部屋)を右側の空きに収めた全景から始める。
    ＋で寄ると黄を追う従来のカメラになり、－で引くと全景に戻る */
 const HOUSE_BOX = new THREE.Box3(new THREE.Vector3(-4.2, 0, -3.4), new THREE.Vector3(10.3, 2.9, 3.4));
-let wholeMode = EMBED, copyFrac = 0, wholeZoom = 1;
+let wholeMode = EMBED, copyFrac = 0, copyBottom = 0, wholeZoom = 1;   // copyBottom: スマホで下に重なる説明カードの高さの割合
 const wholeTarget = new THREE.Vector3(3.05, 0.7, 0);
 const _pv = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new THREE.Vector3(), _goal = new THREE.Vector3();
 function fitWhole() {
@@ -268,10 +273,10 @@ function fitWhole() {
     _pv.set(i & 1 ? HOUSE_BOX.max.x : HOUSE_BOX.min.x, i & 2 ? HOUSE_BOX.max.y : HOUSE_BOX.min.y, i & 4 ? HOUSE_BOX.max.z : HOUSE_BOX.min.z).project(camera);
     x0 = Math.min(x0, _pv.x); x1 = Math.max(x1, _pv.x); y0 = Math.min(y0, _pv.y); y1 = Math.max(y1, _pv.y);
   }
-  const availW = 2 * (1 - copyFrac) * 0.9, availH = 2 * 0.84;
+  const availW = 2 * (1 - copyFrac) * 0.9, availH = 2 * (1 - copyBottom) * 0.84;
   const z = Math.min(availW / (x1 - x0), availH / (y1 - y0));
   // 右側の空きの中心(NDC x = copyFrac)に家の中心を合わせる。ずれは zoom 後の半幅で世界座標に直す
-  const dx = copyFrac - (x0 + x1) / 2 * z, dy = -(y0 + y1) / 2 * z;
+  const dx = copyFrac - (x0 + x1) / 2 * z, dy = copyBottom - (y0 + y1) / 2 * z;   // 下の空きを除いた領域の中央(NDC y = copyBottom)へ
   cam.zoom = z; fitCamera();
   _right.setFromMatrixColumn(camera.matrixWorld, 0); _up.setFromMatrixColumn(camera.matrixWorld, 1);
   wholeTarget.set(3.05, 0.7, 0).addScaledVector(_right, -dx * camera.right).addScaledVector(_up, -dy * camera.top);
@@ -829,7 +834,7 @@ addEventListener('message', e => {
   const d = e.data; if (!d || typeof d.type !== 'string') return;
   if (d.type === 'room:sleep') { wantAwake = false; sleep(); }
   if (d.type === 'room:wake') { wantAwake = true; actx?.resume?.(); start(); }
-  if (d.type === 'room:layout') { copyFrac = +d.copyFrac || 0; fitWhole(); if (wholeMode) { camGoal.zoom = wholeZoom; cam.zoom = wholeZoom; cam.target.copy(wholeTarget); fitCamera(); placeCamera(); } }
+  if (d.type === 'room:layout') { copyFrac = +d.copyFrac || 0; copyBottom = +d.copyBottom || 0; fitWhole(); if (wholeMode) { camGoal.zoom = wholeZoom; cam.zoom = wholeZoom; cam.target.copy(wholeTarget); fitCamera(); placeCamera(); } }
 });
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(pixRatio()); fitCamera(); if (EMBED) { fitWhole(); if (wholeMode) camGoal.zoom = wholeZoom; } });
 

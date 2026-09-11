@@ -59,4 +59,7 @@ if __name__ == '__main__':
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     handler = partial(RangeHandler, directory=root)
     print(f'serving {root} on http://localhost:{port} (Range OK)')
+    # 受付の列が既定(5)だと、画像を並行して読むときに溢れて接続が切られる(ERR_CONNECTION_RESET)ので広げる
+    ThreadingHTTPServer.request_queue_size = 128
+    ThreadingHTTPServer.daemon_threads = True
     ThreadingHTTPServer(('', port), handler).serve_forever()

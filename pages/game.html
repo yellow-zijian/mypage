@@ -121,6 +121,15 @@
     .speaker { height: 34px; }
     .brand { display:none; }
   }
+  /* スマホ: テレビの画面は小さいので、画面いっぱいで遊ぶ入口を置く */
+  .full { display:none; }
+  @media (max-width: 767px) {
+    .knob em { font-size:11px; }
+    .full { display:inline-flex; align-items:center; gap:.8em; position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:20;
+      color:#4a4a43; text-decoration:none; font:700 15px/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em; padding:.6em 0; white-space:nowrap; }
+    .full::after { content:""; width:40px; height:1px; background:#c48d7e; }
+    body.embed .full { color:#f2efe6; }
+  }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>
@@ -150,6 +159,7 @@
   <div class="base"></div>
   <div class="feet"><i></i><i></i></div>
 </div>
+<a class="full" href="../games/neon-ronin/index.html" target="_top">画面いっぱいで遊ぶ</a>
 
 <script>
 (() => {

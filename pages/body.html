@@ -272,6 +272,28 @@
     border-radius:999px; padding:.85em .4em; cursor:pointer; transition:all .2s ease; }
   .allrow button:hover { border-color:#7f8a6b; color:#4a4a43; background:rgba(96,102,88,.2); }
   body.hovering { cursor:pointer; }
+  /* ── スマホ(幅767以下): 横幅を画面に収め、操作パネルは下の引き出しに ── */
+  @media (max-width: 767px) {
+    html, body { overflow-x:hidden; }
+    .sec-profile { padding:11vh 20px 9vh; }
+    .sec-profile .head, .bio { width:100%; }
+    .bio-photo { width:min(360px, 100%); }
+    .bio-photo figcaption { font-size:11px; }
+    .rightcol { left:12px; right:12px; width:auto; top:auto; bottom:calc(12px + env(safe-area-inset-bottom)); transform:none; max-height:54vh; overflow-y:auto; overscroll-behavior:contain; gap:8px; }
+    .rightcol .panel { padding:14px 16px; }   /* 「この体で大会に出る」まで最初から見えるよう詰める */
+    .plist { margin-top:.7em; gap:.35em; }
+    .allrow { margin-top:.7em; }
+    .rightcol.away { transform:translateY(40px); }
+    .plist button { font-size:12px; }
+    .ct-final { overflow-x:hidden; }
+    .ct-fin-in { width:100%; max-width:100vw; box-sizing:border-box; padding-left:16px; padding-right:16px; }
+    .ct-fin-in > * { min-width:0; max-width:100%; }
+    #ct-fin-list { display:grid; grid-template-columns:1fr; }
+    .ct-fin-label, .ct-diff-h, .ct-en { font-size:11px; }
+    .tag, .rank-label, .go span { font-size:11px; }
+    .rank-body i { font-size:10px; }
+    #ct-skip { font-size:11px; }
+  }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>
@@ -841,6 +863,9 @@ renderer.setSize(innerWidth, innerHeight);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 10, 3000);
 camera.position.set(62, 205, 780);
+// スマホ縦: 下の操作パネルの上に体が収まるよう、少し引いて上へずらす(パソコンは従来どおり)
+const fitView = () => { const phone = innerWidth <= 767 && innerWidth < innerHeight; camera.zoom = phone ? .74 : 1; if (phone) camera.setViewOffset(innerWidth, innerHeight, 0, innerHeight * .19, innerWidth, innerHeight); else camera.clearViewOffset(); camera.updateProjectionMatrix(); };
+fitView();
 camera.lookAt(62, 180, 0);
 /* カメラ演出: 選択部位を画面中央(パネルを避けた左寄り)へ寄せる。
    ease-out相当のフレーム補間(NN/g推奨の 400-800ms 感) */
@@ -1447,7 +1472,7 @@ window.__body = { setRot: v => { root.rotation.y = v; }, setTier: i => setAllTie
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
+  camera.aspect = innerWidth / innerHeight; fitView();
   camera.updateProjectionMatrix();
 });
 </script>

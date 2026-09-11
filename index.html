@@ -382,6 +382,30 @@
     color:rgba(242,239,230,.32); letter-spacing:.04em; }
   .foot-credit a { color:rgba(242,239,230,.5); text-decoration:none; border-bottom:1px solid rgba(242,239,230,.2); }
   .foot-credit a:hover { color:var(--rose2); border-color:var(--rose2); }
+  /* ── スマホ(幅767以下)だけの調整。パソコンの見た目は変えない ── */
+  @media (max-width: 767px) {
+    #ns-title { white-space:normal; word-break:keep-all; font-size:clamp(22px, 7.2vw, 30px); line-height:1.45; }
+    .ns-inner { padding:0 22px; }
+    .rc-live-label, #rc-count { font-size:11px; }
+    .gate-meter em { font-size:11px; left:-4.6em; }
+    .hub-menu { left:22px; right:22px; top:auto; bottom:calc(22px + env(safe-area-inset-bottom)); transform:none; gap:0; }
+    .hub-item { min-width:0; width:100%; font-size:17px; }
+    .hub-item:hover, .hub-item.active { transform:none; }
+    .hub-item small { font-size:12px; }
+    .hub-go { top:42%; font-size:17px; }
+    #hub5-go { left:50%; top:42%; }
+    .foot-col em, .foot-col a small, .foot-sign { font-size:11px; }
+    .foot-credit { font-size:10.5px; }
+  }
+  /* 履歴書の拡大(スマホで 1080p のときに押すと開く。左右にスワイプして読む) */
+  .rz { position:fixed; inset:0; z-index:95; background:rgba(20,18,14,.94); display:none; }
+  .rz.on { display:block; }
+  .rz-scroll { position:absolute; inset:0; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:flex; align-items:center; }
+  .rz-scroll img { height:min(84vh, 1055px); width:auto; max-width:none; flex:none; display:block; margin:0 18px; border-radius:4px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .rz-close { position:fixed; right:14px; top:calc(14px + env(safe-area-inset-top)); width:44px; height:44px; border-radius:50%; border:0; cursor:pointer;
+    background:#c48d7e; color:#fff; font:300 24px/1 "Helvetica Neue", Arial, sans-serif; z-index:2; }
+  .rz-hint { position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom)); transform:translateX(-50%); margin:0; white-space:nowrap;
+    color:rgba(242,239,230,.75); font:600 12px/1 "Hiragino Kaku Gothic ProN", sans-serif; letter-spacing:.14em; pointer-events:none; }
   @media (max-width:860px), (max-aspect-ratio:1/1) {
     .foot-grid { grid-template-columns: 1fr; gap: 26px; }
     .ns-foot { min-height:auto; }
@@ -442,7 +466,7 @@
         <div class="ns-shade"></div>
         <div class="ns-watermark">2026</div>
         <div class="ns-inner">
-          <h1 id="ns-title">ようこそ、黄梓健のホームページへ。</h1>
+          <h1 id="ns-title">ようこそ、​黄梓健のホームページへ。</h1>
         </div>
         <div class="ns-weather" id="ns-weather">
           <span class="w-place" id="w-place"></span>
@@ -1403,7 +1427,7 @@ function shatter() {
       ['#integrity', '#mute', '#skip'].forEach(s => $(s).classList.add('fade-out'));
       document.body.classList.remove('armed', 'over-tool');
       [hammerRoot, katanaRoot, drillRoot, shadowH, shadowK, shadowD].forEach(o => { if (o) o.visible = false; });
-      scramble($('#ns-title'), 'ようこそ、黄梓健のホームページへ。');
+      scramble($('#ns-title'), 'ようこそ、​黄梓健のホームページへ。');
     }, 1400);
     setTimeout(() => {                       // 床を外して破片を退場させる
       if (phys && floorBody) { phys.removeRigidBody(floorBody); floorBody = null; }
@@ -2578,10 +2602,20 @@ initWeather();
       cur.textContent = now.textContent = L + 'p';
       menu.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.q === q));
       render();
-      if (L === 1080) say('本物です。ここまで来る人は少ない。');
+      if (L === 1080) say(touchLike.matches ? '本物です。押すと大きく読めます。' : '本物です。ここまで来る人は少ない。');
     }, 350 + Math.min(900, L * .5));
   });
   addEventListener('resize', layout);
+  // スマホ: 1080p の本物を押すと大きく開き、左右にスワイプして読める
+  const touchLike = matchMedia('(max-width: 767px), (pointer: coarse)');
+  const rz = document.createElement('div'); rz.className = 'rz';
+  rz.innerHTML = '<div class="rz-scroll"><img alt="履歴書" draggable="false"></div><button class="rz-close" type="button" aria-label="閉じる">×</button><p class="rz-hint">左右にスワイプして読む</p>';
+  document.body.appendChild(rz);
+  const rzImg = rz.querySelector('img'), rzScroll = rz.querySelector('.rz-scroll');
+  const closeRz = () => { rz.classList.remove('on'); if (window.__lenis) window.__lenis.start(); };
+  real.addEventListener('click', () => { if (level !== 1080 || !touchLike.matches) return; rzImg.src = real.src; rz.classList.add('on'); rzScroll.scrollLeft = 0; if (window.__lenis) window.__lenis.stop(); });
+  rz.querySelector('.rz-close').addEventListener('click', closeRz);
+  rz.addEventListener('click', e => { if (e.target === rz || e.target === rzScroll) closeRz(); });
   window.__px = { get level() { return level; }, set: (L) => { level = L; render(); }, layout, get rect() { return rect; } };
 })();
 
@@ -2746,6 +2780,15 @@ initWeather();
     mscene = new THREE.Scene();
     mcam = new THREE.PerspectiveCamera(40, sec.clientWidth / sec.clientHeight, 10, 4000);
     mcam.position.z = 900;
+    // 縦長の画面では雲と形が画面幅に収まるよう引いて、少し上に寄せる(横長=パソコンは従来どおり z=900)
+    const fit3 = () => {
+      const w = sec.clientWidth, h = sec.clientHeight, a = w / h;
+      mcam.aspect = a; mcam.position.z = Math.max(900, 1236 / a);
+      if (a < 1) mcam.setViewOffset(w, h, 0, h * .08, w, h); else mcam.clearViewOffset();
+      mcam.updateProjectionMatrix();
+    };
+    fit3();
+    addEventListener('resize', () => { if (!mr) return; mr.setSize(sec.clientWidth, sec.clientHeight); fit3(); });
     const g0 = galaxyShape();
     cur.set(g0); st.set(g0); tg.set(g0);
     colCur.set(goldArr); colSt.set(goldArr); colTg.set(goldArr);
@@ -3136,7 +3179,9 @@ initWeather();
   }, { rootMargin: '60% 0px' }).observe(sec);
   // 左の文章が占める幅を部屋へ伝える(部屋は残りの右側に全景を収める)
   const copyFrac = () => (innerWidth > 860 && innerWidth / innerHeight > 1) ? .36 : 0;
-  const postLayout = () => post({ type:'room:layout', copyFrac: copyFrac() });
+  // スマホ: 下に重なる説明カードの高さの割合。部屋はその上の空きの中央に家を置く
+  const copyBottom = () => innerWidth <= 767 ? Math.min(.45, (((document.querySelector('#ns-room .room-copy') || {}).offsetHeight || 0) + 28) / innerHeight) : 0;
+  const postLayout = () => post({ type:'room:layout', copyFrac: copyFrac(), copyBottom: copyBottom() });
   fr.addEventListener('load', () => { if (awake) setTimeout(() => post({ type:'room:wake' }), 50); setTimeout(postLayout, 80); });
   addEventListener('resize', postLayout);
   const IDLE = ['次の用事を考え中', 'ぼんやりしている', '窓の外を見ている', '息子を探している'];
@@ -3178,7 +3223,7 @@ initWeather();
     // 1コマ待ってから開くと、ようこそ文の出現(ふわっと上がる)が毎回動く。文字の組み上がり(scramble)も毎回流す
     requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('new-site').classList.add('revealed')));
     document.getElementById('ns-title').textContent = '';   // 組み上がる前に完成形が一瞬見えないように
-    setTimeout(() => scramble(document.getElementById('ns-title'), 'ようこそ、黄梓健のホームページへ。'), 350);
+    setTimeout(() => scramble(document.getElementById('ns-title'), 'ようこそ、​黄梓健のホームページへ。'), 350);
     const t = document.getElementById('three'); if (t) t.style.pointerEvents = 'none';
     const o = document.getElementById('old-site'); if (o) o.style.visibility = 'hidden';
     ['integrity', 'mute', 'skip'].forEach(id => document.getElementById(id)?.classList.add('fade-out'));

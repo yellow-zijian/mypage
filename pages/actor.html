@@ -86,6 +86,17 @@
   .tag.lie { color:#a5a398; border:1px solid rgba(120,124,110,.4); }
   .tag.tru { color:#ffffff; background:linear-gradient(135deg, #c48d7e, #c48d7e);
     box-shadow:0 0 16px rgba(196,141,126,.35); }
+  /* ── スマホ(幅767以下): 余白と幅を整える ── */
+  @media (max-width: 767px) {
+    .sec-profile { padding:11vh 20px 8vh; }
+    .sec-profile .head, .bio { width:100%; }
+    .bio-photo figcaption { font-size:11px; }
+    .sec-films { padding:6vh 20px 12vh; }
+    .sec-films .head, .films { width:100%; }
+    .film .t span { font-size:11px; }
+    .tag { font-size:11px; }
+    html { background:#e6e3d9; }   /* 一番下で紙の色が途切れて白い帯が出ないように */
+  }
 </style>
 <script src="../assets/analytics.js?v=3"></script>
 </head>
