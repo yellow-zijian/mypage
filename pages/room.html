@@ -93,7 +93,7 @@
 
   #loader { position:fixed; left:50%; top:50%; width:10px; height:10px; margin:-5px; border-radius:50%; background:#c48d7e; z-index:40;
     box-shadow:0 0 24px rgba(196,141,126,.6); animation: pulse 1.1s ease-in-out infinite; transition:opacity .5s ease; }
-  #loader.off { opacity:0; pointer-events:none; }
+  #loader.off { opacity:0; animation:none; pointer-events:none; }   /* 脈打つアニメが透明度を上書きするので止める */
   @keyframes pulse { 0%,100% { transform:scale(.7); opacity:.5; } 50% { transform:scale(1.3); opacity:1; } }
 </style>
 </head>
@@ -361,6 +361,10 @@ function astar(sx, sz, gx, gz) {
 }
 
 /* ---------- 読み込み ---------- */
+// 読み込み中に親から届いた合図(起きて/眠って/配置)を捨てずに覚えておき、読み終えてから反映する
+const earlyMsgs = {};
+const onEarlyMsg = e => { const d = e.data; if (d && typeof d.type === 'string' && /^room:(wake|sleep|layout)$/.test(d.type)) earlyMsgs[d.type === 'room:layout' ? 'layout' : 'awake'] = d; };
+addEventListener('message', onEarlyMsg);
 const loader = new GLTFLoader();
 const load = url => new Promise((ok, ng) => loader.load(url, ok, undefined, ng));
 const [roomG, chibiG, kidG] = await Promise.all([
@@ -832,6 +836,10 @@ addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); re
 $('#loader').classList.add('off');
 $('#head').classList.add('on');
 start();
+// 覚えておいた合図を本来の受け口に流し直し、親にも準備できたと知らせる(親は配置と起きての合図を送り直す)
+removeEventListener('message', onEarlyMsg);
+for (const k of ['layout', 'awake']) if (earlyMsgs[k]) window.postMessage(earlyMsgs[k], '*');
+if (EMBED) parent.postMessage({ type:'room:ready' }, '*');
 
 // 検証用
 function snap(w = 640) { renderer.render(scene, camera); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * innerHeight / innerWidth); c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.72); }

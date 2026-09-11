@@ -3121,7 +3121,7 @@ initWeather();
   if (!sec || !fr || !scroller) return;
   let loaded = false, awake = false, unloadTimer = null;
   const post = m => { try { fr.contentWindow && fr.contentWindow.postMessage(m, '*'); } catch (e) {} };
-  function load() { if (loaded) return; loaded = true; fr.src = `pages/room.html?embed=1&v=${ASSET_V}`; }
+  function load() { if (loaded) return; loaded = true; fr.src = `pages/room.html?embed=1&v=${ASSET_V}&r=2`; }
   new IntersectionObserver(es => {
     const on = es.some(x => x.isIntersecting);
     if (on) { clearTimeout(unloadTimer); load(); awake = true; post({ type:'room:wake' }); }
@@ -3144,6 +3144,9 @@ initWeather();
     const d = e.data; if (!d || typeof d.type !== 'string') return;
     if (d.type === 'room:wheel') {
       scroller.dispatchEvent(new WheelEvent('wheel', { deltaX:d.deltaX || 0, deltaY:d.deltaY || 0, deltaMode:0, bubbles:true, cancelable:true }));
+    } else if (d.type === 'room:ready') {
+      // 部屋がモデルを読み終えた。読み込み中に送った合図は届いていないことがあるので送り直す
+      postLayout(); if (awake) post({ type:'room:wake' });
     } else if (d.type === 'room:now') {
       // 部屋の実況を左のカードに映す
       const now = document.getElementById('rc-now'), sub = document.getElementById('rc-now-sub'),
